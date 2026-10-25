@@ -37,6 +37,15 @@ Output: `playtest/PC/MH3_Rowell_Dev.exe` with its DLLs. The launcher reads the
 existing image through prepared metadata, avoiding another RVZ copy. F2 opens
 shared settings; F1 opens the original PC settings.
 
+To create the downloadable Windows package:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-windows.ps1
+```
+
+Output: **dist/Windows/MH3-Rowell-Windows-x64.zip** and its checksum.
+Its portable launcher lets a new player choose their own game image.
+
 ## Android
 
 ```powershell
@@ -77,6 +86,10 @@ can additionally provide the direct APK and VERSION.json. Keep Windows and
 Android downloads separate and include [credits](../CREDITS.md), the retained
 licenses and access to the matching source. Do not distribute the entire local
 workspace, game data, personal saves or signing keys.
+
+The README's direct download links use tag **rowell-1.4.7** and the exact ZIP/APK
+filenames produced by these scripts. Publish that tag with the prepared assets
+to activate those links.
 
 The scripts do not commit, push or publish automatically. Local reports belong
 in **.local/** or **logs/**. The source snapshot starts a fresh Git history;

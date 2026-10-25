@@ -53,7 +53,7 @@ attributes = subprocess.check_output(["git", "check-attr", "text", "--", "androi
 require(all(line.endswith(": unset") for line in attributes.splitlines()), "Bundle bytes can be altered by Git line-ending conversion")
 
 docs = ["README.md", "CREDITS.md", "android/README.md", "docs/CHANGES.md",
-        "docs/ANDROID_INSTALL.md", "docs/CONTROLS.md", "docs/BUILDING.md"]
+        "docs/ANDROID_INSTALL.md", "docs/WINDOWS_INSTALL.md", "docs/CONTROLS.md", "docs/BUILDING.md"]
 for relative in docs:
     document = root / relative
     require(document.is_file(), f"Missing document: {relative}")

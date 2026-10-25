@@ -24,7 +24,7 @@ jobs:
       - name: Parse PowerShell scripts
         shell: pwsh
         run: |
-          $paths=@('dev.ps1','rowell.ps1','scripts/android-source.ps1','scripts/package-phone.ps1','scripts/test-android-bundle.ps1')
+          $paths=@('dev.ps1','rowell.ps1','scripts/android-source.ps1','scripts/package-phone.ps1','scripts/package-windows.ps1','scripts/test-android-bundle.ps1')
           foreach($path in $paths) {
             $issues=$null
             [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $path),[ref]$null,[ref]$issues)
