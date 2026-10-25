@@ -1,6 +1,6 @@
 #requires -Version 5.1
 [CmdletBinding()]
-param([string]$ApkPath,[string]$MetadataPath,[string]$OutputDirectory)
+param([string]$ApkPath,[string]$MetadataPath,[string]$OutputDirectory,[switch]$PhoneGameplayVerified)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 if(-not $ApkPath) {
@@ -79,7 +79,7 @@ $release=[ordered]@{
     touchSourceSHA256=$metadata.touchSourceSHA256
     sdlVersion=$metadata.sdlVersion;verifiedJniMethods=$metadata.verifiedJniMethods
     sourceRepository=$sourceRepository
-    phoneGameplayVerified=$false
+    phoneGameplayVerified=[bool]$PhoneGameplayVerified
 }
 [IO.File]::WriteAllText((Join-Path $staging 'VERSION.json'),($release | ConvertTo-Json -Depth 5)+"`n",$utf8)
 $files=@(Get-ChildItem -LiteralPath $staging -File -Recurse | Sort-Object FullName)

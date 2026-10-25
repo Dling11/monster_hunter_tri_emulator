@@ -7,12 +7,14 @@ general-purpose Wii emulator. Supply your own European/PAL **RMHP08** game image
 
 ## Downloads
 
-**MH Tri - Rowell - 1.4-rowell.7 pre-release**
+**MH Tri - Rowell - Android 1.4-rowell.8 pre-release**
 
-| Platform | Download |
-| --- | --- |
-| Android phone | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.7/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.7/MH3-Rowell-Dev-Android.zip) |
-| Windows PC | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.7/MH3-Rowell-Windows-x64.zip)** |
+| Platform | Version | Download |
+| --- | --- | --- |
+| Android phone | 1.4-rowell.8 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.8/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.8/MH3-Rowell-Dev-Android.zip) |
+| Windows PC | 1.4-rowell.7 | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.7/MH3-Rowell-Windows-x64.zip)** |
+
+Android 1.4-rowell.8 includes the Moga Woods/solo-quest speed fix tested on a POCO F5.
 
 **Android:** tap the APK to install it. If you download the ZIP, extract it first.
 
@@ -20,7 +22,7 @@ general-purpose Wii emulator. Supply your own European/PAL **RMHP08** game image
 
 [Android installation](docs/ANDROID_INSTALL.md) ·
 [Windows installation](docs/WINDOWS_INSTALL.md) ·
-[Release page, checksums and all files](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.7)
+[Android release, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.8)
 
 Supply your own PAL game image. GitHub's **Code > Download ZIP** downloads source
 code; use the links above to install the app.

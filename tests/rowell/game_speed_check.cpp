@@ -24,7 +24,8 @@ void Restore(const std::any&) {}
 
 int main() {
     using namespace MH3GameSpeed;
-    check(!IsOnlinePlay(2,5) && !IsOnlinePlay(1,0) && IsOnlinePlay(2,4) && IsOnlinePlay(1,4),
+    check(!IsOnlinePlay(2,5) && !IsOnlinePlay(1,3) && !IsOnlinePlay(1,6) &&
+          IsOnlinePlay(2,4) && IsOnlinePlay(1,4),
           "FPS lock distinguishes Village/solo quests from City/online quests");
     void* memory = VirtualAlloc(GuestFlat::Host(0x80000000), Memory::kMem1Size,
                                MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -34,9 +35,24 @@ int main() {
     check(Available() && Select(125), "Village allows speed-up");
     check(!Select(200) && Percent() == 125, "unsupported speed is rejected");
 
+    // Actual RMHP08 departure modes, written by the Village task at
+    // 0x8021F40C: 3 for Moga Woods/free hunting, 6 for a counter quest.
+    // Both differ from the old test's assumed solo-quest mode 0.
+    Select(150);
+    UpdateMode(true, 1, 3, true);
+    check(Available() && Percent() == 150, "leaving Village for Moga Woods retains 1.5x");
+    Select(100);
+    check(Select(125) && Select(150), "speed can be selected inside free hunting");
+    UpdateMode(true, 1, 6, true);
+    check(Available() && Percent() == 150, "offline counter quests allow and retain 1.5x");
+    Select(100);
+    check(Select(150), "speed can be selected inside an offline counter quest");
+    UpdateMode(true, 2, 5, true);
+    check(Available() && Percent() == 150, "returning from a solo quest retains its speed");
+
     GameStep::SetVariable(true);
-    for (int percent : {100, 125, 150}) for (int fps : {30, 60, 120}) {
-        UpdateMode(true, 1, 0, true);
+    for (int playMode : {3, 6}) for (int percent : {100, 125, 150}) for (int fps : {30, 60, 120}) {
+        UpdateMode(true, 1, uint8_t(playMode), true);
         check(Select(percent), "solo quest allows selected rate");
         const double before = GameStep::Elapsed();
         int shared = 0;
@@ -55,7 +71,7 @@ int main() {
     Select(100);
     check(close(ScaleStep(8, 6), 8), "1x retains the original step unchanged");
 
-    for (const auto mode : {std::pair{2,4}, {1,4}, {3,2}, {1,2}, {0,0}, {255,255}}) {
+    for (const auto mode : {std::pair{2,4}, {1,4}, {3,2}, {1,2}, {2,3}, {2,6}, {0,0}, {255,255}}) {
         UpdateMode(true, 2, 5, true); Select(150);
         UpdateMode(true, uint8_t(mode.first), uint8_t(mode.second), true);
         check(!Available() && Percent() == 100 && !Select(125) && close(ScaleStep(1,6),1),

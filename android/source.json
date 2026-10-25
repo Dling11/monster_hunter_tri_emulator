@@ -13,7 +13,7 @@
                               "scripts",
                               "toolchain"
                           ],
-    "patchSha256":  "6a0f0d4d5d2b09c0f0d5031acd5118e7b66e5c6cd504ebe9c728f04f6068795d",
+    "patchSha256":  "3a6c75993461294ce343cc47ffbb63bc467a8d3a9a0b4514cf337f416bbdac44",
     "trackedFiles":  [
                          {
                              "path":  ".gitignore",
@@ -25,7 +25,7 @@
                          },
                          {
                              "path":  "packaging/android/AndroidManifest.xml",
-                             "sha256Lf":  "6e77cb87979ab1b26bbeaa2ac4b03a69bbcf8991f40ab0e08a55ddbb93b0d53c"
+                             "sha256Lf":  "51260fb1b410bc8fe8bd80785ed4cf5c64babdb38f7f6871ddc62512ebf36341"
                          },
                          {
                              "path":  "packaging/android/res/values/strings.xml",
@@ -73,7 +73,7 @@
                          },
                          {
                              "path":  "runtime/src/touch_controls.cpp",
-                             "sha256Lf":  "60fe18dded91317ebce1e7982c5a9ec6ac744f2027007f4866aafa3ee03bb4f1"
+                             "sha256Lf":  "8bad2e890cd959b8be7897c8db20f53df4a5602f0f9b92b2cafc78db2e143664"
                          },
                          {
                              "path":  "scripts/prepare_native_dispatch.py",
@@ -99,7 +99,7 @@
                        },
                        {
                            "path":  "runtime/include/game_speed.h",
-                           "sha256":  "bb233aba90b1e2a3ccddbf77b7dee87652fcd77b6cb70a6c92db970be4d35647"
+                           "sha256":  "500ca894a10b59400b7348d342268f69f2a88e4d197b77a4ffa368e858015f14"
                        },
                        {
                            "path":  "runtime/include/touch_contacts.h",

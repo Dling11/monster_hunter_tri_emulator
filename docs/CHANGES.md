@@ -1,4 +1,10 @@
-# MH Tri - Rowell 1.4-rowell.7
+# MH Tri - Rowell 1.4-rowell.8
+
+- Fixed the solo speed button being disabled in Moga Woods/free hunting and
+  offline counter quests. Both now support 1x, 1.25x and 1.5x.
+- City, online quests and split-screen Arena still run at normal speed.
+
+## 1.4-rowell.7
 
 Modified source snapshot: **25 October 2026**.
 

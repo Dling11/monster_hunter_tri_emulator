@@ -87,9 +87,9 @@ Android downloads separate and include [credits](../CREDITS.md), the retained
 licenses and access to the matching source. Do not distribute the entire local
 workspace, game data, personal saves or signing keys.
 
-The README's direct download links use tag **rowell-1.4.7** and the exact ZIP/APK
-filenames produced by these scripts. Publish that tag with the prepared assets
-to activate those links.
+The README's Android download links use tag **rowell-1.4.8**; Windows links use
+**rowell-1.4.7**. Each link names the exact ZIP/APK produced by these scripts.
+Publish the matching tag with the prepared assets before announcing its links.
 
 The scripts do not commit, push or publish automatically. Local reports belong
 in **.local/** or **logs/**. The source snapshot starts a fresh Git history;
