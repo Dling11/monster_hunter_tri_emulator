@@ -1,0 +1,14 @@
+**
+!docker/
+!docker/translation.Dockerfile
+!scripts/
+!scripts/dev-container.py
+!toolchain/
+!toolchain/**
+**/bin/
+**/obj/
+**/__pycache__/
+**/*.rvz
+**/*.iso
+**/*.wia
+

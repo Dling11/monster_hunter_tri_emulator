@@ -1,0 +1,18 @@
+name: Feature request
+description: Suggest a focused control, settings or UI improvement.
+title: "[Feature] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is difficult today?
+      description: Explain the device, control setup and situation.
+    validations:
+      required: true
+  - type: textarea
+    id: request
+    attributes:
+      label: Requested behavior
+      description: Describe a concrete example and which existing behavior should remain available.
+    validations:
+      required: true

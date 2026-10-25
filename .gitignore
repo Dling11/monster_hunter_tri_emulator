@@ -1,0 +1,93 @@
+# CMake build trees
+build/
+runtime/build/
+cmake-build-*/
+
+# Generated translation output (large and game-derived; regenerate from a PAL disc)
+generated/
+
+# Generated compilation database consumed by clangd
+compile_commands.json
+compile_commands.json.tmp
+
+# clangd index cache and local clangd config
+.cache/
+.clangd
+
+# Local editor settings (clangd arguments live in .vscode/settings.json)
+.vscode/
+.vs/
+
+# CMake caches and user presets
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+
+# Local development tools, extracted disc data and private/runtime files
+.tools/
+.dev/
+Assets/
+logs/
+tools/
+Saves/
+SaveBackups/
+MH3UI.*
+*.rvz
+*.iso
+*.wia
+*.wbfs
+*.wad
+*.dol
+__pycache__/
+
+# Separate Android checkout and downloaded device-test APKs
+/android-source/
+/phone-test/
+/playtest/
+/dist/
+
+# Release packages, private signing material and runtime profiles
+*.apk
+*.aab
+*.zip
+*.7z
+*.keystore
+*.jks
+*.p12
+*.pfx
+/UserData/
+/MH3_Rowell_Dev/
+.env
+.env.*
+!.env.example
+
+# Translator source namespace; the broad build/ rule must not hide this folder.
+!toolchain/translator/src/Translator.Core/Build/
+!toolchain/translator/src/Translator.Core/Build/**
+
+# Local handoff notes and reports are kept off the public repository.
+/.local/
+/BUILD_STATUS.md
+/ROWELL_DEV.md
+/ANDROID_SOURCE_STATUS.md
+/PHONE_TESTING.md
+/DEVELOPMENT.md
+/BUILDINSTRUCTIONS.md
+/CONTRIBUTING.md
+/CHANGELOG.md
+*.log
+*.dmp
+*.tmp
+*.profraw
+*.bak
+*.bak-*
+*.orig
+*.rej
+*~
+.DS_Store
+Thumbs.db
+
+# Rebuild .NET output instead of uploading old binaries and debug symbols.
+/toolchain/**/bin/
+/toolchain/**/obj/
+*.pdb

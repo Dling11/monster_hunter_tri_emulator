@@ -1,0 +1,117 @@
+{
+    "format":  1,
+    "upstream":  "https://github.com/Kiridor123/OceanTriRecomp-Android.git",
+    "baseCommit":  "f7b47b7208bfe1febe8d50716359dc682331c9d9",
+    "sparseDirectories":  [
+                              "aurora-main",
+                              "cmake",
+                              "docs",
+                              "generated",
+                              "packaging",
+                              "pgo",
+                              "runtime",
+                              "scripts",
+                              "toolchain"
+                          ],
+    "patchSha256":  "6a0f0d4d5d2b09c0f0d5031acd5118e7b66e5c6cd504ebe9c728f04f6068795d",
+    "trackedFiles":  [
+                         {
+                             "path":  ".gitignore",
+                             "sha256Lf":  "3fc762c26209d4be7cac6583c388255c2d510eb967a4e4061567c50f5b63b32a"
+                         },
+                         {
+                             "path":  "aurora-main/lib/gfx/texture_replacement.cpp",
+                             "sha256Lf":  "a99fb762147778af4b54a21f6c8f34ec090c510d10c4f448fdd09fd68b29d6d6"
+                         },
+                         {
+                             "path":  "packaging/android/AndroidManifest.xml",
+                             "sha256Lf":  "6e77cb87979ab1b26bbeaa2ac4b03a69bbcf8991f40ab0e08a55ddbb93b0d53c"
+                         },
+                         {
+                             "path":  "packaging/android/res/values/strings.xml",
+                             "sha256Lf":  "6fdca13c07a1b5828e596577ef2e3f7769789ee2adb9ce7e71fe85989faae2df"
+                         },
+                         {
+                             "path":  "packaging/android/src/com/oceantri/mh3/OceanTriActivity.java",
+                             "sha256Lf":  "2ca6ea4c94e12c6b77ca92d050d45083ddbe040431c840c8f89e894c8ea15f49"
+                         },
+                         {
+                             "path":  "runtime/CMakeLists.txt",
+                             "sha256Lf":  "a8b620941091b3b3e6a4f9be4fc8652983bbb97054bfe1364a4741a03c9ebd11"
+                         },
+                         {
+                             "path":  "runtime/include/save_manager.h",
+                             "sha256Lf":  "1583591c718d1eef06786ef4be1af75288f24a1bdfad0d61571c904e7a00808c"
+                         },
+                         {
+                             "path":  "runtime/include/touch_controls.h",
+                             "sha256Lf":  "361155cf057f61f9ba3562c8418fec2706a6ce2e92d06d34b4e8f7b834a4b978"
+                         },
+                         {
+                             "path":  "runtime/include/win_posix_dir.h",
+                             "sha256Lf":  "e17db3ffa67f1df9f06b82f95d56a505e49e2c1fb8f8fae9a3081cd576c12868"
+                         },
+                         {
+                             "path":  "runtime/src/controller_host.cpp",
+                             "sha256Lf":  "c5dafc8bcc7db9f4301459d5a0aba2dc7fa21db302d21892defc63f19ccd7d7c"
+                         },
+                         {
+                             "path":  "runtime/src/frame_pacer.cpp",
+                             "sha256Lf":  "6e934be87af9f7f422361b40fd191904f01af321745997816115176da64ce943"
+                         },
+                         {
+                             "path":  "runtime/src/main.cpp",
+                             "sha256Lf":  "0b8545aa0f42f0dc7754d0697a6690b1ee0368bdc9dd32d1aed5f7dd6f450bc4"
+                         },
+                         {
+                             "path":  "runtime/src/net/local_server.cpp",
+                             "sha256Lf":  "6750e1c9e5730bee65d72828c5d78f8bb3003b606f286f110af31e0eb0a1e70c"
+                         },
+                         {
+                             "path":  "runtime/src/save_manager.cpp",
+                             "sha256Lf":  "7a0d1d949542e030e5337b90dea58baa10db061b3803b044b0db090cabf14e1d"
+                         },
+                         {
+                             "path":  "runtime/src/touch_controls.cpp",
+                             "sha256Lf":  "60fe18dded91317ebce1e7982c5a9ec6ac744f2027007f4866aafa3ee03bb4f1"
+                         },
+                         {
+                             "path":  "scripts/prepare_native_dispatch.py",
+                             "sha256Lf":  "b773adeebfe4b57cf94f708f905792ca4973cbbc911e2336fa1dacedd4098deb"
+                         }
+                     ],
+    "extraFiles":  [
+                       {
+                           "path":  "docker/.dockerignore",
+                           "sha256":  "f4e28f8b4d0173ea3424c423142a77448ac9ac0b5ae685b140ee7ed91affe040"
+                       },
+                       {
+                           "path":  "docker/AndroidTools.Dockerfile",
+                           "sha256":  "fe2af98baa6d1bd734da4e501c4776972ee9389107a61655fd5b51438d673b71"
+                       },
+                       {
+                           "path":  "packaging/android/src/com/oceantri/mh3/RowellRestartActivity.java",
+                           "sha256":  "c9d3f2d0378859fc9ae5d7eab744fe998ebd9973f04fb61a85c55fa7270b00e2"
+                       },
+                       {
+                           "path":  "rowell-android.ps1",
+                           "sha256":  "bf2863f0f14e310862592ad45e5e594c85e87d847b685e5a9aabf22eb3754edb"
+                       },
+                       {
+                           "path":  "runtime/include/game_speed.h",
+                           "sha256":  "bb233aba90b1e2a3ccddbf77b7dee87652fcd77b6cb70a6c92db970be4d35647"
+                       },
+                       {
+                           "path":  "runtime/include/touch_contacts.h",
+                           "sha256":  "97ca4df6f6167b221600c80258357398623fe3ff9baa37cb82dcbfdfdc27604b"
+                       },
+                       {
+                           "path":  "scripts/rowell_android_build.py",
+                           "sha256":  "2b2bae5ee627045ed90404ccb6259419bb1078eede7f309e5398b048bfc00f0c"
+                       },
+                       {
+                           "path":  "scripts/rowell_android_package.py",
+                           "sha256":  "32c32cf51e71b8bc8815b329ff369a01311845c2edb7415ae167ea7122889998"
+                       }
+                   ]
+}

@@ -1,0 +1,35 @@
+name: Source bundle checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      # Usage: https://github.com/actions/checkout
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Check Android source bundle and documentation
+        run: python3 .github/scripts/check_repository.py
+  restore:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          $paths=@('dev.ps1','rowell.ps1','scripts/android-source.ps1','scripts/package-phone.ps1','scripts/test-android-bundle.ps1')
+          foreach($path in $paths) {
+            $issues=$null
+            [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $path),[ref]$null,[ref]$issues)
+            if($issues) { throw ($issues | Out-String) }
+          }
+      - name: Restore Android changes against the pinned upstream files
+        shell: pwsh
+        run: ./scripts/test-android-bundle.ps1

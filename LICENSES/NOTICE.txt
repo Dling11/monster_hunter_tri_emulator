@@ -1,0 +1,40 @@
+MH Tri - Rowell - dependency notices
+
+Rowell-specific source modifications: Rowell (Dling11), 25 October 2026.
+Upstream authors, provenance and source locations are listed in CREDITS.md.
+The main source retains GNU GPL version 3. The native MH3SP server derivative
+retains AGPL-3.0-or-later. Each dependency keeps its own license.
+
+The license texts in this directory are preserved from the component sources
+used for the prepared build, except the AGPL text obtained from MH3SP's LICENSE
+and the OpenSSL text obtained from its pinned openssl-3.5.9 source tag.
+
+FreeType is used under the FreeType License (FTL):
+Portions of this software are copyright (C) 2026 The FreeType Project
+(www.freetype.org). All rights reserved.
+
+Zstandard is used under its BSD license (Zstandard-BSD.txt).
+The embedded LZMA decoder sources identify themselves as public domain by
+Igor Pavlov; their notices remain in runtime/third_party/lzma.
+SQLite is in the public domain; its source notice is reproduced below.
+
+Additional upstream notices are preserved in toolchain/THIRD-PARTY-NOTICES.md
+and in component source headers. Rebuilt packages must retain the notices for
+any additional or changed dependencies they include.
+
+SDL's HIDAPI component is used under its BSD-style license
+(SDL-hidapi-BSD.txt).
+
+SQLite source notice:
+/*
+** 2001 September 15
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** Internal interface definitions for SQLite.

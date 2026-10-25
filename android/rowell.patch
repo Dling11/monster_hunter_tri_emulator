@@ -1,0 +1,3301 @@
+diff --git a/.gitignore b/.gitignore
+index 52989237835daa6c9b6518890456cad4bfb71906..7b05f5e9d299450a90b6018e3d4c5dad39920a60 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,4 +1,6 @@
+ # Build artifacts and directories
++.dev/
++playtest/
+ build/
+ build-*/
+ build-android/
+diff --git a/aurora-main/lib/gfx/texture_replacement.cpp b/aurora-main/lib/gfx/texture_replacement.cpp
+index 1f2a88895e0793de983b1309a20e8a290aa4e783..faa306799ec1ad46b34e42b74e9fcbf18d67d0dd 100644
+--- a/aurora-main/lib/gfx/texture_replacement.cpp
++++ b/aurora-main/lib/gfx/texture_replacement.cpp
+@@ -559,11 +559,11 @@ void build_index() noexcept {
+   }
+ 
+ #if defined(__ANDROID__) || defined(ANDROID)
+-  scanDirs.push_back("/storage/emulated/0/MH3/textures");
+-  scanDirs.push_back("/storage/emulated/0/MH3/Load/Textures");
++  scanDirs.push_back("/storage/emulated/0/MH3_Rowell_Dev/textures");
++  scanDirs.push_back("/storage/emulated/0/MH3_Rowell_Dev/Load/Textures");
+ #endif
+   scanDirs.push_back("textures");
+-  scanDirs.push_back("MH3/textures");
++  scanDirs.push_back("MH3_Rowell_Dev/textures");
+ 
+   std::error_code ec;
+ 
+diff --git a/packaging/android/AndroidManifest.xml b/packaging/android/AndroidManifest.xml
+index 940453d42908a79e9e348b531648235292a11442..84a3062067084f4cfa193184e78482523f0e0864 100644
+--- a/packaging/android/AndroidManifest.xml
++++ b/packaging/android/AndroidManifest.xml
+@@ -1,8 +1,8 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-    package="com.oceantri.mh3"
+-    android:versionCode="4"
+-    android:versionName="1.4">
++    package="com.rowell.mh3dev"
++    android:versionCode="10007"
++    android:versionName="1.4-rowell.7">
+ 
+     <uses-sdk
+         android:minSdkVersion="29"
+@@ -30,7 +30,8 @@
+         <activity
+             android:name="com.oceantri.mh3.OceanTriActivity"
+             android:label="@string/app_name"
+-            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation"
++            android:launchMode="singleTask"
++            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density"
+             android:screenOrientation="sensorLandscape"
+             android:exported="true">
+             <intent-filter>
+@@ -38,5 +39,11 @@
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+         </activity>
++        <activity
++            android:name="com.oceantri.mh3.RowellRestartActivity"
++            android:process=":restart"
++            android:exported="false"
++            android:excludeFromRecents="true"
++            android:theme="@android:style/Theme.NoDisplay" />
+     </application>
+ </manifest>
+diff --git a/packaging/android/res/values/strings.xml b/packaging/android/res/values/strings.xml
+index 6fd8e01debf27504aba142b74dc5d21ec8f9fee4..5aaa05c58948cbb60ea8b601c48e4d4d0b5ed5e9 100644
+--- a/packaging/android/res/values/strings.xml
++++ b/packaging/android/res/values/strings.xml
+@@ -1,4 +1,4 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+-    <string name="app_name">Monster Hunter Tri</string>
++    <string name="app_name">MH Tri - Rowell</string>
+ </resources>
+diff --git a/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java b/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
+index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d319027bdd5eda 100644
+--- a/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
++++ b/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
+@@ -55,7 +55,7 @@ public class OceanTriActivity extends SDLActivity {
+ 
+         // Try writing to MH3/logs file
+         try {
+-            File logDir = new File("/storage/emulated/0/MH3/logs");
++            File logDir = new File("/storage/emulated/0/MH3_Rowell_Dev/logs");
+             if (!logDir.exists()) {
+                 logDir.mkdirs();
+             }
+@@ -99,7 +99,7 @@ public class OceanTriActivity extends SDLActivity {
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+-        log("OceanTriActivity.onCreate() called");
++        log("OceanTriActivity.onCreate() called (pid=" + android.os.Process.myPid() + ")");
+ 
+         // Request 120Hz high refresh rate display mode
+         setHighRefreshRate();
+@@ -113,7 +113,7 @@ public class OceanTriActivity extends SDLActivity {
+                 String stackTrace = sw.toString();
+                 log("FATAL JAVA UNCAUGHT EXCEPTION: " + stackTrace);
+                 try {
+-                    File crashDir = new File("/storage/emulated/0/MH3/logs");
++                    File crashDir = new File("/storage/emulated/0/MH3_Rowell_Dev/logs");
+                     if (!crashDir.exists()) {
+                         crashDir.mkdirs();
+                     }
+@@ -141,12 +141,26 @@ public class OceanTriActivity extends SDLActivity {
+     @Override
+     protected void onResume() {
+         super.onResume();
++        log("Game activity resumed (pid=" + android.os.Process.myPid() + ")");
+         setHighRefreshRate();
+         if (hasStoragePermission() && !mRomReady && !mRomCheckStarted) {
+             checkRomAndPrepare();
+         }
+     }
+ 
++    @Override
++    protected void onPause() {
++        log("Game activity paused (pid=" + android.os.Process.myPid() + ")");
++        super.onPause();
++    }
++
++    @Override
++    protected void onNewIntent(Intent intent) {
++        super.onNewIntent(intent);
++        setIntent(intent);
++        log("Returning to the existing game activity (pid=" + android.os.Process.myPid() + ")");
++    }
++
+     @Override
+     protected void main() {
+         log("OceanTriActivity.main() thread waiting for ROM ready...");
+@@ -219,8 +233,8 @@ public class OceanTriActivity extends SDLActivity {
+             return;
+         }
+ 
+-        // 1. Check if ROM already exists in the official game directory (/storage/emulated/0/MH3/)
+-        File mh3Dir = new File("/storage/emulated/0/MH3");
++        // 1. Check if ROM already exists in the official game directory (/storage/emulated/0/MH3_Rowell_Dev/)
++        File mh3Dir = new File("/storage/emulated/0/MH3_Rowell_Dev");
+         if (!mh3Dir.exists()) {
+             mh3Dir.mkdirs();
+         }
+@@ -229,7 +243,7 @@ public class OceanTriActivity extends SDLActivity {
+         if (existingMh3Rom != null) {
+             sRomPath = existingMh3Rom.getAbsolutePath();
+             mRomReady = true;
+-            log("ROM already present in target directory /storage/emulated/0/MH3: " + sRomPath);
++            log("ROM already present in target directory /storage/emulated/0/MH3_Rowell_Dev: " + sRomPath);
+             return;
+         }
+ 
+@@ -256,22 +270,22 @@ public class OceanTriActivity extends SDLActivity {
+         final File file = new File(detectedPath);
+         AlertDialog.Builder builder = new AlertDialog.Builder(this);
+         builder.setTitle("Monster Hunter Tri");
+-        builder.setMessage("Se detectó tu ROM en:\n" + detectedPath + "\n\n" +
+-            "¿Deseas copiarla automáticamente a /storage/emulated/0/MH3/ para iniciar?");
+-        builder.setPositiveButton("Copiar a MH3 e Iniciar", new DialogInterface.OnClickListener() {
++        builder.setMessage("Found a game image at:\n" + detectedPath + "\n\n" +
++            "Copy it into MH3_Rowell_Dev and start?");
++        builder.setPositiveButton("Copy to development app and start", new DialogInterface.OnClickListener() {
+             @Override
+             public void onClick(DialogInterface dialog, int which) {
+-                File target = new File("/storage/emulated/0/MH3", file.getName());
++                File target = new File("/storage/emulated/0/MH3_Rowell_Dev", file.getName());
+                 copyFileWithProgress(file, target);
+             }
+         });
+-        builder.setNeutralButton("Seleccionar otra", new DialogInterface.OnClickListener() {
++        builder.setNeutralButton("Choose another image", new DialogInterface.OnClickListener() {
+             @Override
+             public void onClick(DialogInterface dialog, int which) {
+                 launchRomPicker();
+             }
+         });
+-        builder.setNegativeButton("Usar sin copiar", new DialogInterface.OnClickListener() {
++        builder.setNegativeButton("Use this image directly", new DialogInterface.OnClickListener() {
+             @Override
+             public void onClick(DialogInterface dialog, int which) {
+                 sRomPath = detectedPath;
+@@ -286,15 +300,15 @@ public class OceanTriActivity extends SDLActivity {
+     private void showRomSelectPrompt() {
+         AlertDialog.Builder builder = new AlertDialog.Builder(this);
+         builder.setTitle("Monster Hunter Tri");
+-        builder.setMessage("Por favor selecciona el archivo de la ROM (.iso, .rvz o .wia) de Monster Hunter Tri (Europeo).\n\n" +
+-            "La aplicación se encargará de copiarla automáticamente a /storage/emulated/0/MH3/ para jugar.");
+-        builder.setPositiveButton("Seleccionar ROM", new DialogInterface.OnClickListener() {
++        builder.setMessage("Select your European Monster Hunter Tri game image (.iso, .rvz or .wia).\n\n" +
++            "This development app uses MH3_Rowell_Dev. Your existing app and saves stay separate.");
++        builder.setPositiveButton("Choose game image", new DialogInterface.OnClickListener() {
+             @Override
+             public void onClick(DialogInterface dialog, int which) {
+                 launchRomPicker();
+             }
+         });
+-        builder.setNegativeButton("Salir", new DialogInterface.OnClickListener() {
++        builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+             @Override
+             public void onClick(DialogInterface dialog, int which) {
+                 finish();
+@@ -361,7 +375,7 @@ public class OceanTriActivity extends SDLActivity {
+             log("Querying URI info: " + e.getMessage());
+         }
+ 
+-        final File targetDir = new File("/storage/emulated/0/MH3");
++        final File targetDir = new File("/storage/emulated/0/MH3_Rowell_Dev");
+         if (!targetDir.exists()) targetDir.mkdirs();
+         final File targetFile = new File(targetDir, displayName);
+ 
+@@ -373,8 +387,8 @@ public class OceanTriActivity extends SDLActivity {
+         }
+ 
+         final ProgressDialog progressDialog = new ProgressDialog(this);
+-        progressDialog.setTitle("Copiando ROM");
+-        progressDialog.setMessage("Copiando " + displayName + " a /storage/emulated/0/MH3/...\nPor favor espera, no cierres la app.");
++        progressDialog.setTitle("Copying game image");
++        progressDialog.setMessage("Copying " + displayName + " a /storage/emulated/0/MH3_Rowell_Dev/...\nPlease wait and keep the app open.");
+         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+         progressDialog.setCancelable(false);
+         progressDialog.setCanceledOnTouchOutside(false);
+@@ -433,15 +447,15 @@ public class OceanTriActivity extends SDLActivity {
+                             progressDialog.dismiss();
+                             if (targetFile.exists()) targetFile.delete();
+                             AlertDialog.Builder b = new AlertDialog.Builder(OceanTriActivity.this);
+-                            b.setTitle("Error al copiar ROM");
+-                            b.setMessage("Ocurrió un error al copiar el archivo:\n" + e.getMessage());
+-                            b.setPositiveButton("Reintentar", new DialogInterface.OnClickListener() {
++                            b.setTitle("Could not copy the game image");
++                            b.setMessage("Could not copy the file:\n" + e.getMessage());
++                            b.setPositiveButton("Retry", new DialogInterface.OnClickListener() {
+                                 @Override
+                                 public void onClick(DialogInterface dialog, int which) {
+                                     showRomSelectPrompt();
+                                 }
+                             });
+-                            b.setNegativeButton("Salir", new DialogInterface.OnClickListener() {
++                            b.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                                 @Override
+                                 public void onClick(DialogInterface dialog, int which) {
+                                     finish();
+@@ -467,8 +481,8 @@ public class OceanTriActivity extends SDLActivity {
+ 
+         final long totalBytesExpected = sourceFile.length();
+         final ProgressDialog progressDialog = new ProgressDialog(this);
+-        progressDialog.setTitle("Copiando ROM");
+-        progressDialog.setMessage("Copiando " + sourceFile.getName() + " a /storage/emulated/0/MH3/...\nPor favor espera, no cierres la app.");
++        progressDialog.setTitle("Copying game image");
++        progressDialog.setMessage("Copying " + sourceFile.getName() + " a /storage/emulated/0/MH3_Rowell_Dev/...\nPlease wait and keep the app open.");
+         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+         progressDialog.setCancelable(false);
+         progressDialog.setCanceledOnTouchOutside(false);
+@@ -599,17 +613,31 @@ public class OceanTriActivity extends SDLActivity {
+         System.exit(0);
+     }
+ 
++    // A separate process relaunches SDL after the current game process exits.
++    public void restartGame() {
++        runOnUiThread(new Runnable() {
++            @Override
++            public void run() {
++                log("Restarting the development game with saved settings");
++                Intent restart = new Intent(OceanTriActivity.this, RowellRestartActivity.class);
++                restart.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
++                restart.putExtra("game_pid", android.os.Process.myPid());
++                startActivity(restart);
++            }
++        });
++    }
++
+     private String findGameRom() {
+         List<File> searchDirs = new ArrayList<>();
+         searchDirs.add(new File("/storage/emulated/0/Download"));
+-        searchDirs.add(new File("/storage/emulated/0/MH3"));
++        searchDirs.add(new File("/storage/emulated/0/MH3_Rowell_Dev"));
+         searchDirs.add(new File("/storage/emulated/0/OceanTri"));
+         searchDirs.add(new File("/storage/emulated/0/Wii"));
+         searchDirs.add(new File("/storage/emulated/0/ROMs"));
+         searchDirs.add(new File("/storage/emulated/0/Games"));
+         searchDirs.add(new File("/storage/emulated/0"));
+         searchDirs.add(new File("/sdcard/Download"));
+-        searchDirs.add(new File("/sdcard/MH3"));
++        searchDirs.add(new File("/sdcard/MH3_Rowell_Dev"));
+         searchDirs.add(new File("/sdcard/OceanTri"));
+         searchDirs.add(new File("/sdcard/Wii"));
+         searchDirs.add(new File("/sdcard"));
+diff --git a/runtime/CMakeLists.txt b/runtime/CMakeLists.txt
+index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..bc4f4827de5f875024dc2f7e4e2e1f2aab53b762 100644
+--- a/runtime/CMakeLists.txt
++++ b/runtime/CMakeLists.txt
+@@ -208,6 +208,14 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
+ set(MH3_NATIVE_DISPATCH_RESOLVED_PROFILE "" CACHE FILEPATH "Optional resolved translator mod profile")
+ set(MH3_NATIVE_DISPATCH_RETRO_CPP_DIR "" CACHE PATH "Optional translator mod C++ directory")
+ set(native_dispatch_args)
++set(MH3_TRANSLATOR_DLL "" CACHE FILEPATH "Translator CLI used for native dispatch preparation")
++set(MH3_TRANSLATION_METADATA "${CMAKE_CURRENT_SOURCE_DIR}/../generated/translation.json" CACHE FILEPATH "Base translation metadata")
++if(MH3_TRANSLATOR_DLL)
++  list(APPEND native_dispatch_args --translator "${MH3_TRANSLATOR_DLL}")
++  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${MH3_TRANSLATOR_DLL}")
++endif()
++list(APPEND native_dispatch_args --base-metadata "${MH3_TRANSLATION_METADATA}")
++set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${MH3_TRANSLATION_METADATA}")
+ 
+ if(MH3_NATIVE_DISPATCH_RESOLVED_PROFILE)
+   list(APPEND native_dispatch_args --resolved-profile "${MH3_NATIVE_DISPATCH_RESOLVED_PROFILE}")
+@@ -227,7 +235,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${native_dispatch
+   "${CMAKE_CURRENT_SOURCE_DIR}/../generated/translation.json")
+ file(GLOB native_dispatch_functions CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../generated/functions/*.cpp")
+ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${native_dispatch_functions})
+-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../generated/translation.json" native_dispatch_metadata)
++file(READ "${MH3_TRANSLATION_METADATA}" native_dispatch_metadata)
+ string(JSON native_dispatch_bundle_type ERROR_VARIABLE native_dispatch_bundle_error TYPE "${native_dispatch_metadata}" sourceBundlePath)
+ 
+ if(NOT native_dispatch_bundle_error AND native_dispatch_bundle_type STREQUAL "STRING")
+@@ -348,10 +356,9 @@ target_include_directories(MH3 PRIVATE include ..)
+ if(ANDROID)
+   set_target_properties(MH3 PROPERTIES OUTPUT_NAME "main")
+   target_link_libraries(MH3 PRIVATE log GLESv3 EGL android)
+-  target_include_directories(MH3 PRIVATE /var/mnt/juegos_sdb2/openssl-android-install/include)
+-  target_link_libraries(MH3 PRIVATE
+-    /var/mnt/juegos_sdb2/openssl-android-install/lib/libssl.a
+-    /var/mnt/juegos_sdb2/openssl-android-install/lib/libcrypto.a)
++  set(OPENSSL_USE_STATIC_LIBS TRUE)
++  find_package(OpenSSL REQUIRED)
++  target_link_libraries(MH3 PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+   target_compile_definitions(MH3 PRIVATE MH3_HAS_OPENSSL)
+ endif()
+ 
+diff --git a/runtime/include/save_manager.h b/runtime/include/save_manager.h
+index 9edcecc4293fa61ec57aef60f6f2bcb263c1c10c..a37c935bc5146fe64480dbbdea23bb366db5630d 100644
+--- a/runtime/include/save_manager.h
++++ b/runtime/include/save_manager.h
+@@ -1,6 +1,7 @@
+ ﻿#pragma once
+ #include <filesystem>
+ #include <string>
++#include <vector>
+ 
+ namespace mh3_save_manager {
+ namespace fs = std::filesystem;
+@@ -16,4 +17,14 @@ Result CreateBackup(const fs::path& saveData, const fs::path& backupsRoot);
+ Result ExportSave(const fs::path& saveData, const fs::path& exportParent);
+ Result StageImport(const fs::path& selectedFolder, const fs::path& pendingRoot);
+ Result ApplyPendingImport(const fs::path& saveData, const fs::path& pendingRoot, const fs::path& backupsRoot);
+-}
+\ No newline at end of file
++struct SaveCopy {
++    fs::path folder;
++    std::string created;
++    std::string kind;
++};
++// Scanned only when opening/changing the restore browser, never per frame.
++std::vector<SaveCopy> ListSaveCopies(const fs::path& userDir, bool backups);
++std::string CopyCreatedTime(const fs::path& folder);
++Result QueueRestore(const fs::path& selectedFolder, const fs::path& userDir);
++Result CompleteQueuedRestore(const fs::path& userDir);
++}
+diff --git a/runtime/include/touch_controls.h b/runtime/include/touch_controls.h
+index 632b4b1c949bda2658d931b8d5cb734451998746..0d9f79114075eafc3960621151cd31348858ecbb 100644
+--- a/runtime/include/touch_controls.h
++++ b/runtime/include/touch_controls.h
+@@ -15,6 +15,8 @@ void TouchControls_Init(void);
+ // Enable or disable touch controls overlay.
+ void TouchControls_SetEnabled(bool enabled);
+ bool TouchControls_IsEnabled(void);
++bool TouchControls_WantsPointer(void);
++bool TouchControls_RunInputChecks(void);
+ 
+ // Process an SDL touch or window event (called from event watcher or pump).
+ // Handles SDL_EVENT_FINGER_DOWN, SDL_EVENT_FINGER_UP, SDL_EVENT_FINGER_MOTION,
+@@ -34,6 +36,8 @@ void TouchControls_RenderGL(int windowWidth, int windowHeight);
+ bool TouchControls_IsMenuOpen(void);
+ void TouchControls_ToggleMenu(void);
+ void TouchControls_SetMenuOpen(bool open);
++bool TouchControls_IsModalOpen(void);
++uint16_t TouchControls_GetComboMask(unsigned slot);
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/runtime/include/win_posix_dir.h b/runtime/include/win_posix_dir.h
+index 05a42e587a8b389f5776cd6566c91b2902614eae..65d928c37dc24503dd360dfa2f45d23e3f61ec65 100644
+--- a/runtime/include/win_posix_dir.h
++++ b/runtime/include/win_posix_dir.h
+@@ -95,7 +95,7 @@ inline std::filesystem::path mh3_self_exe() {
+     if (ext && ext[0]) return std::filesystem::path(ext) / "MH3";
+     const char* internal = SDL_GetAndroidInternalStoragePath();
+     if (internal && internal[0]) return std::filesystem::path(internal) / "MH3";
+-    return std::filesystem::path("/storage/emulated/0/MH3/MH3");
++    return std::filesystem::path("/storage/emulated/0/MH3_Rowell_Dev/MH3");
+ }
+ #else
+ inline std::filesystem::path mh3_self_exe() { return std::filesystem::read_symlink("/proc/self/exe"); }
+diff --git a/runtime/src/controller_host.cpp b/runtime/src/controller_host.cpp
+index 376bc7a1b84f836484c5e3c9d3d9249eb2211709..c2190b028396abb7517265a274b47dbac4f9d222 100644
+--- a/runtime/src/controller_host.cpp
++++ b/runtime/src/controller_host.cpp
+@@ -1,5 +1,5 @@
+ #include "controller_host.h"
+-#include "touch_controls.h"
++#include "touch_controls.h"
+ #include "mh3_mouse_look_sensitivity.h"
+ #include "fatal.h"
+ #include "dev_options.h"
+@@ -51,7 +51,7 @@ void Gamepad_LoadConfig() {
+     g_gamepadConfigLoaded = true;
+ 
+     const char* user = std::getenv("MH3_USER_DIR");
+-    std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3";
++    std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
+     std::string path = dir + "/gamepad.cfg";
+     std::ifstream in(path);
+     if (in) {
+@@ -65,7 +65,7 @@ void Gamepad_LoadConfig() {
+ 
+ void Gamepad_SaveConfig() {
+     const char* user = std::getenv("MH3_USER_DIR");
+-    std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3";
++    std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
+     std::string path = dir + "/gamepad.cfg";
+     std::ofstream out(path, std::ios::trunc);
+     if (out) {
+@@ -291,6 +291,7 @@ ClassicControllerSample ReadLiveController() {
+     if (!SDL_WasInit(SDL_INIT_GAMEPAD) && !SDL_InitSubSystem(SDL_INIT_GAMEPAD))
+         MH3_THROW(std::runtime_error(std::string("SDL controller initialization: ") + SDL_GetError()));
+ 
++    if (TouchControls_IsMenuOpen()) return sample;
+     SDL_Window* focusedWindow = SDL_GetKeyboardFocus();
+     float mouseDeltaX = 0.0f, mouseDeltaY = 0.0f;
+     SDL_MouseButtonFlags mouseButtons = 0;
+diff --git a/runtime/src/frame_pacer.cpp b/runtime/src/frame_pacer.cpp
+index 58240187f8d48f5ed0508173d6b3b660a3ad7d18..032edbb9b554a6e48a5e2367d051b2d706ab0abd 100644
+--- a/runtime/src/frame_pacer.cpp
++++ b/runtime/src/frame_pacer.cpp
+@@ -22,6 +22,7 @@
+ #endif
+ #include "field_jump.h"
+ #include "game_step.h"
++#include "game_speed.h"
+ #include "mh3_frame_rate_control.h"
+ #include "guest_threads.h"
+ #include "memory.h"
+@@ -204,6 +205,14 @@ extern "C" void MH3_FramePacer(CpuContext* ctx) {
+ 
+     started = true;
+     GameStep::SetVariable(variableStep);
++    auto applyGameSpeed = [&](double retraces) {
++        // Recheck on the game thread for every step, even with the overlay
++        // hidden. The online quest uses play mode 4 as well as the City.
++        const bool ready = Memory::Contains(0x8065AA84, 2);
++        MH3GameSpeed::UpdateMode(ready, ready ? Memory::Read8(0x8065AA84) : 0,
++                                ready ? Memory::Read8(0x8065AA85) : 0, variableStep);
++        return MH3GameSpeed::ScaleStep(retraces, std::chrono::duration<double>(kMaxStep) / period);
++    };
+     double stepTicks; // game time of the step that just ran, in retraces
+     if (variableStep) {
+         const int targetFps = MH3FrameRateControl::TargetFPS();
+@@ -250,6 +259,7 @@ extern "C" void MH3_FramePacer(CpuContext* ctx) {
+         // Retrace period in seconds (e.g. 1 / 59.94 s)
+         const double retraceSeconds = std::chrono::duration<double>(period).count();
+         stepTicks = smoothedDt / retraceSeconds;
++        stepTicks = applyGameSpeed(stepTicks);
+ 
+         GameStep::Begin(stepTicks / 2.0);
+ 
+@@ -266,6 +276,7 @@ extern "C" void MH3_FramePacer(CpuContext* ctx) {
+         else
+             frameEnd += budget * period;
+         stepTicks = budget;
++        applyGameSpeed(stepTicks); // Fixed-step diagnostic mode stays at 1x.
+         GameStep::Begin(budget / 2.0);
+ 
+         // Flip one retrace before the end, as the original does.
+diff --git a/runtime/src/main.cpp b/runtime/src/main.cpp
+index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c96bd6a4dd 100644
+--- a/runtime/src/main.cpp
++++ b/runtime/src/main.cpp
+@@ -1,4 +1,5 @@
+ #include "touch_controls.h"
++#include "save_manager.h"
+ #include "language.h"
+ #include "mh3_frame_rate_control.h"
+ #if defined(ANDROID) || defined(__ANDROID__)
+@@ -127,8 +128,8 @@ void AppendCrashLog(std::string_view what, const CpuContext* cpu) noexcept {
+ #if defined(ANDROID) || defined(__ANDROID__)
+     __android_log_print(ANDROID_LOG_FATAL, "MH3", "MH3 CRASH REPORT:\n%s", text.c_str());
+     std::error_code lec;
+-    std::filesystem::create_directories("/storage/emulated/0/MH3/logs", lec);
+-    if (FILE* f = fopen("/storage/emulated/0/MH3/logs/oceantri_crash.txt", "a")) {
++    std::filesystem::create_directories("/storage/emulated/0/MH3_Rowell_Dev/logs", lec);
++    if (FILE* f = fopen("/storage/emulated/0/MH3_Rowell_Dev/logs/oceantri_crash.txt", "a")) {
+         fputs(text.c_str(), f);
+         fputc('\n', f);
+         fclose(f);
+@@ -648,7 +649,7 @@ bool PrepareGameData(const char* rom) {
+     } else if (intFiles && intFiles[0]) {
+         root = std::filesystem::path(intFiles);
+     } else {
+-        root = std::filesystem::path("/storage/emulated/0/MH3");
++        root = std::filesystem::path("/storage/emulated/0/MH3_Rowell_Dev");
+     }
+     std::error_code rootEc;
+     std::filesystem::create_directories(root, rootEc);
+@@ -684,13 +685,13 @@ bool PrepareGameData(const char* rom) {
+ #if defined(__ANDROID__)
+             searchPaths = {
+                 "/storage/emulated/0/Download",
+-                "/storage/emulated/0/MH3",
++                "/storage/emulated/0/MH3_Rowell_Dev",
+                 "/storage/emulated/0/OceanTri",
+                 "/storage/emulated/0/ROMs",
+                 "/storage/emulated/0/Games",
+                 "/storage/emulated/0",
+                 "/sdcard/Download",
+-                "/sdcard/MH3",
++                "/sdcard/MH3_Rowell_Dev",
+                 "/sdcard/OceanTri",
+                 "/sdcard/ROMs",
+                 "/sdcard/Games",
+@@ -1009,10 +1010,10 @@ int main(int argc, char** argv) {
+             char buf[1024];
+             ssize_t r;
+             std::error_code ec;
+-            std::filesystem::create_directories("/storage/emulated/0/MH3/logs", ec);
+-            std::filesystem::create_directories("/storage/emulated/0/MH3/textures", ec);
++            std::filesystem::create_directories("/storage/emulated/0/MH3_Rowell_Dev/logs", ec);
++            std::filesystem::create_directories("/storage/emulated/0/MH3_Rowell_Dev/textures", ec);
+             {
+-                std::string readmePath = "/storage/emulated/0/MH3/textures/INSTRUCCIONES.txt";
++                std::string readmePath = "/storage/emulated/0/MH3_Rowell_Dev/textures/INSTRUCCIONES.txt";
+                 if (!std::filesystem::exists(readmePath)) {
+                     if (FILE* rf = fopen(readmePath.c_str(), "w")) {
+                         fputs("=== MONSTER HUNTER TRI - TEXTURAS HD ===\n"
+@@ -1023,7 +1024,7 @@ int main(int argc, char** argv) {
+                     }
+                 }
+             }
+-            FILE* logFile = fopen("/storage/emulated/0/MH3/logs/game_log.txt", "a");
++            FILE* logFile = fopen("/storage/emulated/0/MH3_Rowell_Dev/logs/game_log.txt", "a");
+             while ((r = read(fd, buf, sizeof(buf) - 1)) > 0) {
+                 if (r > 0 && buf[r - 1] == '\n') --r;
+                 buf[r] = '\0';
+@@ -1050,7 +1051,7 @@ int main(int argc, char** argv) {
+     {
+         std::string userDirStr;
+ #if defined(ANDROID) || defined(__ANDROID__)
+-        userDirStr = "/storage/emulated/0/MH3";
++        userDirStr = "/storage/emulated/0/MH3_Rowell_Dev";
+ #else
+         const char* envUser = std::getenv("MH3_USER_DIR");
+         if (envUser && *envUser) {
+@@ -1078,9 +1079,9 @@ int main(int argc, char** argv) {
+         std::cout << "MH3: MH3_USER_DIR set to: " << userDir << "\n";
+ #endif
+ 
+-        // Language setting: Default to Spanish ('es')
++        // New development installations start in English; preserve a saved choice.
+         std::string langPath = std::string(userDir) + "/MH3UI.language";
+-        std::string langCode = "es";
++        std::string langCode = "en";
+         {
+             std::ifstream in(langPath);
+             std::string code;
+@@ -1088,11 +1089,11 @@ int main(int argc, char** argv) {
+                 langCode = code;
+             } else {
+                 std::ofstream out(langPath);
+-                if (out) out << "es\n";
++                if (out) out << "en\n";
+             }
+         }
+         setenv("MH3_LANGUAGE", langCode.c_str(), 1);
+-        uint8_t sysLang = 4; // default Spanish
++        uint8_t sysLang = 1; // default English
+         if (langCode == "en") sysLang = 1;
+         else if (langCode == "de") sysLang = 2;
+         else if (langCode == "fr") sysLang = 3;
+@@ -1173,6 +1174,15 @@ int main(int argc, char** argv) {
+ #else
+     {
+ #endif
++        const char* restoreDir=std::getenv("MH3_USER_DIR");
++        if(restoreDir && *restoreDir) {
++            const auto restore=mh3_save_manager::CompleteQueuedRestore(restoreDir);
++            if(!restore.success) {
++                const auto data=mh3_save_manager::ResolveSaveDataDirectory(std::filesystem::path(restoreDir)/"nand");
++                if(!mh3_save_manager::HasSaveData(data))MH3_THROW(std::runtime_error("Could not restore saved progress: "+restore.detail));
++                std::cerr << "Restore failed; keeping current saved progress: " << restore.detail << '\n';
++            }
++        }
+ #ifdef __vita__
+         if (argc == 1 && !VitaLauncher::Run())
+             return 0;
+diff --git a/runtime/src/net/local_server.cpp b/runtime/src/net/local_server.cpp
+index bee817f25e43e86f55d2ff6f4e7d9ca433cb2d81..a73442cc5d97bff1e3d332eff88062ac262e749a 100644
+--- a/runtime/src/net/local_server.cpp
++++ b/runtime/src/net/local_server.cpp
+@@ -49,11 +49,7 @@ std::string GetConfigPath() {
+     const char* user = std::getenv("MH3_USER_DIR");
+     if (user && *user)
+         return std::string(user) + "/MH3UI.online";
+-    if (std::filesystem::exists("/storage/emulated/0/MH3"))
+-        return "/storage/emulated/0/MH3/MH3UI.online";
+-    if (std::filesystem::exists("/sdcard/Download"))
+-        return "/sdcard/Download/MH3UI.online";
+-    return "MH3UI.online";
++    return "/storage/emulated/0/MH3_Rowell_Dev/MH3UI.online";
+ }
+ 
+ bool PortOpen(uint16_t port) {
+diff --git a/runtime/src/save_manager.cpp b/runtime/src/save_manager.cpp
+index f121310357040dfaa513f4882949ffb4af3eae35..6864abc60e0d13c5c9236db9254c4f3a7de78fc6 100644
+--- a/runtime/src/save_manager.cpp
++++ b/runtime/src/save_manager.cpp
+@@ -5,6 +5,13 @@
+ #include <iomanip>
+ #include <sstream>
+ #include <system_error>
++#include <algorithm>
++#include <array>
++#include <cstring>
++#include <cstdlib>
++#ifdef _WIN32
++#include <thread>
++#endif
+ 
+ namespace mh3_save_manager {
+ namespace {
+@@ -79,12 +86,87 @@ fs::path SourceDataDirectory(const fs::path& selected) {
+     };
+     for (const auto& candidate : candidates) if (HasFiles(candidate)) return candidate;
+     if (selected.filename() == "data" && HasFiles(selected)) return selected;
++    if (fs::is_regular_file(selected / "nocopy/data00", ec) && !ec) return selected;
+     return {};
+ }
++bool SameContents(const fs::path& source, const fs::path& destination) {
++    std::error_code ec;
++    fs::recursive_directory_iterator it(source, ec), end;
++    for (; !ec && it != end; it.increment(ec)) {
++        if (it->is_symlink(ec) || ec) return false;
++        if (!it->is_regular_file(ec)) continue;
++        const auto target = destination / it->path().lexically_relative(source);
++        const auto size = it->file_size(ec);
++        if (ec || fs::file_size(target, ec) != size || ec) return false;
++        std::ifstream a(it->path(), std::ios::binary), b(target, std::ios::binary);
++        if (!a || !b) return false;
++        std::array<char, 16384> first{}, second{};
++        while (a) {
++            a.read(first.data(), first.size()); b.read(second.data(), second.size());
++            if (a.gcount() != b.gcount() || std::memcmp(first.data(), second.data(), size_t(a.gcount()))) return false;
++        }
++        if (a.bad() || b.bad()) return false;
++    }
++    return !ec;
++}
++std::string CopyStamp(const fs::path& folder) {
++    const auto name = folder.filename().string();
++    const size_t prefix = name.rfind("Backup-", 0) == 0 ? 7 : name.rfind("MH3-RMHP08-", 0) == 0 ? 11 : 0;
++    if (!prefix || name.size() < prefix + 19) return {};
++    const auto stamp = name.substr(prefix, 19);
++    for (size_t i = 0; i < stamp.size(); ++i) {
++        if (i == 8 || i == 15) { if (stamp[i] != '-') return {}; }
++        else if (stamp[i] < '0' || stamp[i] > '9') return {};
++    }
++    if (name.size() > prefix + 19) {
++        if (name[prefix + 19] != '-' || name.size() == prefix + 20) return {};
++        for (size_t i = prefix + 20; i < name.size(); ++i) if (name[i] < '0' || name[i] > '9') return {};
++    }
++    std::tm value{}; std::istringstream input(stamp.substr(0, 15));
++    input >> std::get_time(&value, "%Y%m%d-%H%M%S");
++    if (input.fail()) return {};
++    return stamp;
++}
++std::vector<fs::path> ManagedBackups(const fs::path& root) {
++    std::vector<fs::path> copies;
++    std::error_code ec;
++    fs::directory_iterator it(root, ec), end;
++    std::error_code rootError; const auto resolvedRoot=fs::weakly_canonical(root,rootError);
++    if(rootError)return copies;
++    for (; !ec && it != end; it.increment(ec)) {
++        std::error_code entryError;
++        if (it->is_symlink(entryError) || entryError || !it->is_directory(entryError) || entryError) continue;
++        const auto resolved=fs::weakly_canonical(it->path(),entryError);
++        if(entryError || resolved.parent_path()!=resolvedRoot)continue;
++        if (it->path().filename().string().rfind("Backup-", 0) == 0 && !CopyStamp(it->path()).empty() && HasFiles(it->path()/"data"))
++            copies.push_back(it->path());
++    }
++    std::sort(copies.begin(), copies.end(), [](const auto& a, const auto& b) {
++        const auto first = CopyStamp(a), second = CopyStamp(b);
++        if (first != second) return first > second;
++        // Same-millisecond collision suffixes are internal identifiers, not UI names.
++        const auto suffix = [](const fs::path& p) { const auto s=p.filename().string(); return s.size()>27 ? std::strtoul(s.c_str()+27,nullptr,10) : 0UL; };
++        return suffix(a) > suffix(b);
++    });
++    return copies;
++}
+ void RemoveTree(const fs::path& path) noexcept {
+     std::error_code ec;
+     fs::remove_all(path, ec);
+ }
++void RenameFolder(const fs::path& source, const fs::path& destination, std::error_code& ec) {
++    for (unsigned attempt = 0;; ++attempt) {
++        fs::rename(source, destination, ec);
++#ifdef _WIN32
++        // Windows scanners can briefly hold a newly copied directory. Retry only
++        // access/sharing/lock failures; other failures retain the rollback path.
++        if (!ec || attempt == 19 || (ec != std::errc::permission_denied && ec.value() != 32 && ec.value() != 33)) return;
++        std::this_thread::sleep_for(std::chrono::milliseconds(25));
++#else
++        return;
++#endif
++    }
++}
+ }
+ 
+ fs::path ResolveSaveDataDirectory(const fs::path& nandRoot) {
+@@ -110,10 +192,17 @@ Result CreateBackup(const fs::path& saveData, const fs::path& backupsRoot) {
+     if (!HasFiles(saveData)) return {false, {}, "no-save-data"};
+     const auto destination = UniqueFolder(backupsRoot, "Backup-");
+     if (destination.empty()) return {false, {}, "backup-folder-create-failed"};
+-    if (!CopyContents(saveData, destination / "data")) {
++    if (!CopyContents(saveData, destination / "data") || !SameContents(saveData, destination / "data")) {
+         RemoveTree(destination);
+         return {false, {}, "backup-copy-failed"};
+     }
++    // Do not rotate an older copy until the new copy has passed byte verification.
++    auto copies = ManagedBackups(backupsRoot);
++    copies.erase(std::remove(copies.begin(),copies.end(),destination),copies.end());
++    for (size_t i = 2; i < copies.size(); ++i) {
++        std::error_code removeError; fs::remove_all(copies[i], removeError);
++        if (removeError) return {true, destination, "cleanup-incomplete"};
++    }
+     return {true, destination, {}};
+ }
+ Result ExportSave(const fs::path& saveData, const fs::path& exportParent) {
+@@ -127,13 +216,13 @@ Result ExportSave(const fs::path& saveData, const fs::path& exportParent) {
+         RemoveTree(bundle);
+         return {false, {}, "export-copy-failed"};
+     }
+-    std::ofstream readme(bundle / "LEEME.txt", std::ios::binary | std::ios::trunc);
+-    readme << "Monster Hunter Tri - guardado exportado\n"
+-              "Region: Europa\n"
+-              "Codigo del juego: RMHP08\n"
+-              "ID de titulo: 00010000/524D4850\n\n"
+-              "Para importar, abre MH3, entra en Gestor de Guardados > Importar\n"
+-              "y selecciona esta carpeta. La importacion se aplica al cerrar MH3.\n";
++    std::ofstream readme(bundle / "README.txt", std::ios::binary | std::ios::trunc);
++    readme << "MH Tri - Rowell / exported game save\n"
++              "Game: European Monster Hunter Tri (RMHP08)\n\n"
++              "This copies progress already saved inside Tri, not a running session.\n"
++              "Transfer this entire folder to MH3_Rowell_Dev/imports on the other device.\n"
++              "Open Gear > Saves > Restore / import > Other saves and select this copy.\n"
++              "Confirm Restore and restart, then use Tri's normal Continue option.\n";
+     if (!readme) {
+         RemoveTree(bundle);
+         return {false, {}, "readme-write-failed"};
+@@ -155,9 +244,10 @@ Result StageImport(const fs::path& selectedFolder, const fs::path& pendingRoot)
+         RemoveTree(fresh);
+         return {false, {}, "pending-copy-failed"};
+     }
+-    std::ofstream manifest(fresh / "IMPORTACION_PENDIENTE.txt", std::ios::binary | std::ios::trunc);
+-    manifest << "La importacion se aplicara al cerrar MH3.\n"
+-                "Antes de sustituir la partida actual se guardara un backup automatico.\n";
++    std::ofstream manifest(fresh / "README.txt", std::ios::binary | std::ios::trunc);
++    manifest << "Staged saved progress for MH Tri - Rowell.\n"
++                "A confirmed restore is applied before the game starts.\n"
++                "The current saved progress is backed up before replacement.\n";
+     manifest.close();
+     if (!manifest) {
+         RemoveTree(fresh);
+@@ -166,14 +256,14 @@ Result StageImport(const fs::path& selectedFolder, const fs::path& pendingRoot)
+     const bool hadPending = fs::exists(pendingRoot, ec);
+     if (ec) { RemoveTree(fresh); return {false, {}, "pending-check-failed"}; }
+     if (hadPending) {
+-        fs::rename(pendingRoot, old, ec);
++        RenameFolder(pendingRoot, old, ec);
+         if (ec) { RemoveTree(fresh); return {false, {}, "pending-rename-failed"}; }
+     }
+-    fs::rename(fresh, pendingRoot, ec);
++    RenameFolder(fresh, pendingRoot, ec);
+     if (ec) {
+         if (hadPending) {
+             std::error_code restoreError;
+-            fs::rename(old, pendingRoot, restoreError);
++            RenameFolder(old, pendingRoot, restoreError);
+         }
+         RemoveTree(fresh);
+         return {false, {}, "pending-commit-failed"};
+@@ -195,21 +285,21 @@ Result ApplyPendingImport(const fs::path& saveData, const fs::path& pendingRoot,
+     const auto fresh = saveData.parent_path() / (saveData.filename().string() + ".mh3-new-" + transactionTag);
+     const auto old = saveData.parent_path() / (saveData.filename().string() + ".mh3-old-" + transactionTag);
+     if (fs::exists(fresh, ec) || ec || fs::exists(old, ec) || ec) return {false, {}, "save-transaction-name-collision"};
+-    if (!CopyContents(staged, fresh)) {
++    if (!CopyContents(staged, fresh) || !SameContents(staged, fresh)) {
+         RemoveTree(fresh);
+         return {false, {}, "import-copy-failed"};
+     }
+     const bool hadCurrent = fs::exists(saveData, ec);
+     if (ec) { RemoveTree(fresh); return {false, {}, "save-check-failed"}; }
+     if (hadCurrent) {
+-        fs::rename(saveData, old, ec);
++        RenameFolder(saveData, old, ec);
+         if (ec) { RemoveTree(fresh); return {false, {}, "save-rename-failed"}; }
+     }
+-    fs::rename(fresh, saveData, ec);
++    RenameFolder(fresh, saveData, ec);
+     if (ec) {
+         if (hadCurrent) {
+             std::error_code restoreError;
+-            fs::rename(old, saveData, restoreError);
++            RenameFolder(old, saveData, restoreError);
+         }
+         RemoveTree(fresh);
+         return {false, {}, "import-commit-failed"};
+@@ -218,4 +308,58 @@ Result ApplyPendingImport(const fs::path& saveData, const fs::path& pendingRoot,
+     RemoveTree(pendingRoot);
+     return {true, saveData, {}};
+ }
+-}
+\ No newline at end of file
++
++std::string CopyCreatedTime(const fs::path& folder) {
++    const auto stamp = CopyStamp(folder);
++    if (stamp.empty()) return "Creation time not recorded";
++    std::tm value{}; std::istringstream input(stamp.substr(0,15));
++    input >> std::get_time(&value, "%Y%m%d-%H%M%S");
++    std::ostringstream out; out << std::put_time(&value, "%d %b %Y, %I:%M:%S %p") << " (local time)";
++    return out.str();
++}
++std::vector<SaveCopy> ListSaveCopies(const fs::path& userDir, bool backups) {
++    std::vector<SaveCopy> copies;
++    if (backups) {
++        for (const auto& folder : ManagedBackups(userDir/"saves")) copies.push_back({folder,CopyCreatedTime(folder),"Backup"});
++    } else for (const auto& kind : {"imports", "exports"}) {
++        std::error_code ec; fs::directory_iterator it(userDir/kind,ec), end;
++        for (;!ec && it!=end;it.increment(ec)) {
++            std::error_code entryError;
++            if (it->is_symlink(entryError) || entryError || !it->is_directory(entryError) || entryError) continue;
++            if (!SourceDataDirectory(it->path()).empty()) copies.push_back({it->path(),CopyCreatedTime(it->path()),kind});
++        }
++    }
++    if (!backups) std::sort(copies.begin(),copies.end(),[](const SaveCopy& a,const SaveCopy& b) {
++        const auto first=CopyStamp(a.folder),second=CopyStamp(b.folder);
++        if(first!=second)return first>second;
++        return a.folder.generic_string()<b.folder.generic_string();
++    });
++    return copies;
++}
++Result QueueRestore(const fs::path& selectedFolder, const fs::path& userDir) {
++    const auto pending=userDir/"PendingRestore";
++    auto result=StageImport(selectedFolder,pending);
++    if (!result.success) return result;
++    if (!SameContents(SourceDataDirectory(selectedFolder),pending/"data")) {
++        RemoveTree(pending);return {false,{},"restore-copy-verification-failed"};
++    }
++    std::ofstream marker(pending/"restart-request.txt",std::ios::binary|std::ios::trunc);
++    marker << "MH_TRI_ROWELL_RESTORE_1\n";marker.close();
++    if (!marker) {RemoveTree(pending);return {false,{},"restore-request-write-failed"};}
++    return {true,pending,{}};
++}
++Result CompleteQueuedRestore(const fs::path& userDir) {
++    const auto pending=userDir/"PendingRestore";
++    std::ifstream marker(pending/"restart-request.txt");std::string signature;std::getline(marker,signature);marker.close();
++    if(signature!="MH_TRI_ROWELL_RESTORE_1")return {true,{},"no-queued-restore"};
++    const auto result=HasPendingImport(pending)?ApplyPendingImport(ResolveSaveDataDirectory(userDir/"nand"),pending,userDir/"saves"):
++        Result{false,{},"queued-restore-is-empty"};
++    if(!result.success) {
++        // Keep staged data for recovery, but do not repeat a failed request on every boot.
++        std::error_code ec;fs::remove(pending/"restart-request.txt",ec);
++    }
++    std::ofstream status(userDir/"restore-status.txt",std::ios::trunc);
++    status << (result.success ? "Restored saved progress. Use Tri's Continue option." : "Restore failed: "+result.detail) << '\n';
++    return result;
++}
++}
+diff --git a/runtime/src/touch_controls.cpp b/runtime/src/touch_controls.cpp
+index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..be8132af3bce865780ae36f725969dacd7d8276a 100644
+--- a/runtime/src/touch_controls.cpp
++++ b/runtime/src/touch_controls.cpp
+@@ -1,12 +1,24 @@
+ #include "touch_controls.h"
++#include "touch_contacts.h"
++#include "game_speed.h"
++#include <optional>
++#include <array>
++#include <mutex>
++#include <limits>
+ #include "droid_sans_atlas.h"
+ #include "language.h"
+ #include "save_manager.h"
+ #include "mh3_frame_rate_control.h"
+ #include "widescreen.h"
+ #include "memory.h"
++#ifdef MH3_PC_TOUCH_UI
++#include "pc_keybindings.h"
++#include "rowell_touch.h"
++#endif
++#ifndef MH3_PC_TOUCH_UI
+ #include "net/local_server.h"
+ #include "net/lan_beacon.h"
++#endif
+ 
+ #include <SDL3/SDL.h>
+ #include <GLES3/gl3.h>
+@@ -18,6 +30,8 @@
+ #include <sstream>
+ #include <filesystem>
+ #include <chrono>
++#include <ctime>
++#include <iomanip>
+ #include <atomic>
+ #include <cstdio>
+ #include <cstring>
+@@ -25,6 +39,7 @@
+ 
+ #if defined(__ANDROID__)
+ #include <android/log.h>
++#include <jni.h>
+ #define LOG_TAG "MH3_TOUCH"
+ #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+ #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+@@ -49,15 +64,56 @@ bool Gamepad_GetSwapTriggers();
+ void Gamepad_SetSwapTriggers(bool swap);
+ }
+ 
++#ifndef MH3_PC_TOUCH_UI
+ namespace aurora::gfx::texture_replacement {
+ size_t get_replacement_count() noexcept;
+ void set_enabled(bool enabled) noexcept;
+ bool is_enabled() noexcept;
+ void reload() noexcept;
+ }
++#endif
++
++#ifdef MH3_TOUCH_INPUT_TESTS
++namespace mh3_save_manager {
++unsigned BackupCallsForTesting();
++unsigned ExportCallsForTesting();
++unsigned ImportCallsForTesting();
++unsigned StageCallsForTesting();
++std::filesystem::path StagedImportForTesting();
++bool RestartForTesting();
++}
++#endif
+ 
+ namespace {
+ 
++#if defined(__ANDROID__)
++bool RequestAndroidGameRestart() {
++    auto* env = static_cast<JNIEnv*>(SDL_GetAndroidJNIEnv());
++    auto activity = static_cast<jobject>(SDL_GetAndroidActivity());
++    if (!env || !activity) return false;
++    jclass activityClass = env->GetObjectClass(activity);
++    jmethodID restart = env->GetMethodID(activityClass, "restartGame", "()V");
++    if (restart) env->CallVoidMethod(activity, restart);
++    const bool failed = env->ExceptionCheck();
++    if (failed) { env->ExceptionDescribe(); env->ExceptionClear(); }
++    env->DeleteLocalRef(activityClass);
++    env->DeleteLocalRef(activity);
++    return restart && !failed;
++}
++#endif
++
++bool RequestGameRestart() {
++#ifdef MH3_TOUCH_INPUT_TESTS
++    return mh3_save_manager::RestartForTesting();
++#elif defined(__ANDROID__)
++    return RequestAndroidGameRestart();
++#elif defined(MH3_PC_TOUCH_UI)
++    return RowellTouch_RestartGame();
++#else
++    return false;
++#endif
++}
++
+ struct Vec2 {
+     float x = 0.0f;
+     float y = 0.0f;
+@@ -81,7 +137,7 @@ constexpr Color COL_CHIP_BORDER   { 0.106f, 0.345f, 0.431f, 1.0f };
+ 
+ struct ConfigurableButton {
+     std::string id;
+-    const char* label;
++    std::string label;
+     uint16_t mask;
+     Vec2 defaultNormPos;
+     float defaultNormRadius;
+@@ -90,7 +146,7 @@ struct ConfigurableButton {
+     Vec2 pos;
+     float radius = 0.0f;
+     bool isPressed = false;
+-    int fingerId = -1;
++    mh3_touch::Contacts contacts;
+     Color baseColor;
+     Color borderColor;
+ };
+@@ -106,6 +162,8 @@ struct UIVertex {
+     float extra;         // half width (for type 2)
+ };
+ 
++enum class SaveAction { None, Export, Import, Backup };
++
+ class TouchSettingsEngine {
+ public:
+     TouchSettingsEngine() {
+@@ -113,7 +171,7 @@ public:
+ #if defined(__ANDROID__)
+         m_touchVisible = true;
+ #else
+-        m_touchVisible = false;
++        m_touchVisible = true;
+ #endif
+     }
+ 
+@@ -128,14 +186,43 @@ public:
+         LoadLayoutConfig();
+     }
+ 
+-    void SetEnabled(bool enabled) { m_enabled = enabled; }
++    void ResetInput() {
++        for (auto& b : m_buttons) { b.contacts.Clear(); b.isPressed = false; }
++        m_latchedMask.store(0);
++        m_buttonGestures.Clear();
++        m_speedGestures.Clear();
++        m_leftFingerId.reset(); m_rightFingerId.reset(); m_editFingerId.reset();
++        m_leftX = m_leftY = m_rightX = m_rightY = 0;
++        m_rightStickActive = false; m_editDragging = false;
++        m_leftStickPos = m_leftStickCenter;
++        m_cameraDeltaX.store(0); m_cameraDeltaY.store(0);
++    }
++    void SetEnabled(bool enabled) { if (!enabled) { ResetInput(); MH3GameSpeed::Reset(); } m_enabled = enabled; }
+     bool IsEnabled() const { return m_enabled; }
+ 
+-    bool IsMenuOpen() const { return m_menuOpen; }
++    bool IsMenuOpen() const { return m_menuOpen || m_editMode; }
++    bool IsModalOpen() const {
++        return IsSaveConfirmationOpen() || m_saveBrowserOpen || m_restoreRestarting
++#ifdef MH3_PC_TOUCH_UI
++            || m_keyboardEditorOpen
++#endif
++            ;
++    }
++    uint16_t GetComboMask(unsigned slot) const { return slot<m_comboMasks.size()?m_comboMasks[slot]:0; }
++    bool WantsPointer() const { return m_menuOpen || m_editMode || m_touchVisible; }
+     void ToggleMenu() { SetMenuOpen(!m_menuOpen); }
+     void SetMenuOpen(bool open) {
++        m_pendingSaveAction = SaveAction::None;
++        m_pendingImportFolder.clear();
++        m_saveBrowserOpen=false;
++#ifdef MH3_PC_TOUCH_UI
++        m_keyboardEditorOpen=false;m_captureAction=-1;
++#endif
++        if (m_editMode) { LoadLayoutConfig(); RecalculateButtonPositions(); m_editMode=false; }
++        ResetInput();
+         m_menuOpen = open;
+         if (m_menuOpen) {
++            if (m_menuTab == 2) RefreshLastBackup();
+             SDL_ShowCursor();
+             if (SDL_Window* win = aurora_get_window()) {
+                 SDL_SetWindowRelativeMouseMode(win, false);
+@@ -149,13 +236,51 @@ public:
+         }
+     }
+ 
++    bool IsSaveConfirmationOpen() const { return m_pendingSaveAction != SaveAction::None; }
++    void CancelSaveConfirmation() {
++        const bool importing=m_pendingSaveAction==SaveAction::Import;
++        switch (m_pendingSaveAction) {
++        case SaveAction::Export: m_saveStatusMsg = "Export canceled."; break;
++        case SaveAction::Import: m_saveStatusMsg = "Import canceled. Your save was not changed."; break;
++        case SaveAction::Backup: m_saveStatusMsg = "Backup canceled."; break;
++        default: break;
++        }
++        m_pendingSaveAction = SaveAction::None;
++        m_pendingImportFolder.clear();
++        if(importing)m_saveBrowserOpen=true;
++    }
++    void CancelModal() {
++        if(m_restoreRestarting)return;
++#ifdef MH3_PC_TOUCH_UI
++        if(m_keyboardEditorOpen) {
++            if(m_captureAction>=0){m_captureAction=-1;m_keyStatus="Binding canceled.";}
++            else m_keyboardEditorOpen=false;
++            return;
++        }
++#endif
++        if(IsSaveConfirmationOpen())CancelSaveConfirmation();
++        else m_saveBrowserOpen=false;
++    }
++#ifdef MH3_PC_TOUCH_UI
++    bool HandleKeyboardEditorKey(SDL_Scancode key) {
++        if(!m_keyboardEditorOpen)return false;
++        if(key==SDL_SCANCODE_ESCAPE){CancelModal();return true;}
++        if(m_captureAction>=0) {
++            const auto error=RowellKeys::Current().Assign(m_captureAction,m_captureSlot,key);
++            m_keyStatus=error.empty()?"Binding saved automatically.":error;
++            if(error.empty())m_captureAction=-1;
++        }
++        return true;
++    }
++#endif
++
+     void ApplyFullscreen(bool enabled) {
+         m_fullscreen = enabled;
+         aurora_set_fullscreen(enabled);
+         if (enabled) {
+             // Fix de resolución a pantalla completa: relación 16:9 estricta en Aurora y en la memoria del juego
+             aurora_set_native_target_aspect(2); // AURORA_NATIVE_TARGET_ASPECT_16_9
+-            m_aspectIndex = 0; // 16:9 Panorámica
++            m_aspectIndex = 0; // 16:9 Widescreen
+             SetWidescreenSetting(true);
+ #if defined(__cpp_exceptions)
+             try {
+@@ -180,13 +305,171 @@ public:
+         ApplyFullscreen(!m_fullscreen);
+     }
+ 
++    bool RunInputChecks() {
++        TouchSettingsEngine e;
++        e.SetEnabled(true); e.UpdateLayout(1280,720);
++        auto find=[&](const char* name)->ConfigurableButton& {
++            for(auto& b:e.m_buttons) if(b.id==name) return b;
++            std::abort();
++        };
++        auto press=[&](uint64_t id,const char* name) {
++            auto& b=find(name); e.HandleTouchDown(id,b.pos.x/e.m_width,b.pos.y/e.m_height);
++        };
++        uint8_t lastTriggerR=0;
++        auto sample=[&] {
++            uint16_t buttons=0; int16_t lx=0,ly=0,rx=0,ry=0; uint8_t tl=0,tr=0;
++            e.UpdateSample(&buttons,&lx,&ly,&rx,&ry,&tl,&tr); lastTriggerR=tr; return buttons;
++        };
++        auto check=[](bool ok,const char* what) { if(!ok) std::fprintf(stderr,"Touch check failed: %s\n",what); return ok; };
++        constexpr uint64_t one=0x100000001ULL,two=0x200000001ULL,three=0x8000000000000001ULL;
++        press(one,"R");press(two,"X");press(three,"A");
++        if(!check(sample()==(MH3_CL_R|MH3_CL_X|MH3_CL_A),"three independent 64-bit contacts"))return false;
++        e.HandleTouchUp(two);
++        if(!check(sample()==(MH3_CL_R|MH3_CL_A),"release middle contact only"))return false;
++        e.HandleTouchUp(one);
++        if(!check(sample()==MH3_CL_A,"third contact remains held"))return false;
++        e.HandleTouchUp(three);
++        if(!check(sample()==0,"release all"))return false;
++        press(0,"M5");
++        if(!check(sample()==(MH3_CL_R|MH3_CL_X|MH3_CL_A) && lastTriggerR==255,"R+X+A combo and R trigger"))return false;
++        e.HandleTouchUp(0);if(!check(sample()==0,"combo release"))return false;
++        press(one,"A");press(two,"A");sample();e.HandleTouchUp(one);
++        if(!check(sample()==MH3_CL_A,"two contacts on one button"))return false;
++        e.HandleTouchUp(two);if(!check(sample()==0,"last owner releases button"))return false;
++        press(one,"M5");e.HandleTouchUp(one);
++        if(!check(sample()==(MH3_CL_R|MH3_CL_X|MH3_CL_A) && sample()==0,"short tap lasts one sample"))return false;
++        press(one,"R"); e.SetMenuOpen(true); e.SetMenuOpen(false);
++        if(!check(sample()==0,"opening settings clears held and latched input"))return false;
++        press(one,"A");sample(); e.HandleTouchMove(one,0.5f,0.5f);
++        if(!check(sample()==0,"sliding outside releases"))return false;
++        auto& b=find("A"); e.HandleTouchMove(one,b.pos.x/e.m_width,b.pos.y/e.m_height);
++        if(!check(sample()==MH3_CL_A,"sliding back restores button"))return false;
++        e.ResetInput();if(!check(sample()==0,"focus loss resets input"))return false;
++        press(one,"M5"); e.CancelTouch(one);
++        if(!check(sample()==0,"canceled tap does not replay"))return false;
++        press(one,"R");press(two,"M5");e.CancelTouch(two);
++        if(!check(sample()==MH3_CL_R,"cancel leaves other contacts held"))return false;
++        e.ResetInput();
++        e.m_comboMasks[4]=MH3_CL_R|MH3_CL_B|MH3_CL_Y; e.ApplyComboMasks();e.SaveLayoutConfig();
++        e.m_comboMasks[4]=0;e.LoadLayoutConfig();
++        e.RecalculateButtonPositions();
++        if(!check(find("M5").mask==(MH3_CL_R|MH3_CL_B|MH3_CL_Y),"custom combo survives reload"))return false;
++        e.ResetInput();
++        uint16_t physical=MH3_CL_B|MH3_CL_ZL; int16_t lx=0,ly=0,rx=0,ry=0; uint8_t tl=23,tr=45;
++        e.UpdateSample(&physical,&lx,&ly,&rx,&ry,&tl,&tr);
++        if(!check(physical==(MH3_CL_B|MH3_CL_ZL) && tl==23 && tr==45,"physical gamepad state stays intact"))return false;
++        MH3GameSpeed::UpdateMode(true, 1, 0, true);
++        MH3GameSpeed::Reset();
++        press(one,"SPEED");
++        if(!check(MH3GameSpeed::Percent()==125 && sample()==0,"speed button changes time without a Wii input"))return false;
++        auto& a=find("A"); e.HandleTouchMove(one,a.pos.x/e.m_width,a.pos.y/e.m_height);
++        if(!check(sample()==0,"dragging speed button cannot press an attack"))return false;
++        e.HandleTouchUp(one);press(two,"SPEED");e.HandleTouchUp(two);
++        if(!check(MH3GameSpeed::Percent()==150,"second speed tap selects 1.5x"))return false;
++        press(one,"SPEED");e.HandleTouchUp(one);
++        if(!check(MH3GameSpeed::Percent()==100,"third speed tap restores 1x"))return false;
++        MH3GameSpeed::UpdateMode(true, 1, 4, true);
++        press(one,"SPEED");e.HandleTouchUp(one);
++        if(!check(MH3GameSpeed::Percent()==100 && sample()==0,"speed tap is blocked in online quests"))return false;
++#ifdef MH3_TOUCH_INPUT_TESTS
++        e.SetMenuOpen(true); e.m_menuTab=2;
++        const float panelX=e.m_width*0.05f, panelW=e.m_width-panelX*2.0f;
++        const float contentW=panelW-40.0f, contentX=panelX+20.0f;
++        const float contentY=e.m_height*0.04f+86.0f+44.0f+16.0f;
++        const float bw=(contentW-56.0f)/3.0f;
++        const float actionY=contentY+95.0f;
++        const float dialogW=560.0f, dialogX=(e.m_width-dialogW)*0.5f, dialogY=(e.m_height-220.0f)*0.5f;
++        const float choiceW=(dialogW-64.0f)*0.5f;
++        const float yesX=dialogX+40.0f+choiceW*1.5f, yesY=dialogY+172.0f;
++        auto counts=[] { return std::array<unsigned,4>{mh3_save_manager::ExportCallsForTesting(),
++            mh3_save_manager::ImportCallsForTesting(),mh3_save_manager::BackupCallsForTesting(),
++            mh3_save_manager::StageCallsForTesting()}; };
++        const float importX=contentX+18.0f+(bw+10.0f)+bw*0.5f;
++        const auto initial=counts();
++        e.HandleMenuTouchDown(importX,actionY);
++        if(!check(e.m_saveBrowserOpen && !e.IsSaveConfirmationOpen() && counts()==initial,"empty browser performs no save operation"))return false;
++        e.CancelModal();
++        const auto importFolder=std::filesystem::path(std::getenv("MH3_USER_DIR"))/"imports/FixtureImport";
++        std::filesystem::create_directories(importFolder/"nocopy");
++        std::ofstream(importFolder/"nocopy/data00") << "private test input";
++        const SaveAction actions[]={SaveAction::Export,SaveAction::None,SaveAction::Backup};
++        for(int action : {0,2}) {
++            const float actionX=contentX+18.0f+action*(bw+10.0f)+bw*0.5f;
++            const auto before=counts();
++            for(int i=0;i<100;++i) e.HandleMenuTouchDown(actionX,actionY);
++            e.HandleMenuTouchDown(contentX+18.0f+((action+1)%3)*(bw+10.0f)+bw*0.5f,actionY);
++            if(!check(e.IsSaveConfirmationOpen() && e.m_pendingSaveAction==actions[action] && counts()==before,
++                      "repeated/background taps cannot execute or change a pending save action"))return false;
++            e.HandleMenuTouchDown(dialogX+24.0f+choiceW*0.5f,dialogY+172.0f);
++            if(!check(!e.IsSaveConfirmationOpen() && counts()==before,"No cancels without save operations"))return false;
++            e.HandleMenuTouchDown(actionX,actionY);e.CancelSaveConfirmation();
++            if(!check(!e.IsSaveConfirmationOpen() && counts()==before,"keyboard cancel performs no save operations"))return false;
++            e.HandleMenuTouchDown(actionX,actionY);e.SetMenuOpen(false);e.SetMenuOpen(true);
++            if(!check(!e.IsSaveConfirmationOpen() && counts()==before,"closing the menu cancels the pending action"))return false;
++            e.HandleMenuTouchDown(actionX,actionY);
++            e.HandleMenuTouchDown(yesX,yesY);
++            auto expected=before;++expected[action];if(action==1)++expected[3];
++            if(!check(!e.IsSaveConfirmationOpen() && counts()==expected,"Yes executes only the confirmed save action once"))return false;
++            for(int i=0;i<100;++i) e.HandleMenuTouchDown(yesX,yesY);
++            if(!check(counts()==expected,"repeated Yes taps cannot repeat the save operation"))return false;
++        }
++        if(!check(e.m_lastBackupTime=="25 Oct 2026, 12:34:56 PM (local time)" &&
++                  BackupDisplayTime("unrelated-folder").empty(),"backup time is readable and invalid names are ignored"))return false;
++#ifdef MH3_PC_TOUCH_UI
++        e.m_menuTab=3;e.HandleMenuTouchDown(contentX+contentW-123,contentY+28);
++        if(!check(e.m_keyboardEditorOpen && e.IsModalOpen(),"PC keyboard editor opens from Controls"))return false;
++        const float kw=920,kx=(e.m_width-kw)*.5f,ky=(e.m_height-560)*.5f;
++        const float keyW=(kw-48-kw*.30f-90-32)/3;
++        const float firstKeyX=kx+24+kw*.30f+keyW*.5f,firstKeyY=ky+105;
++        e.HandleMenuTouchDown(firstKeyX,firstKeyY);e.HandleKeyboardEditorKey(SDL_SCANCODE_X);
++        if(!check(e.m_captureAction==0 && RowellKeys::Current().Get(0)[0]==SDL_SCANCODE_F,"conflicting key stays in capture without changing controls"))return false;
++        e.HandleKeyboardEditorKey(SDL_SCANCODE_ESCAPE);
++        if(!check(e.m_captureAction==-1 && e.m_keyboardEditorOpen,"Escape cancels capture and keeps the editor"))return false;
++        e.HandleMenuTouchDown(firstKeyX,firstKeyY);e.HandleKeyboardEditorKey(SDL_SCANCODE_G);
++        if(!check(e.m_captureAction==-1 && RowellKeys::Current().Get(0)[0]==SDL_SCANCODE_G,"editor saves a chosen key"))return false;
++        e.HandleMenuTouchDown(kx+kw-69,firstKeyY);
++        if(!check(RowellKeys::Current().Get(0)[0]==SDL_SCANCODE_F,"mouse reset restores an action"))return false;
++        e.HandleMenuTouchDown(firstKeyX,firstKeyY);e.HandleKeyboardEditorKey(SDL_SCANCODE_F2);
++        if(!check(e.m_captureAction==0 && e.IsModalOpen(),"settings key cannot replace a gameplay binding"))return false;
++        e.HandleKeyboardEditorKey(SDL_SCANCODE_ESCAPE);e.HandleMenuTouchDown(kx+kw-124,ky+519);
++        e.HandleMenuTouchDown(kx+104,ky+519);
++        if(!check(!e.m_keyboardEditorOpen,"mouse close leaves keyboard editor"))return false;
++        e.m_menuTab=2;
++#endif
++        const auto beforeRestore=counts();
++        std::filesystem::create_directories(importFolder.parent_path().parent_path()/"saves");
++        e.HandleMenuTouchDown(importX,actionY);
++        const float browserW=900,browserX=(e.m_width-browserW)*.5f,browserY=(e.m_height-520)*.5f;
++        e.HandleMenuTouchDown(browserX+browserW-124,browserY+477);
++        if(!check(e.m_saveBrowserOpen && e.m_selectedSave==-1 && !e.IsSaveConfirmationOpen() && counts()==beforeRestore,
++                  "browser never selects or restores a default copy"))return false;
++        e.HandleMenuTouchDown(browserX+100,browserY+132+2*64+28);
++        e.HandleMenuTouchDown(browserX+browserW-124,browserY+477);
++        if(!check(e.IsSaveConfirmationOpen() && e.m_pendingImportFolder.filename()=="Backup-20261025-160000-001" && counts()==beforeRestore,
++                  "choosing an older backup only opens review"))return false;
++        e.HandleMenuTouchDown(dialogX+24+choiceW*.5f,yesY);
++        if(!check(e.m_saveBrowserOpen && !e.IsSaveConfirmationOpen() && counts()==beforeRestore,"No returns to the chooser without writing saved files"))return false;
++        e.HandleMenuTouchDown(browserX+browserW*.75f,browserY+97);
++        if(!check(!e.m_browseBackups && e.m_selectedSave==-1,"changing source tab clears selection"))return false;
++        e.HandleMenuTouchDown(browserX+100,browserY+160);
++        e.HandleMenuTouchDown(browserX+browserW-124,browserY+477);
++        e.HandleMenuTouchDown(yesX,yesY);
++        if(!check(mh3_save_manager::StagedImportForTesting()==importFolder && counts()[3]==beforeRestore[3]+1 &&
++                  counts()[1]==beforeRestore[1] && e.m_restoreRestarting,"Yes stages the selected import and requests restart without rewriting live saves"))return false;
++        for(int i=0;i<100;++i)e.HandleMenuTouchDown(yesX,yesY);
++        if(!check(counts()[3]==beforeRestore[3]+1,"repeated taps while restarting cannot queue additional restores"))return false;
++        std::printf("Save UI: export/backup confirmation, explicit older-copy selection, no automatic choice, cancel, staged restart and repeat-tap checks passed.\n");
++#endif
++        std::printf("Touch controls: 21 input, persistence and speed-button checks passed.\n");return true;
++    }
++
+     void UpdateLayout(int width, int height) {
+         if (width <= 0 || height <= 0) return;
+-        if (width == m_width && height == m_height) return;
++        if (height > 0 && int(float(width)*720.0f/height)==m_width && m_height==720) return;
+ 
+-        m_width = width;
+-        m_height = height;
+-        m_unit = float(height);
++        m_width = std::max(1, int(float(width) * 720.0f / float(height)));
++        m_height = 720;
++        m_unit = 720.0f;
+ 
+         RecalculateButtonPositions();
+     }
+@@ -228,15 +511,19 @@ public:
+         float btnR = 0.058f;
+ 
+         // Macro Buttons FIRST (checked before individual buttons for collision priority)
+-        AddBtn("M1", "1", (MH3_CL_A | MH3_CL_X), { diamondNormX - spreadX * 1.8f, diamondNormY - spreadY * 0.8f }, btnR * 0.95f,
++        AddBtn("M1", "A+X", (MH3_CL_A | MH3_CL_X), { diamondNormX - spreadX * 1.8f, diamondNormY - spreadY * 0.8f }, btnR * 0.95f,
+                { 0.85f, 0.30f, 0.60f, 0.60f }, { 1.0f, 0.45f, 0.80f, 0.95f });
+-        AddBtn("M2", "2", (MH3_CL_B | MH3_CL_Y), { diamondNormX - spreadX * 1.8f, diamondNormY + spreadY * 0.8f }, btnR * 0.95f,
++        AddBtn("M2", "B+Y", (MH3_CL_B | MH3_CL_Y), { diamondNormX - spreadX * 1.8f, diamondNormY + spreadY * 0.8f }, btnR * 0.95f,
+                { 0.30f, 0.75f, 0.75f, 0.60f }, { 0.45f, 0.95f, 0.95f, 0.95f });
+-        AddBtn("M3", "3", (MH3_CL_L | MH3_CL_R), { 0.50f, 0.15f }, btnR * 0.85f,
++        AddBtn("M3", "L+R", (MH3_CL_L | MH3_CL_R), { 0.50f, 0.15f }, btnR * 0.85f,
+                { 0.55f, 0.35f, 0.85f, 0.60f }, { 0.75f, 0.55f, 1.00f, 0.95f });
+         AddBtn("M4", "A+B", (MH3_CL_A | MH3_CL_B), { diamondNormX + spreadX * 0.5f, diamondNormY + spreadY * 1.15f }, btnR * 0.95f,
+                { 0.85f, 0.48f, 0.18f, 0.60f }, { 1.0f, 0.70f, 0.30f, 0.95f });
+ 
++        AddBtn("M5", "R+X+A", MH3_CL_R | MH3_CL_X | MH3_CL_A,
++               { 0.74f, 0.56f }, btnR * 1.18f,
++               {0.18f, 0.45f, 0.65f, 0.60f}, {0.35f, 0.90f, 1.0f, 0.95f});
++
+         // A, B, X, Y (after macros so macros win collision priority)
+         AddBtn("A", "A", MH3_CL_A, { diamondNormX + spreadX, diamondNormY }, btnR,
+                { 0.85f, 0.25f, 0.25f, 0.55f }, { 1.0f, 0.40f, 0.40f, 0.90f });
+@@ -281,6 +568,9 @@ public:
+                { 0.15f, 0.22f, 0.28f, 0.55f }, { 0.65f, 0.85f, 1.00f, 0.85f });
+         AddBtn("PLUS",  "+", MH3_CL_PLUS,  { 0.54f, menuY }, menuR,
+                { 0.15f, 0.22f, 0.28f, 0.55f }, { 0.65f, 0.85f, 1.00f, 0.85f });
++        AddBtn("SPEED", "1x", 0, { 0.36f, menuY }, menuR * 1.20f,
++               { 0.15f, 0.22f, 0.28f, 0.55f }, { 0.65f, 0.85f, 1.00f, 0.85f });
++        ApplyComboMasks();
+     }
+ 
+     void AddBtn(const std::string& id, const char* label, uint16_t mask, Vec2 normPos, float normRadius,
+@@ -298,12 +588,22 @@ public:
+         m_buttons.push_back(b);
+     }
+ 
++    ConfigurableButton* HitButton(float px, float py) {
++        ConfigurableButton* best = nullptr;
++        float distance = 1.18f * 1.18f;
++        for (auto& b : m_buttons) {
++            if (!IsButtonActive(b) || b.radius <= 0) continue;
++            float dx = (px - b.pos.x) / b.radius, dy = (py - b.pos.y) / b.radius;
++            float score = dx * dx + dy * dy;
++            if (score <= distance) { distance = score; best = &b; }
++        }
++        return best;
++    }
++
+     void HandleTouchDown(SDL_FingerID id, float normX, float normY) {
+         if (!m_enabled) return;
+         float px = normX * float(m_width);
+         float py = normY * float(m_height);
+-        LOGI("TouchDown id=%lld norm=(%.3f, %.3f) px=(%.1f, %.1f) m_width=%d m_height=%d",
+-             (long long)id, normX, normY, px, py, m_width, m_height);
+ 
+         if (m_editMode) {
+             HandleEditModeTouchDown(id, px, py);
+@@ -319,8 +619,8 @@ public:
+         float gdx = px - m_gearPos.x;
+         float gdy = py - m_gearPos.y;
+         if (gdx * gdx + gdy * gdy <= (m_gearRadius * 1.8f) * (m_gearRadius * 1.8f)) {
+-            m_menuOpen = true;
+-            m_menuTab = 0; // Gráficos
++            SetMenuOpen(true);
++            m_menuTab = 3; // Gráficos
+             return;
+         }
+ 
+@@ -329,28 +629,28 @@ public:
+             return;
+         }
+ 
+-        // Buttons
+-        for (auto& btn : m_buttons) {
+-            if (!IsButtonActive(btn)) continue;
+-            float dx = px - btn.pos.x;
+-            float dy = py - btn.pos.y;
+-            if (dx * dx + dy * dy <= (btn.radius * 1.35f) * (btn.radius * 1.35f)) {
+-                btn.isPressed = true;
+-                btn.fingerId = int(id);
+-                m_latchedMask.fetch_or(uint32_t(btn.mask), std::memory_order_relaxed);
+-                LOGI("Hit Button '%s' (label=%s, mask=0x%04x)!", btn.id.c_str(), btn.label, btn.mask);
++        if (auto* btn = HitButton(px, py)) {
++            m_buttonGestures.Press(id);
++            if (btn->id == "SPEED") {
++                m_speedGestures.Press(id);
++                btn->contacts.Press(id);
++                btn->isPressed = btn->contacts.Held();
++                MH3GameSpeed::Cycle();
+                 return;
+             }
++            if (btn->contacts.Press(id)) m_latchedMask.fetch_or(btn->mask);
++            btn->isPressed = btn->contacts.Held();
++            return;
+         }
+ 
+         // Left Stick
+         if (px < float(m_width) * 0.45f) {
+-            if (m_leftFingerId < 0) {
++            if (!m_leftFingerId.has_value()) {
+                 float dx = px - m_leftStickCenter.x;
+                 float dy = py - m_leftStickCenter.y;
+                 float distSq = dx * dx + dy * dy;
+                 if (distSq <= (m_leftStickRadius * 2.2f) * (m_leftStickRadius * 2.2f) || py > float(m_height) * 0.5f) {
+-                    m_leftFingerId = int(id);
++                    m_leftFingerId = id;
+                     UpdateLeftStickPosition(px, py);
+                     return;
+                 }
+@@ -359,8 +659,8 @@ public:
+ 
+         // Right Stick (Free floating camera look)
+         if (px >= float(m_width) * 0.45f) {
+-            if (m_rightFingerId < 0) {
+-                m_rightFingerId = int(id);
++            if (!m_rightFingerId.has_value()) {
++                m_rightFingerId = id;
+                 m_rightFloatingOrigin = { px, py };
+                 m_rightStickPos = { px, py };
+                 m_rightLastPos = { px, py };
+@@ -376,7 +676,7 @@ public:
+         float py = normY * float(m_height);
+ 
+         if (m_editMode) {
+-            if (m_editDragging && m_editFingerId == int(id)) {
++            if (m_editDragging && m_editFingerId == id) {
+                 if (m_selectedButtonIndex >= 0 && m_selectedButtonIndex < int(m_buttons.size())) {
+                     m_buttons[m_selectedButtonIndex].pos = { px, py };
+                     m_buttons[m_selectedButtonIndex].normPos = { px / float(m_width), py / float(m_height) };
+@@ -390,13 +690,25 @@ public:
+         }
+ 
+         if (m_menuOpen) return;
++        if (m_speedGestures.Contains(id)) return;
++        bool buttonContact = false;
++        for (auto& b : m_buttons) if (b.contacts.Contains(id)) {
++            b.contacts.Release(id); b.isPressed = b.contacts.Held(); buttonContact = true;
++        }
++        if (buttonContact || m_buttonGestures.Contains(id)) {
++            if (auto* b = HitButton(px, py); b && b->id != "SPEED") {
++                b->contacts.Press(id); b->isPressed = true;
++                m_latchedMask.fetch_or(b->mask);
++            }
++            return;
++        }
+ 
+-        if (int(id) == m_leftFingerId) {
++        if (id == m_leftFingerId) {
+             UpdateLeftStickPosition(px, py);
+             return;
+         }
+ 
+-        if (int(id) == m_rightFingerId && m_rightStickActive) {
++        if (id == m_rightFingerId && m_rightStickActive) {
+             float dx = px - m_rightLastPos.x;
+             float dy = py - m_rightLastPos.y;
+             m_rightLastPos = { px, py };
+@@ -422,12 +734,14 @@ public:
+     }
+ 
+     void HandleTouchUp(SDL_FingerID id) {
++        m_speedGestures.Release(id);
+         if (!m_enabled) return;
++        m_buttonGestures.Release(id);
+ 
+         if (m_editMode) {
+-            if (m_editFingerId == int(id)) {
++            if (m_editFingerId == id) {
+                 m_editDragging = false;
+-                m_editFingerId = -1;
++                m_editFingerId.reset();
+             }
+             return;
+         }
+@@ -435,27 +749,30 @@ public:
+         if (m_menuOpen) return;
+ 
+         for (auto& btn : m_buttons) {
+-            if (btn.fingerId == int(id)) {
+-                btn.isPressed = false;
+-                btn.fingerId = -1;
+-            }
++            btn.contacts.Release(id);
++            btn.isPressed = btn.contacts.Held();
+         }
+ 
+-        if (int(id) == m_leftFingerId) {
+-            m_leftFingerId = -1;
++        if (id == m_leftFingerId) {
++            m_leftFingerId.reset();
+             m_leftStickPos = m_leftStickCenter;
+             m_leftX = 0;
+             m_leftY = 0;
+         }
+ 
+-        if (int(id) == m_rightFingerId) {
+-            m_rightFingerId = -1;
++        if (id == m_rightFingerId) {
++            m_rightFingerId.reset();
+             m_rightStickActive = false;
+             m_rightX = 0;
+             m_rightY = 0;
+         }
+     }
+ 
++    void CancelTouch(SDL_FingerID id) {
++        HandleTouchUp(id);
++        m_latchedMask.store(0); // A canceled gesture must not replay as a short tap.
++    }
++
+     void HandleMouseDown(float px, float py) {
+         if (!m_enabled) return;
+         if (m_editMode) {
+@@ -472,17 +789,23 @@ public:
+             ToggleMenu();
+             return;
+         }
++        if (m_touchVisible && m_width > 0 && m_height > 0) {
++            HandleTouchDown(UINT64_MAX, px / m_width, py / m_height);
++        }
+     }
+ 
+     void HandleMouseUp(float px, float py) {
+         (void)px; (void)py;
++        HandleTouchUp(UINT64_MAX);
+         if (m_editMode) {
+             m_editDragging = false;
+-            m_editFingerId = -1;
++            m_editFingerId.reset();
+         }
+     }
+ 
+     void HandleMouseMove(float px, float py) {
++        if (!m_editMode && m_width > 0 && m_height > 0)
++            HandleTouchMove(UINT64_MAX, px / m_width, py / m_height);
+         if (m_editMode && m_editDragging) {
+             if (m_selectedButtonIndex >= 0 && m_selectedButtonIndex < int(m_buttons.size())) {
+                 m_buttons[m_selectedButtonIndex].pos = { px, py };
+@@ -517,6 +840,7 @@ public:
+         if (btn.id == "M2") return m_macro2Enabled;
+         if (btn.id == "M3") return m_macro3Enabled;
+         if (btn.id == "M4") return m_macro4Enabled;
++        if (btn.id == "M5") return m_macro5Enabled;
+         return true;
+     }
+ 
+@@ -526,19 +850,17 @@ public:
+         if (!m_enabled || m_menuOpen || m_editMode) return;
+ 
+         uint32_t latched = m_latchedMask.exchange(0, std::memory_order_relaxed);
+-        *buttons |= uint16_t(latched);
++        uint16_t touchMask = uint16_t(latched);
+ 
+         for (const auto& btn : m_buttons) {
+             if (btn.isPressed && IsButtonActive(btn)) {
+-                *buttons |= btn.mask;
++                touchMask |= btn.mask;
+             }
+         }
+ 
+-        if (*buttons) {
+-            LOGI("UpdateSample buttons active: 0x%04x", *buttons);
+-        }
+ 
+-        if (m_leftFingerId >= 0) {
++        *buttons |= touchMask;
++        if (m_leftFingerId.has_value()) {
+             *leftX = m_leftX;
+             *leftY = m_leftY;
+         }
+@@ -550,10 +872,10 @@ public:
+             }
+         }
+ 
+-        if (*buttons & MH3_CL_L)  *triggerL = 255;
+-        if (*buttons & MH3_CL_ZL) *triggerL = 255;
+-        if (*buttons & MH3_CL_R)  *triggerR = 255;
+-        if (*buttons & MH3_CL_ZR) *triggerR = 255;
++        if (touchMask & MH3_CL_L)  *triggerL = 255;
++        if (touchMask & MH3_CL_ZL) *triggerL = 255;
++        if (touchMask & MH3_CL_R)  *triggerR = 255;
++        if (touchMask & MH3_CL_ZR) *triggerR = 255;
+ 
+         float camX = m_cameraDeltaX.exchange(0.0f);
+         float camY = m_cameraDeltaY.exchange(0.0f);
+@@ -566,7 +888,7 @@ public:
+         static float s_cachedTemp = 0.0f;
+         static auto s_lastRead = std::chrono::steady_clock::now();
+         auto now = std::chrono::steady_clock::now();
+-        if (s_cachedTemp > 0.0f && std::chrono::duration_cast<std::chrono::milliseconds>(now - s_lastRead).count() < 1500) {
++        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - s_lastRead).count() < 1500) {
+             return s_cachedTemp;
+         }
+         s_lastRead = now;
+@@ -597,9 +919,9 @@ public:
+         return s_cachedTemp;
+     }
+ 
+-    bool IsOnlineCity() const {
+-        if (!Memory::Contains(0x8065AA84, 1)) return false;
+-        return (Memory::Read8(0x8065AA84) == 2);
++    bool IsOnlinePlay() const {
++        if (!Memory::Contains(0x8065AA84, 2)) return false;
++        return MH3GameSpeed::IsOnlinePlay(Memory::Read8(0x8065AA84), Memory::Read8(0x8065AA85));
+     }
+ 
+     // -------------------------------------------------------------
+@@ -659,20 +981,11 @@ public:
+             lastStamp = now;
+         }
+ 
+-        // Auto-lock to 30 FPS in Loc Lac City (Online mode)
+-        bool inCity = IsOnlineCity();
+-        static bool s_wasInCity = false;
+-        if (inCity) {
+-            if (!s_wasInCity) {
+-                s_wasInCity = true;
+-                MH3FrameRateControl::SetTargetFPS(30);
+-            }
+-        } else {
+-            if (s_wasInCity) {
+-                s_wasInCity = false;
+-                MH3FrameRateControl::SetTargetFPS(m_fpsLimit);
+-            }
+-        }
++        // Game mode 2 includes BOTH Moga Village and City. Play mode 4 is
++        // online; village play mode 5 must retain its chosen offline limit.
++        const int desiredFps = IsOnlinePlay() ? 30 : m_fpsLimit;
++        if (MH3FrameRateControl::TargetFPS() != desiredFps)
++            MH3FrameRateControl::SetTargetFPS(desiredFps);
+ 
+         // Save OpenGL State
+         GLint lastViewport[4]; glGetIntegerv(GL_VIEWPORT, lastViewport);
+@@ -684,12 +997,24 @@ public:
+         GLint lastProgram = 0; glGetIntegerv(GL_CURRENT_PROGRAM, &lastProgram);
+         GLint lastVAO = 0; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &lastVAO);
+         GLint lastVBO = 0; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &lastVBO);
++        GLint lastActiveTex = 0; glGetIntegerv(GL_ACTIVE_TEXTURE, &lastActiveTex);
++        glActiveTexture(GL_TEXTURE0);
+         GLint lastTex = 0; glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTex);
++        GLint lastBlendSrc, lastBlendDst, lastBlendSrcA, lastBlendDstA;
++        GLint lastEq, lastEqAlpha, lastSampler;
++        glGetIntegerv(GL_BLEND_EQUATION_RGB, &lastEq); glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &lastEqAlpha);
++        glGetIntegerv(GL_SAMPLER_BINDING, &lastSampler);
++        GLboolean stencilEnabled=glIsEnabled(GL_STENCIL_TEST);
++        glGetIntegerv(GL_BLEND_SRC_RGB, &lastBlendSrc); glGetIntegerv(GL_BLEND_DST_RGB, &lastBlendDst);
++        glGetIntegerv(GL_BLEND_SRC_ALPHA, &lastBlendSrcA); glGetIntegerv(GL_BLEND_DST_ALPHA, &lastBlendDstA);
+ 
+         glViewport(0, 0, windowWidth, windowHeight);
+         glDisable(GL_SCISSOR_TEST);
+         glEnable(GL_BLEND);
+         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
++        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
++        glBindSampler(0,0);
++        glDisable(GL_STENCIL_TEST);
+         glDisable(GL_DEPTH_TEST);
+         glDisable(GL_CULL_FACE);
+ 
+@@ -703,11 +1028,17 @@ public:
+         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+ 
+         m_verts.clear();
++        if (m_verts.capacity() < 24000) m_verts.reserve(24000);
+ 
+         if (m_editMode) {
+             RenderEditMode();
+         } else if (m_menuOpen) {
+             RenderSettingsMenu();
++            if(m_saveBrowserOpen)RenderSaveBrowser();
++            if (IsSaveConfirmationOpen()) RenderSaveConfirmation();
++#ifdef MH3_PC_TOUCH_UI
++            if(m_keyboardEditorOpen)RenderKeyboardEditor();
++#endif
+         } else {
+             if (m_touchVisible) {
+                 RenderGameplayOverlay();
+@@ -734,13 +1065,31 @@ public:
+         if (cullEnabled) glEnable(GL_CULL_FACE);
+         glUseProgram(lastProgram);
+         glBindTexture(GL_TEXTURE_2D, lastTex);
++        glActiveTexture(lastActiveTex);
++        glBlendFuncSeparate(lastBlendSrc, lastBlendDst, lastBlendSrcA, lastBlendDstA);
++        glBlendEquationSeparate(lastEq,lastEqAlpha);
++        glBindSampler(0,lastSampler);
++        if(stencilEnabled) glEnable(GL_STENCIL_TEST);
+         glBindVertexArray(lastVAO);
+         glBindBuffer(GL_ARRAY_BUFFER, lastVBO);
+     }
+ 
+ private:
+     void InitGL() {
+-        if (m_shaderProgram) return;
++        if (m_shaderProgram && glIsProgram(m_shaderProgram)) return;
++        m_shaderProgram=m_vao=m_vbo=m_fontTex=0;
++        struct RestoreBindings {
++            GLint vao=0,vbo=0,active=0,texture=0;
++            RestoreBindings() {
++                glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&vao); glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&vbo);
++                glGetIntegerv(GL_ACTIVE_TEXTURE,&active); glActiveTexture(GL_TEXTURE0);
++                glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture);
++            }
++            ~RestoreBindings() {
++                glBindVertexArray(vao); glBindBuffer(GL_ARRAY_BUFFER,vbo);
++                glBindTexture(GL_TEXTURE_2D,texture); glActiveTexture(active);
++            }
++        } restoreBindings;
+ 
+         const char* vertShaderSrc =
+             "#version 300 es\n"
+@@ -1115,7 +1464,7 @@ private:
+         DrawAADisc(m_leftStickCenter.x - m_leftStickRadius, m_leftStickCenter.y, dotR, dotCol, dotCol);
+         DrawAADisc(m_leftStickCenter.x + m_leftStickRadius, m_leftStickCenter.y, dotR, dotCol, dotCol);
+ 
+-        bool leftHeld = (m_leftFingerId >= 0);
++        bool leftHeld = (m_leftFingerId.has_value());
+         DrawAADisc(m_leftStickPos.x, m_leftStickPos.y, m_leftStickKnobRadius,
+                    leftHeld ? Color{ 0.15f, 0.50f, 0.70f, 0.90f * op } : Color{ 0.10f, 0.32f, 0.45f, 0.80f * op },
+                    leftHeld ? Color{ 1.0f, 1.0f, 1.0f, 0.98f * op } : Color{ 0.50f, 0.88f, 1.00f, 0.95f * op }, 0.12f);
+@@ -1129,20 +1478,32 @@ private:
+                        { 0.15f, 0.45f, 0.60f, 0.45f * op }, { 0.40f, 0.80f, 1.00f, 0.70f * op }, 0.10f);
+         }
+ 
++        // The component keys light up with the combo that is holding them.
++        uint16_t heldMask = 0;
++        for (const auto& b : m_buttons) if (b.isPressed && IsButtonActive(b)) heldMask |= b.mask;
+         // 3. Gameplay Buttons (ABXY, Shoulders, D-pad, Menu, Macros)
+         for (const auto& btn : m_buttons) {
+             if (!IsButtonActive(btn)) continue;
+-            Color base = btn.isPressed ? Color{ std::min(1.0f, btn.baseColor.r * 1.4f), std::min(1.0f, btn.baseColor.g * 1.4f), std::min(1.0f, btn.baseColor.b * 1.4f), 0.90f } : btn.baseColor;
+-            Color border = btn.isPressed ? Color{ 1.0f, 1.0f, 1.0f, 1.0f } : btn.borderColor;
++            bool singleButton = btn.mask && (btn.mask & (btn.mask-1))==0;
++            bool pressed = btn.isPressed || (singleButton && (heldMask & btn.mask) == btn.mask);
++            Color base = pressed ? Color{ std::min(1.0f, btn.baseColor.r * 1.4f), std::min(1.0f, btn.baseColor.g * 1.4f), std::min(1.0f, btn.baseColor.b * 1.4f), 0.90f } : btn.baseColor;
++            Color border = pressed ? Color{ 1.0f, 1.0f, 1.0f, 1.0f } : btn.borderColor;
+             base.a *= op;
+             border.a *= op;
+ 
+-            DrawAADisc(btn.pos.x, btn.pos.y, btn.radius, base, border, 0.09f);
++            DrawAADisc(btn.pos.x, btn.pos.y, btn.radius * (pressed ? 0.94f : 1.0f), base, border, 0.09f);
+ 
+-            float textSize = btn.radius * 0.95f;
++            if (pressed) DrawAARing(btn.pos.x, btn.pos.y, btn.radius * 1.10f, 2.0f, {0.4f, 0.95f, 1.0f, op * 0.8f});
++            const char* label = btn.label.c_str();
++            if (btn.id == "SPEED") {
++                label = MH3GameSpeed::Percent() == 125 ? "1.25x" : MH3GameSpeed::Percent() == 150 ? "1.5x" : "1x";
++            }
++            float textSize = std::min(btn.radius*0.80f, btn.radius*1.64f / std::max(1.0f,float(std::strlen(label))*0.58f));
+             Color textCol = COL_WHITE;
++            if (btn.id == "SPEED" && !MH3GameSpeed::Available()) textCol = COL_MUTED;
++            else if (btn.id == "SPEED" && MH3GameSpeed::Percent() != 100) textCol = COL_CYAN;
+             textCol.a *= op;
+-            DrawButtonLabel(btn.pos.x, btn.pos.y, btn.label, textSize, textCol);
++            DrawButtonLabel(btn.pos.x, btn.pos.y, label, textSize, textCol);
+         }
+ 
+         // 4. Gear / Menu Button
+@@ -1180,13 +1541,14 @@ private:
+         }
+ 
+         // Header Title & Subtitle (Larger readable fonts)
+-        const char* titles[] = { "Gráficos", "Sistema", "Guardados", "Controles", "Online" };
++        const char* titles[] = { "Graphics", "System", "Saves", "Controls", "Online", "Combos" };
+         const char* subtitles[] = {
+-            "Pantalla, resolución y presentación",
+-            "Idioma, guardados y reinicio",
+-            "Gestor de partidas Dolphin / Wii NAND",
+-            "Visibilidad en pantalla, mando gamepad y macros",
+-            "Multijugador local, ZeroTier y servidores comunitarios"
++            "Display, resolution and presentation",
++            "Game language and restart",
++            "Save manager for this development app",
++            "Touch layout, gamepad and combo buttons",
++            "Local and community multiplayer",
++            "Choose the buttons each combo holds together"
+         };
+         DrawText(padX + 24.0f, padY + 16.0f, titles[m_menuTab], 28.0f, COL_WHITE);
+         DrawText(padX + 24.0f, padY + 48.0f, subtitles[m_menuTab], 14.5f, COL_MUTED);
+@@ -1212,9 +1574,9 @@ private:
+ 
+         // Tab Navigation Bar
+         float tabY = padY + 86.0f;
+-        float tabW = (panW - 40.0f - 40.0f) / 5.0f;
++        float tabW = (panW - 40.0f - 50.0f) / 6.0f;
+         float tabH = 44.0f;
+-        for (int i = 0; i < 5; ++i) {
++        for (int i = 0; i < 6; ++i) {
+             float tx = padX + 20.0f + float(i) * (tabW + 10.0f);
+             bool active = (m_menuTab == i);
+             DrawRoundedRect(tx, tabY, tabW, tabH, 8.0f,
+@@ -1233,16 +1595,17 @@ private:
+         else if (m_menuTab == 2) RenderTabSaves(padX + 20.0f, contentY, contentW);
+         else if (m_menuTab == 3) RenderTabControls(padX + 20.0f, contentY, contentW);
+         else if (m_menuTab == 4) RenderTabOnline(padX + 20.0f, contentY, contentW);
++        else if (m_menuTab == 5) RenderTabCombos(padX + 20.0f, contentY, contentW);
+     }
+ 
+     void RenderTabGraphics(float x, float y, float w) {
+         // Card 1: Internal Resolution
+         float c1H = 108.0f;
+         DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+-        DrawText(x + 18.0f, y + 14.0f, "Resolución interna", 19.0f, COL_WHITE);
+-        DrawText(x + 18.0f, y + 36.0f, "Wii Original (1x por defecto) | Mayor resolución = mayor nitidez y detalle gráfico", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "Internal resolution", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 36.0f, "Original resolution is fastest. Higher resolution uses more GPU power.", 13.5f, COL_MUTED);
+ 
+-        const char* resLabels[] = { "Wii Original", "720p", "1080p", "1440p", "4K (2160p)", "Nativa" };
++        const char* resLabels[] = { "Wii original", "720p", "1080p", "1440p", "4K (2160p)", "Native" };
+         float chipW = (w - 36.0f - 25.0f) / 6.0f;
+         float chipH = 42.0f;
+         float chipY = y + 54.0f;
+@@ -1256,7 +1619,7 @@ private:
+                      active ? COL_ACTIVE_TEXT : COL_WHITE, true);
+         }
+ 
+-        // Card 2: Pantalla Completa (Fix de aspecto) & Relación de aspecto
++        // Card 2: Pantalla Completa (Fix de aspecto) & Aspect de aspecto
+         float c2Y = y + c1H + 12.0f;
+         float c2H = 114.0f;
+         DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+@@ -1264,8 +1627,8 @@ private:
+         float colW = (w - 36.0f - 16.0f) * 0.5f;
+ 
+         // Left side: Fullscreen & 16:9 Fix
+-        DrawText(x + 18.0f, c2Y + 14.0f, "Pantalla completa (Fix de aspecto)", 19.0f, COL_WHITE);
+-        DrawText(x + 18.0f, c2Y + 36.0f, "Fix 16:9 activo: evita que la imagen se estire o deforme en tu pantalla", 12.5f, COL_MUTED);
++        DrawText(x + 18.0f, c2Y + 14.0f, "Fullscreen", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, c2Y + 36.0f, "Keep the picture proportional when using fullscreen.", 12.5f, COL_MUTED);
+ 
+         float fsBtnY = c2Y + 54.0f;
+         float fsBtnW = colW;
+@@ -1274,15 +1637,15 @@ private:
+                         fsActive ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         fsActive ? COL_CYAN : COL_CHIP_BORDER);
+         DrawText(x + 18.0f + fsBtnW * 0.5f, fsBtnY + 12.0f,
+-                 fsActive ? "Pantalla completa: ACTIVADA (Fix 16:9)" : "Activar pantalla completa", 14.5f,
++                 fsActive ? "Fullscreen: ON" : "Enable fullscreen", 14.5f,
+                  fsActive ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+-        // Right side: Relación de aspecto
++        // Right side: Aspect de aspecto
+         float rightColX = x + 18.0f + colW + 16.0f;
+-        DrawText(rightColX, c2Y + 14.0f, "Relación de aspecto", 19.0f, COL_WHITE);
+-        DrawText(rightColX, c2Y + 36.0f, "Ajuste de presentación geométrica", 12.5f, COL_MUTED);
++        DrawText(rightColX, c2Y + 14.0f, "Aspect ratio", 19.0f, COL_WHITE);
++        DrawText(rightColX, c2Y + 36.0f, "Screen shape and presentation", 12.5f, COL_MUTED);
+ 
+-        const char* aspectLabels[] = { "16:9 Panorámica", "4:3 Clásica", "Estirar Pantalla" };
++        const char* aspectLabels[] = { "16:9 Widescreen", "4:3 Classic", "Stretch screen" };
+         float aChipW = (colW - 10.0f) / 3.0f;
+         for (int i = 0; i < 3; ++i) {
+             float ax = rightColX + float(i) * (aChipW + 5.0f);
+@@ -1300,13 +1663,13 @@ private:
+         DrawRoundedRect(x, c3Y, w, c3H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+ 
+         float fpsColW = (w - 36.0f - 16.0f) * 0.52f;
+-        bool inCity = IsOnlineCity();
++        bool inCity = IsOnlinePlay();
+         if (inCity) {
+-            DrawText(x + 18.0f, c3Y + 14.0f, "Límite de fotogramas: 30 FPS [BLOQUEADO EN ONLINE]", 18.0f, COL_CYAN);
+-            DrawText(x + 18.0f, c3Y + 36.0f, "Auto-bloqueado a 30 FPS en la Ciudad para evitar mini-turbo y mantener sincronía.", 12.0f, { 1.0f, 0.85f, 0.35f, 1.0f });
++            DrawText(x + 18.0f, c3Y + 14.0f, "Frame limit: 30 FPS [ONLINE]", 18.0f, COL_CYAN);
++            DrawText(x + 18.0f, c3Y + 36.0f, "City and online quests keep the 30 FPS synchronization cap.", 12.0f, { 1.0f, 0.85f, 0.35f, 1.0f });
+         } else {
+-            DrawText(x + 18.0f, c3Y + 14.0f, "Límite de fotogramas (FPS)", 19.0f, COL_WHITE);
+-            DrawText(x + 18.0f, c3Y + 36.0f, "30, 60, 90 o 120 FPS (En Aldea puedes jugar a 60+ FPS)", 12.5f, COL_MUTED);
++            DrawText(x + 18.0f, c3Y + 14.0f, "Frame rate limit (FPS)", 19.0f, COL_WHITE);
++            DrawText(x + 18.0f, c3Y + 36.0f, "Choose a limit for Village and solo quests. Actual FPS depends on your device.", 12.5f, COL_MUTED);
+         }
+ 
+         const char* fpsLabels[] = { "30 FPS", "60 FPS", "90 FPS", "120 FPS" };
+@@ -1326,15 +1689,15 @@ private:
+         // Right side: Sincronización y Contador
+         float syncColX = x + 18.0f + fpsColW + 16.0f;
+         float syncColW = (w - 36.0f - 16.0f) * 0.48f;
+-        DrawText(syncColX, c3Y + 14.0f, "Sincronización y Estadísticas", 19.0f, COL_WHITE);
+-        DrawText(syncColX, c3Y + 36.0f, "V-Sync anti-tearing y contador HUD en pantalla", 12.5f, COL_MUTED);
++        DrawText(syncColX, c3Y + 14.0f, "Sync and statistics", 19.0f, COL_WHITE);
++        DrawText(syncColX, c3Y + 36.0f, "V-Sync and the on-screen frame rate counter", 12.5f, COL_MUTED);
+ 
+         float sChipW = (syncColW - 10.0f) * 0.5f;
+         // VSync chip
+         DrawRoundedRect(syncColX, fChipY, sChipW, chipH, 8.0f,
+                         m_vsync ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         m_vsync ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(syncColX + sChipW * 0.5f, fChipY + 12.0f, m_vsync ? "V-Sync: ACTIVADO" : "V-Sync: DESACTIVADO", 13.0f,
++        DrawText(syncColX + sChipW * 0.5f, fChipY + 12.0f, m_vsync ? "V-Sync: ON" : "V-Sync: OFF", 13.0f,
+                  m_vsync ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // HUD FPS chip
+@@ -1342,9 +1705,10 @@ private:
+         DrawRoundedRect(hudX, fChipY, sChipW, chipH, 8.0f,
+                         m_showFpsHud ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         m_showFpsHud ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(hudX + sChipW * 0.5f, fChipY + 12.0f, m_showFpsHud ? "HUD FPS: VISIBLE" : "HUD FPS: OCULTO", 13.0f,
++        DrawText(hudX + sChipW * 0.5f, fChipY + 12.0f, m_showFpsHud ? "FPS counter: ON" : "FPS counter: OFF", 13.0f,
+                  m_showFpsHud ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
++#ifndef MH3_PC_TOUCH_UI
+         // Card 4: Reemplazo de Texturas HD (Dolphin Texture Pack)
+         float c4Y = c3Y + c3H + 12.0f;
+         float c4H = 108.0f;
+@@ -1353,9 +1717,9 @@ private:
+         bool texEnabled = aurora::gfx::texture_replacement::is_enabled();
+         size_t texCount = aurora::gfx::texture_replacement::get_replacement_count();
+         char texSub[140];
+-        std::snprintf(texSub, sizeof(texSub), "Texturas cargadas: %zu | Carpeta: /storage/emulated/0/MH3/textures/ (RMHE08 o RMHP08)", texCount);
++        std::snprintf(texSub, sizeof(texSub), "Textures: %zu | Folder: MH3_Rowell_Dev/textures/", texCount);
+ 
+-        DrawText(x + 18.0f, c4Y + 14.0f, "Texturas HD personalizadas (Pack Dolphin)", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, c4Y + 14.0f, "Custom HD textures (Dolphin packs)", 19.0f, COL_WHITE);
+         DrawText(x + 18.0f, c4Y + 36.0f, texSub, 13.0f, (texCount > 0) ? COL_CYAN : COL_MUTED);
+ 
+         float tBtnW = (w - 36.0f - 15.0f) * 0.50f;
+@@ -1366,22 +1730,23 @@ private:
+                         texEnabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         texEnabled ? COL_CYAN : COL_CHIP_BORDER);
+         DrawText(x + 18.0f + tBtnW * 0.5f, tBtnY + 12.0f,
+-                 texEnabled ? "Texturas HD: ACTIVADAS" : "Texturas HD: DESACTIVADAS", 14.5f,
++                 texEnabled ? "HD textures: ON" : "HD textures: OFF", 14.5f,
+                  texEnabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Reload button
+         float reloadX = x + 18.0f + tBtnW + 15.0f;
+         DrawRoundedRect(reloadX, tBtnY, tBtnW, chipH, 8.0f,
+                         { 0.12f, 0.35f, 0.45f, 0.90f }, { 0.25f, 0.75f, 0.95f, 1.0f });
+-        DrawText(reloadX + tBtnW * 0.5f, tBtnY + 12.0f, "🔄 Recargar texturas", 14.5f, COL_WHITE, true);
++        DrawText(reloadX + tBtnW * 0.5f, tBtnY + 12.0f, "Reload textures", 14.5f, COL_WHITE, true);
++#endif
+     }
+ 
+     void RenderTabSystem(float x, float y, float w) {
+         // Card 1: Game Language
+         float c1H = 130.0f;
+         DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+-        DrawText(x + 18.0f, y + 14.0f, "Idioma del juego", 19.0f, COL_WHITE);
+-        DrawText(x + 18.0f, y + 36.0f, "Texto y menús del disco europeo. Requiere reiniciar para aplicar cambios.", 14.0f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "Game language", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 36.0f, "Changes the game text only. Restart to apply. App settings remain in English.", 14.0f, COL_MUTED);
+ 
+         const char* langLabels[] = { "Español", "English", "Français", "Deutsch", "Italiano" };
+         float chipW = (w - 36.0f - 20.0f) / 5.0f;
+@@ -1399,28 +1764,51 @@ private:
+ 
+         // Active Language status text
+         float statusY = y + c1H + 12.0f;
+-        std::string statStr = std::string("Idioma seleccionado: ") + langLabels[std::clamp(m_langChoice, 0, 4)];
++        std::string statStr = std::string("Selected game language: ") + langLabels[std::clamp(m_langChoice, 0, 4)];
+         DrawText(x + 18.0f, statusY, statStr.c_str(), 14.5f, COL_MUTED);
+ 
+         // Card 2: Restart Action Card
+         float c2Y = statusY + 28.0f;
+         float c2H = 88.0f;
+         DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+-        DrawText(x + 18.0f, c2Y + 16.0f, "Reiniciar el juego", 19.0f, COL_WHITE);
+-        DrawText(x + 18.0f, c2Y + 42.0f, "Aplica cambios de idioma y ajustes pendientes de inmediato.", 14.0f, COL_MUTED);
++        DrawText(x + 18.0f, c2Y + 16.0f, "Restart game", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, c2Y + 42.0f, "Apply pending game language and startup settings.", 14.0f, COL_MUTED);
+ 
+         float rBtnW = 200.0f;
+         float rBtnX = x + w - rBtnW - 18.0f;
+         float rBtnY = c2Y + 22.0f;
+         DrawRoundedRect(rBtnX, rBtnY, rBtnW, 44.0f, 8.0f, { 0.15f, 0.50f, 0.65f, 0.95f }, COL_CYAN);
+-        DrawText(rBtnX + rBtnW * 0.5f, rBtnY + 13.0f, "Reiniciar Ahora", 16.0f, COL_WHITE, true);
++        DrawText(rBtnX + rBtnW * 0.5f, rBtnY + 13.0f, "Restart now", 16.0f, COL_WHITE, true);
++
++        const float speedY = y + 270.0f;
++        DrawRoundedRect(x, speedY, w, 142.0f, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
++        DrawText(x + 18.0f, speedY + 14.0f, "Game speed (single-player)", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, speedY + 38.0f,
++                 MH3GameSpeed::Available() ? "Change speed here or tap the 1x button while playing."
++                                          : "Available in Moga Village and solo quests. City and Arena stay at 1x.",
++                 13.5f, COL_MUTED);
++        const char* speedLabels[] = {"1x", "1.25x", "1.5x"};
++        const int speedValues[] = {100, 125, 150};
++        const float speedW = (w - 56.0f) / 3.0f;
++        for (int i = 0; i < 3; ++i) {
++            const float sx = x + 18.0f + i * (speedW + 10.0f);
++            const bool active = MH3GameSpeed::Percent() == speedValues[i];
++            const bool enabled = i == 0 || MH3GameSpeed::Available();
++            DrawRoundedRect(sx, speedY + 62.0f, speedW, 40.0f, 8.0f,
++                            active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP, COL_CHIP_BORDER);
++            DrawText(sx + speedW * 0.5f, speedY + 73.0f, speedLabels[i], 16.0f,
++                     active ? COL_ACTIVE_TEXT : enabled ? COL_WHITE : COL_MUTED, true);
++        }
++        DrawText(x + 18.0f, speedY + 115.0f,
++                 "Experimental: audio and movies keep their normal speed. Resets to 1x outside solo play.",
++                 12.5f, COL_MUTED);
+     }
+ 
+     void RenderTabSaves(float x, float y, float w) {
+-        float c1H = 224.0f;
++        float c1H = 266.0f;
+         DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+-        DrawText(x + 18.0f, y + 14.0f, "Gestor de Guardados (Dolphin / Wii NAND)", 19.0f, COL_WHITE);
+-        DrawText(x + 18.0f, y + 38.0f, "Ubicación: /storage/emulated/0/MH3/nand/title/00010000/524d4850/data/nocopy", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "Saved progress", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 38.0f, "Save inside Tri first. Backup and Export copy that saved progress.", 13.5f, COL_MUTED);
+ 
+         // Action Buttons
+         float btnW = (w - 36.0f - 20.0f) / 3.0f;
+@@ -1430,32 +1818,297 @@ private:
+         // 1. Export
+         float b1X = x + 18.0f;
+         DrawRoundedRect(b1X, btnY, btnW, btnH, 8.0f, { 0.08f, 0.35f, 0.45f, 0.95f }, COL_CYAN);
+-        DrawText(b1X + btnW * 0.5f, btnY + 15.0f, "📁 Exportar a Descargas", 15.0f, COL_WHITE, true);
++        DrawText(b1X + btnW * 0.5f, btnY + 15.0f, "Export save", 15.0f, COL_WHITE, true);
+ 
+         // 2. Import
+         float b2X = b1X + btnW + 10.0f;
+         DrawRoundedRect(b2X, btnY, btnW, btnH, 8.0f, { 0.12f, 0.45f, 0.35f, 0.95f }, { 0.30f, 0.85f, 0.60f, 1.0f });
+-        DrawText(b2X + btnW * 0.5f, btnY + 15.0f, "📥 Importar de Dolphin", 15.0f, COL_WHITE, true);
++        DrawText(b2X + btnW * 0.5f, btnY + 15.0f, "Restore / import", 15.0f, COL_WHITE, true);
+ 
+         // 3. Quick Backup
+         float b3X = b2X + btnW + 10.0f;
+         DrawRoundedRect(b3X, btnY, btnW, btnH, 8.0f, { 0.35f, 0.30f, 0.15f, 0.95f }, { 0.90f, 0.75f, 0.30f, 1.0f });
+-        DrawText(b3X + btnW * 0.5f, btnY + 15.0f, "💾 Crear Respaldo", 15.0f, COL_WHITE, true);
++        DrawText(b3X + btnW * 0.5f, btnY + 15.0f, "Create backup", 15.0f, COL_WHITE, true);
++        DrawText(b1X + btnW * 0.5f, y + 126.0f, "Copy for another device.", 12.5f, COL_MUTED, true);
++        DrawText(b2X + btnW * 0.5f, y + 126.0f, "Choose a saved copy to restore.", 12.5f, COL_MUTED, true);
++        DrawText(b3X + btnW * 0.5f, y + 126.0f, "Keep the newest 3 recovery copies.", 12.5f, COL_MUTED, true);
+ 
+         // Status Banner
+-        float bannerY = y + 138.0f;
++        float bannerY = y + 154.0f;
+         float bannerH = 68.0f;
+         DrawRoundedRect(x + 18.0f, bannerY, w - 36.0f, bannerH, 8.0f, { 0.02f, 0.08f, 0.12f, 0.90f }, COL_PANEL_BORDER);
+-        DrawText(x + 30.0f, bannerY + 12.0f, "Estado:", 14.0f, COL_CYAN);
++        DrawText(x + 30.0f, bannerY + 12.0f, "Status:", 14.0f, COL_CYAN);
+         DrawText(x + 30.0f, bannerY + 36.0f, m_saveStatusMsg.c_str(), 14.0f, COL_WHITE);
++        const std::string last = "Backup created: " + m_lastBackupTime;
++        DrawText(x + 18.0f, y + 236.0f, last.c_str(), 14.0f, COL_MUTED);
++    }
++
++    void RenderSaveConfirmation() {
++        DrawRectSolid(0, 0, float(m_width), float(m_height), {0, 0, 0, 0.70f});
++        const float w = std::min(560.0f, float(m_width) - 48.0f);
++        const float x = (m_width - w) * 0.5f, y = (m_height - 220.0f) * 0.5f;
++        DrawRoundedRect(x, y, w, 220.0f, 16.0f, COL_BG_DARK, COL_CYAN);
++        const bool importing = m_pendingSaveAction == SaveAction::Import;
++        const bool exporting = m_pendingSaveAction == SaveAction::Export;
++        DrawText(x + 24.0f, y + 24.0f,
++                 importing ? "Restore this save and restart?" : exporting ? "Export this save?" : "Create a backup?",
++                 25.0f, COL_WHITE);
++        DrawText(x + 24.0f, y + 68.0f,
++                 importing ? "Replaces your saved progress with your selected copy."
++                           : exporting ? "Copies your last in-game save to the exports folder."
++                                       : "Copies the progress you last saved inside Tri.", 15.0f, COL_MUTED);
++        DrawText(x + 24.0f, y + 94.0f,
++                 importing ? "Backs up saved progress first. Unsaved play is lost."
++                           : "Your current save stays in place.", 15.0f, COL_MUTED);
++        if (importing) {
++            DrawClippedText(x+24,y+120,"From: "+m_pendingImportLabel,13,w-48,COL_CYAN);
++        } else if(!exporting) DrawText(x+24,y+120,"Keeps up to 3 backups, including automatic safety copies.",13,COL_CYAN);
++        const float bw = (w - 64.0f) * 0.5f;
++        DrawRoundedRect(x + 24.0f, y + 148.0f, bw, 48.0f, 8.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
++        DrawText(x + 24.0f + bw * 0.5f, y + 162.0f, "No", 18.0f, COL_WHITE, true);
++        DrawRoundedRect(x + 40.0f + bw, y + 148.0f, bw, 48.0f, 8.0f, COL_ACTIVE_CHIP, COL_CYAN);
++        DrawText(x + 40.0f + bw * 1.5f, y + 162.0f, importing?"Yes, restore":"Yes", 18.0f, COL_ACTIVE_TEXT, true);
++    }
++
++    void DrawClippedText(float x,float y,std::string text,float size,float width,Color color) {
++        if(MeasureText(text.c_str(),size)>width) {
++            const float limit=width-MeasureText("...",size);
++            while(!text.empty() && MeasureText(text.c_str(),size)>limit) {
++                size_t end=text.size()-1;while(end && (static_cast<unsigned char>(text[end])&0xc0)==0x80)--end;
++                text.resize(end);
++            }
++            text+="...";
++        }
++        DrawText(x,y,text.c_str(),size,color);
++    }
++    void OpenSaveBrowser(bool backups=true) {
++        const char* user=std::getenv("MH3_USER_DIR");
++        m_saveCopies=mh3_save_manager::ListSaveCopies(user&&*user?user:"/storage/emulated/0/MH3_Rowell_Dev",backups);
++        m_browseBackups=backups;m_savePage=0;m_selectedSave=-1;m_saveBrowserOpen=true;
++        ResetInput();
++    }
++    void RenderSaveBrowser() {
++        const float w=std::min(900.0f,float(m_width)-64),x=(m_width-w)*.5f,y=(m_height-520)*.5f;
++        DrawRectSolid(0,0,float(m_width),float(m_height),{0,0,0,.72f});
++        DrawRoundedRect(x,y,w,520,16,COL_BG_DARK,COL_CYAN);
++        DrawText(x+24,y+20,"Choose saved progress",24,COL_WHITE);
++        DrawText(x+24,y+53,"Select a copy, then review it before restoring. Times show when copies were created.",13,COL_MUTED);
++        const float tabW=(w-60)*.5f;
++        for(int i=0;i<2;++i) {
++            const bool active=m_browseBackups==(i==0);
++            DrawRoundedRect(x+24+i*(tabW+12),y+80,tabW,34,8,active?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(x+24+i*(tabW+12)+tabW*.5f,y+89,i==0?"My backups (up to 3)":"Other saves (imports / exports)",14,active?COL_ACTIVE_TEXT:COL_WHITE,true);
++        }
++        if(m_saveCopies.empty()) {
++            DrawText(x+24,y+160,m_browseBackups?"No backups yet. Save inside Tri, then choose Create backup.":"No compatible save folders found.",16,COL_WHITE);
++            if(!m_browseBackups)DrawText(x+24,y+190,"Put a complete exported save folder in MH3_Rowell_Dev/imports.",14,COL_MUTED);
++        }
++        for(int row=0;row<4;++row) {
++            const int index=m_savePage*4+row;if(index>=int(m_saveCopies.size()))break;
++            const auto& copy=m_saveCopies[index];const bool selected=index==m_selectedSave;
++            const float ry=y+132+row*64;
++            DrawRoundedRect(x+24,ry,w-48,56,8,selected?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            const std::string title=copy.created=="Creation time not recorded"?copy.folder.filename().string():copy.created;
++            DrawClippedText(x+38,ry+9,title,17,w-76,selected?COL_ACTIVE_TEXT:COL_WHITE);
++            const std::string sub=m_browseBackups?(index==0?"Backup - newest":index==1?"Backup - previous copy":
++                index==2 && m_saveCopies.size()==3?"Backup - oldest retained":"Backup - older copy"):
++                copy.kind+" / "+copy.folder.filename().string();
++            DrawClippedText(x+38,ry+34,sub,12.5f,w-76,selected?COL_ACTIVE_TEXT:COL_MUTED);
++        }
++        RenderPager(x,y+402,w,m_savePage,int((m_saveCopies.size()+3)/4));
++        DrawRoundedRect(x+24,y+456,160,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+104,y+468,"Cancel",16,COL_WHITE,true);
++        const bool ready=m_selectedSave>=0;
++        DrawRoundedRect(x+w-224,y+456,200,42,8,ready?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+w-124,y+468,"Review selected copy",15,ready?COL_ACTIVE_TEXT:COL_MUTED,true);
++    }
++    void RenderPager(float x,float y,float w,int page,int pages) {
++        DrawRoundedRect(x+24,y,100,32,7,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+74,y+8,"Previous",13,page>0?COL_WHITE:COL_MUTED,true);
++        DrawRoundedRect(x+w-124,y,100,32,7,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+w-74,y+8,"Next",13,page+1<pages?COL_WHITE:COL_MUTED,true);
++        char text[64];std::snprintf(text,sizeof(text),"Page %d / %d",page+1,std::max(1,pages));
++        DrawText(x+w*.5f,y+8,text,13,COL_MUTED,true);
++    }
++    void HandleSaveBrowserTouch(float px,float py) {
++        const float w=std::min(900.0f,float(m_width)-64),x=(m_width-w)*.5f,y=(m_height-520)*.5f;
++        if(px<x+24 || px>x+w-24)return;
++        if(py>=y+80 && py<=y+114) {
++            const float tabW=(w-60)*.5f;
++            if(px<=x+24+tabW)OpenSaveBrowser(true);
++            else if(px>=x+36+tabW)OpenSaveBrowser(false);
++            return;
++        }
++        for(int row=0;row<4;++row)if(py>=y+132+row*64 && py<=y+188+row*64) {
++            const int index=m_savePage*4+row;if(index<int(m_saveCopies.size()))m_selectedSave=index;return;
++        }
++        if(py>=y+402 && py<=y+434) {
++            if(px<=x+124 && m_savePage>0)--m_savePage;
++            else if(px>=x+w-124 && (m_savePage+1)*4<int(m_saveCopies.size()))++m_savePage;
++            return;
++        }
++        if(py>=y+456 && py<=y+498) {
++            if(px<=x+184)m_saveBrowserOpen=false;
++            else if(px>=x+w-224 && m_selectedSave>=0 && m_selectedSave<int(m_saveCopies.size())) {
++                const auto& copy=m_saveCopies[m_selectedSave];m_pendingImportFolder=copy.folder;
++                m_pendingImportLabel=copy.kind=="Backup"?copy.created:copy.folder.filename().string();
++                m_pendingSaveAction=SaveAction::Import;m_saveBrowserOpen=false;
++            }
++        }
++    }
++#ifdef MH3_PC_TOUCH_UI
++    void RenderKeyboardEditor() {
++        const float w=std::min(920.0f,float(m_width)-64),x=(m_width-w)*.5f,y=(m_height-560)*.5f;
++        DrawRectSolid(0,0,float(m_width),float(m_height),{0,0,0,.72f});
++        DrawRoundedRect(x,y,w,560,16,COL_BG_DARK,COL_CYAN);
++        DrawText(x+24,y+18,"PC keyboard bindings",24,COL_WHITE);
++        DrawText(x+24,y+53,"Click a key to change it. Three keys per action. Changes save automatically.",13,COL_MUTED);
++        const float labelW=w*.30f,keyW=(w-48-labelW-90-32)/3;
++        for(int row=0;row<6;++row) {
++            const int action=m_keyPage*6+row;if(action>=RowellKeys::ActionCount)break;
++            const float ry=y+84+row*54;
++            DrawText(x+24,ry+14,RowellKeys::Definition(action).label,16,COL_WHITE);
++            const auto keys=RowellKeys::Current().Get(action);
++            for(int slot=0;slot<3;++slot) {
++                const float kx=x+24+labelW+slot*(keyW+8);
++                DrawRoundedRect(kx,ry,keyW,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++                const char* name=keys[slot]==SDL_SCANCODE_UNKNOWN?"Unassigned":SDL_GetScancodeName(keys[slot]);
++                DrawClippedText(kx+10,ry+13,name,14,keyW-20,keys[slot]==SDL_SCANCODE_UNKNOWN?COL_MUTED:COL_WHITE);
++            }
++            DrawRoundedRect(x+w-114,ry,90,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(x+w-69,ry+13,"Reset",14,COL_WHITE,true);
++        }
++        DrawClippedText(x+24,y+416,m_keyStatus,13,w-48,COL_CYAN);
++        RenderPager(x,y+450,w,m_keyPage,(RowellKeys::ActionCount+5)/6);
++        DrawRoundedRect(x+24,y+500,160,38,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+104,y+511,"Close",15,COL_WHITE,true);
++        DrawRoundedRect(x+w-224,y+500,200,38,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+w-124,y+511,"Reset all defaults",15,COL_WHITE,true);
++        if(m_captureAction>=0) {
++            const float cw=std::min(600.0f,w-32),cx=(m_width-cw)*.5f,cy=(m_height-240)*.5f;
++            DrawRectSolid(0,0,float(m_width),float(m_height),{0,0,0,.70f});
++            DrawRoundedRect(cx,cy,cw,240,16,COL_BG_DARK,COL_CYAN);
++            DrawText(cx+24,cy+24,"Press a key",25,COL_WHITE);
++            DrawText(cx+24,cy+65,RowellKeys::Definition(m_captureAction).label,18,COL_CYAN);
++            DrawText(cx+24,cy+95,"Escape cancels. F1/F2/F3 stay reserved for settings and speed.",13,COL_MUTED);
++            DrawClippedText(cx+24,cy+125,m_keyStatus,13,cw-48,COL_CYAN);
++            const float bw=(cw-64)*.5f;
++            DrawRoundedRect(cx+24,cy+174,bw,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(cx+24+bw*.5f,cy+186,"Cancel",15,COL_WHITE,true);
++            DrawRoundedRect(cx+40+bw,cy+174,bw,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(cx+40+bw*1.5f,cy+186,"Clear binding",15,COL_WHITE,true);
++        }
++    }
++    void HandleKeyboardEditorTouch(float px,float py) {
++        const float w=std::min(920.0f,float(m_width)-64),x=(m_width-w)*.5f,y=(m_height-560)*.5f;
++        if(m_captureAction>=0) {
++            const float cw=std::min(600.0f,w-32),cx=(m_width-cw)*.5f,cy=(m_height-240)*.5f,bw=(cw-64)*.5f;
++            if(py>=cy+174 && py<=cy+216) {
++                if(px>=cx+24 && px<=cx+24+bw)CancelModal();
++                else if(px>=cx+40+bw && px<=cx+cw-24) {
++                    const auto error=RowellKeys::Current().Assign(m_captureAction,m_captureSlot,SDL_SCANCODE_UNKNOWN);
++                    m_keyStatus=error.empty()?"Binding cleared and saved.":error;
++                    if(error.empty())m_captureAction=-1;
++                }
++            }
++            return;
++        }
++        if(px<x+24 || px>x+w-24)return;
++        const float labelW=w*.30f,keyW=(w-48-labelW-90-32)/3;
++        for(int row=0;row<6;++row) {
++            const int action=m_keyPage*6+row;if(action>=RowellKeys::ActionCount)break;
++            const float ry=y+84+row*54;
++            if(py<ry || py>ry+42)continue;
++            if(px>=x+w-114) {
++                const auto error=RowellKeys::Current().Reset(action);m_keyStatus=error.empty()?"Action reset to defaults.":error;return;
++            }
++            for(int slot=0;slot<3;++slot) {
++                const float kx=x+24+labelW+slot*(keyW+8);
++                if(px>=kx && px<=kx+keyW) {m_captureAction=action;m_captureSlot=slot;m_keyStatus="Waiting for a key...";ResetInput();return;}
++            }
++        }
++        if(py>=y+450 && py<=y+482) {
++            if(px<=x+124 && m_keyPage>0)--m_keyPage;
++            else if(px>=x+w-124 && (m_keyPage+1)*6<RowellKeys::ActionCount)++m_keyPage;
++        }
++        if(py>=y+500 && py<=y+538) {
++            if(px<=x+184)m_keyboardEditorOpen=false;
++            else if(px>=x+w-224){const auto error=RowellKeys::Current().Reset();m_keyStatus=error.empty()?"All keyboard defaults restored.":error;}
++        }
++    }
++#endif
++
++    void ApplyComboMasks() {
++        static const char* names[] = {"A", "B", "X", "Y", "L", "R", "ZL", "ZR"};
++        static const uint16_t bits[] = {MH3_CL_A, MH3_CL_B, MH3_CL_X, MH3_CL_Y,
++            MH3_CL_L, MH3_CL_R, MH3_CL_ZL, MH3_CL_ZR};
++        for (auto& b : m_buttons) {
++            if (b.id.size()!=2 || b.id[0]!='M' || b.id[1]<'1' || b.id[1]>'5') continue;
++            b.mask = m_comboMasks[b.id[1]-'1']; b.label.clear();
++            for (int i=0;i<8;++i) if (b.mask & bits[i]) {
++                if (!b.label.empty()) b.label += "+";
++                b.label += names[i];
++            }
++            if (b.label.empty()) b.label = "Empty";
++            if (b.mask==(MH3_CL_R|MH3_CL_X|MH3_CL_A)) b.label="R+X+A";
++        }
++    }
++    bool& ComboEnabled(int i) {
++        switch(i) { case 0:return m_macro1Enabled; case 1:return m_macro2Enabled;
++          case 2:return m_macro3Enabled; case 3:return m_macro4Enabled; default:return m_macro5Enabled; }
++    }
++    void RenderTabCombos(float x, float y, float w) {
++        DrawText(x, y, "Combo buttons", 23, COL_WHITE);
++        DrawText(x, y+32, "Select a slot, then select its buttons. Hold a combo to press them together.", 14, COL_MUTED);
++        float sw=(w-40)/5;
++        for (int i=0;i<5;++i) {
++            float bx=x+i*(sw+10); char title[24]; std::snprintf(title,sizeof(title),"Combo %d",i+1);
++            DrawRoundedRect(bx,y+62,sw,44,8,m_comboEdit==i?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CYAN);
++            DrawText(bx+sw/2,y+75,title,16,m_comboEdit==i?COL_ACTIVE_TEXT:COL_WHITE,true);
++        }
++        DrawRoundedRect(x,y+123,w,44,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+18,y+136,ComboEnabled(m_comboEdit)?"Enabled - tap to hide this combo":"Hidden - tap to enable this combo",16,COL_WHITE);
++        const char* names[]={"A","B","X","Y","L","R","ZL","ZR"};
++        const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR};
++        float bw=(w-30)/4;
++        for(int i=0;i<8;++i) {
++            float bx=x+(i%4)*(bw+10), by=y+190+(i/4)*58;
++            bool on=(m_comboMasks[m_comboEdit]&bits[i])!=0;
++            DrawRoundedRect(bx,by,bw,46,8,on?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(bx+bw/2,by+14,names[i],18,on?COL_ACTIVE_TEXT:COL_WHITE,true);
++        }
++        DrawText(x,y+322,"Changes save automatically. Drag and resize combos in Controls > Edit layout.",14,COL_MUTED);
++        DrawText(x,y+352,"Three or more fingers work together. Each finger releases independently.",14,COL_CYAN);
++    }
++    bool HandleComboTap(float px,float py,float x,float y,float w) {
++        float sw=(w-40)/5;
++        if(py>=y+62 && py<=y+106) for(int i=0;i<5;++i) {
++            float bx=x+i*(sw+10); if(px>=bx && px<=bx+sw) {m_comboEdit=i;return true;}
++        }
++        if(py>=y+123 && py<=y+167 && px>=x && px<=x+w) {
++            ComboEnabled(m_comboEdit)=!ComboEnabled(m_comboEdit); ResetInput(); SaveLayoutConfig(); return true;
++        }
++        const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR};
++        float bw=(w-30)/4;
++        for(int i=0;i<8;++i) {
++            float bx=x+(i%4)*(bw+10),by=y+190+(i/4)*58;
++            if(px>=bx && px<=bx+bw && py>=by && py<=by+46) {
++                m_comboMasks[m_comboEdit]^=bits[i]; ResetInput(); ApplyComboMasks(); SaveLayoutConfig(); return true;
++            }
++        }
++        return false;
+     }
+ 
+     void RenderTabControls(float x, float y, float w) {
+         // Card 1: Visibilidad y Opacidad de controles táctiles en pantalla
+         float c1H = 176.0f;
+         DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+-        DrawText(x + 18.0f, y + 14.0f, "Controles táctiles en pantalla", 19.0f, COL_WHITE);
+-        DrawText(x + 18.0f, y + 34.0f, "Oculta los botones virtuales si juegas con mando o ajusta su transparencia.", 13.0f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "On-screen touch controls", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 34.0f, "Show touch controls, or hide them when using a gamepad.", 13.0f, COL_MUTED);
++#ifdef MH3_PC_TOUCH_UI
++        DrawRoundedRect(x+w-228,y+12,210,32,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+w-123,y+21,"Keyboard bindings",14,COL_WHITE,true);
++#endif
+ 
+         float tvChipW = (w - 36.0f - 15.0f) / 2.0f;
+         float tvChipH = 38.0f;
+@@ -1466,7 +2119,7 @@ private:
+         DrawRoundedRect(tv1X, tvChipY, tvChipW, tvChipH, 8.0f,
+                         m_touchVisible ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         m_touchVisible ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(tv1X + tvChipW * 0.5f, tvChipY + 10.0f, "Botones táctiles: VISIBLES", 14.5f,
++        DrawText(tv1X + tvChipW * 0.5f, tvChipY + 10.0f, "Touch buttons: SHOW", 14.5f,
+                  m_touchVisible ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Hidden chip
+@@ -1474,12 +2127,12 @@ private:
+         DrawRoundedRect(tv2X, tvChipY, tvChipW, tvChipH, 8.0f,
+                         !m_touchVisible ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         !m_touchVisible ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(tv2X + tvChipW * 0.5f, tvChipY + 10.0f, "Botones táctiles: OCULTOS (Solo Mando)", 14.5f,
++        DrawText(tv2X + tvChipW * 0.5f, tvChipY + 10.0f, "Touch buttons: HIDE", 14.5f,
+                  !m_touchVisible ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Row 2: Opacity selector
+-        DrawText(x + 18.0f, y + 102.0f, "Opacidad de botones virtuales:", 15.0f, COL_WHITE);
+-        const char* opLabels[] = { "25% (Suave)", "50% (Medio)", "75% (Claro)", "100% (Sólido)" };
++        DrawText(x + 18.0f, y + 102.0f, "Button opacity:", 15.0f, COL_WHITE);
++        const char* opLabels[] = { "25%", "50%", "75%", "100%" };
+         const float opValues[] = { 0.25f, 0.50f, 0.75f, 1.00f };
+         float opChipW = (w - 36.0f - 30.0f) / 4.0f;
+         float opChipH = 36.0f;
+@@ -1498,8 +2151,8 @@ private:
+         float c2Y = y + c1H + 12.0f;
+         float c2H = 116.0f;
+         DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+-        DrawText(x + 18.0f, c2Y + 14.0f, "Distribución de botones del Mando (Gamepad)", 19.0f, COL_WHITE);
+-        DrawText(x + 18.0f, c2Y + 36.0f, "Para mandos Bluetooth/USB (Xbox, PlayStation, Nintendo o genéricos):", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, c2Y + 14.0f, "Gamepad layout", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, c2Y + 36.0f, "For Bluetooth and USB gamepads. Touch button names keep their Wii meanings.", 13.5f, COL_MUTED);
+ 
+         const int gpLayout = Gamepad_GetLayout();
+         const bool swapTrig = Gamepad_GetSwapTriggers();
+@@ -1513,7 +2166,7 @@ private:
+         DrawRoundedRect(l1X, gpChipY, lChipW, gpChipH, 8.0f,
+                         (gpLayout == 0) ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         (gpLayout == 0) ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(l1X + lChipW * 0.5f, gpChipY + 12.0f, "Estilo Nintendo (A=Der, B=Abajo)", 13.5f,
++        DrawText(l1X + lChipW * 0.5f, gpChipY + 12.0f, "Nintendo: A right, B bottom", 13.5f,
+                  (gpLayout == 0) ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Xbox/Generic layout
+@@ -1521,7 +2174,7 @@ private:
+         DrawRoundedRect(l2X, gpChipY, lChipW, gpChipH, 8.0f,
+                         (gpLayout == 1) ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         (gpLayout == 1) ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(l2X + lChipW * 0.5f, gpChipY + 12.0f, "Estilo Xbox / Genérico (A=Abajo, B=Der)", 13.5f,
++        DrawText(l2X + lChipW * 0.5f, gpChipY + 12.0f, "Xbox: A bottom, B right", 13.5f,
+                  (gpLayout == 1) ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Swap triggers
+@@ -1531,15 +2184,15 @@ private:
+                         swapTrig ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         swapTrig ? COL_CYAN : COL_CHIP_BORDER);
+         DrawText(trigX + trigW * 0.5f, gpChipY + 12.0f,
+-                 swapTrig ? "Gatillos: INVERTIDOS" : "Gatillos: NORMALES", 14.5f,
++                 swapTrig ? "Shoulders/triggers: SWAP" : "Shoulders/triggers: ORIGINAL", 14.5f,
+                  swapTrig ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Card 3: Macros y Personalización
+         float c3Y = c2Y + c2H + 12.0f;
+         float c3H = 154.0f;
+         DrawRoundedRect(x, c3Y, w, c3H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+-        DrawText(x + 18.0f, c3Y + 14.0f, "Botones especiales (Macros) y Editor de pantalla", 19.0f, COL_WHITE);
+-        DrawText(x + 18.0f, c3Y + 36.0f, "Activa combinaciones de botones simultáneos para armas o reposiciona controles:", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, c3Y + 14.0f, "Existing combos and touch layout", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, c3Y + 36.0f, "Keep these presets, or use the Combos tab to choose up to eight simultaneous buttons.", 13.5f, COL_MUTED);
+ 
+         float mChipW = (w - 36.0f - 30.0f) / 4.0f;
+         float mChipH = 40.0f;
+@@ -1550,7 +2203,7 @@ private:
+         DrawRoundedRect(m1X, mChipY, mChipW, mChipH, 8.0f,
+                         m_macro1Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         m_macro1Enabled ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(m1X + mChipW * 0.5f, mChipY + 11.0f, m_macro1Enabled ? "M1 (A+X): SÍ" : "M1 (A+X): NO", 13.5f,
++        DrawText(m1X + mChipW * 0.5f, mChipY + 11.0f, m_macro1Enabled ? "Combo 1: ON" : "Combo 1: OFF", 13.5f,
+                  m_macro1Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Macro 2 (B+Y)
+@@ -1558,7 +2211,7 @@ private:
+         DrawRoundedRect(m2X, mChipY, mChipW, mChipH, 8.0f,
+                         m_macro2Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         m_macro2Enabled ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(m2X + mChipW * 0.5f, mChipY + 11.0f, m_macro2Enabled ? "M2 (B+Y): SÍ" : "M2 (B+Y): NO", 13.5f,
++        DrawText(m2X + mChipW * 0.5f, mChipY + 11.0f, m_macro2Enabled ? "Combo 2: ON" : "Combo 2: OFF", 13.5f,
+                  m_macro2Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Macro 3 (L+R)
+@@ -1566,7 +2219,7 @@ private:
+         DrawRoundedRect(m3X, mChipY, mChipW, mChipH, 8.0f,
+                         m_macro3Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         m_macro3Enabled ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(m3X + mChipW * 0.5f, mChipY + 11.0f, m_macro3Enabled ? "M3 (L+R): SÍ" : "M3 (L+R): NO", 13.5f,
++        DrawText(m3X + mChipW * 0.5f, mChipY + 11.0f, m_macro3Enabled ? "Combo 3: ON" : "Combo 3: OFF", 13.5f,
+                  m_macro3Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Macro 4 (A+B)
+@@ -1574,7 +2227,7 @@ private:
+         DrawRoundedRect(m4X, mChipY, mChipW, mChipH, 8.0f,
+                         m_macro4Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         m_macro4Enabled ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(m4X + mChipW * 0.5f, mChipY + 11.0f, m_macro4Enabled ? "M4 (A+B): SÍ" : "M4 (A+B): NO", 13.5f,
++        DrawText(m4X + mChipW * 0.5f, mChipY + 11.0f, m_macro4Enabled ? "Combo 4: ON" : "Combo 4: OFF", 13.5f,
+                  m_macro4Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Row 2: Action Buttons
+@@ -1583,12 +2236,12 @@ private:
+         float editBtnW = (w - 36.0f - 15.0f) * 0.58f;
+         float editBtnX = x + 18.0f;
+         DrawRoundedRect(editBtnX, actBtnY, editBtnW, actBtnH, 8.0f, { 0.10f, 0.50f, 0.65f, 0.95f }, COL_CYAN);
+-        DrawText(editBtnX + editBtnW * 0.5f, actBtnY + 12.0f, "✏ Modificar Posición y Tamaño Táctil", 15.0f, COL_WHITE, true);
++        DrawText(editBtnX + editBtnW * 0.5f, actBtnY + 12.0f, "Edit touch layout", 15.0f, COL_WHITE, true);
+ 
+         float rstBtnW = (w - 36.0f - 15.0f) * 0.42f;
+         float rstBtnX = editBtnX + editBtnW + 15.0f;
+         DrawRoundedRect(rstBtnX, actBtnY, rstBtnW, actBtnH, 8.0f, { 0.40f, 0.15f, 0.18f, 0.85f }, { 0.90f, 0.35f, 0.40f, 1.0f });
+-        DrawText(rstBtnX + rstBtnW * 0.5f, actBtnY + 12.0f, "Restablecer Diseño", 15.0f, COL_WHITE, true);
++        DrawText(rstBtnX + rstBtnW * 0.5f, actBtnY + 12.0f, "Reset positions", 15.0f, COL_WHITE, true);
+     }
+ 
+     void RenderEditMode() {
+@@ -1603,7 +2256,7 @@ private:
+                        isSel ? Color{ 0.95f, 0.85f, 0.20f, 0.65f } : btn.baseColor,
+                        isSel ? Color{ 1.0f, 1.0f, 0.40f, 1.0f } : btn.borderColor, isSel ? 0.14f : 0.09f);
+             DrawAARing(btn.pos.x, btn.pos.y, btn.radius * 1.15f, 2.0f, isSel ? Color{ 1.0f, 0.9f, 0.2f, 0.9f } : Color{ 0.3f, 0.8f, 1.0f, 0.5f });
+-            DrawButtonLabel(btn.pos.x, btn.pos.y, btn.label, btn.radius * 0.95f, isSel ? COL_CYAN : COL_WHITE);
++            DrawButtonLabel(btn.pos.x, btn.pos.y, btn.label.c_str(), btn.radius * 0.95f, isSel ? COL_CYAN : COL_WHITE);
+         }
+ 
+         // Left Stick
+@@ -1619,7 +2272,7 @@ private:
+         float banX = (float(m_width) - banW) * 0.5f;
+         float banY = 12.0f;
+         DrawRoundedRect(banX, banY, banW, banH, 8.0f, COL_BG_DARK, COL_CYAN);
+-        DrawText(banX + banW * 0.5f, banY + 11.0f, "MODO EDICIÓN: Arrastra para mover | Usa [-] y [+] para cambiar tamaño", 14.0f, COL_CYAN, true);
++        DrawText(banX + banW * 0.5f, banY + 11.0f, "EDIT LAYOUT: Drag a control to move it. Use - and + to resize.", 14.0f, COL_CYAN, true);
+ 
+         // Bottom Toolbar
+         float barW = float(m_width) * 0.80f;
+@@ -1634,31 +2287,35 @@ private:
+ 
+         // Button 1: [- Tamaño]
+         DrawRoundedRect(barX + 10.0f, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
+-        DrawText(barX + 10.0f + bw * 0.5f, by + 9.0f, "[-] Tamaño", 13.0f, COL_WHITE, true);
++        DrawText(barX + 10.0f + bw * 0.5f, by + 9.0f, "Smaller", 13.0f, COL_WHITE, true);
+ 
+         // Button 2: [+ Tamaño]
+         DrawRoundedRect(barX + 20.0f + bw, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
+-        DrawText(barX + 20.0f + bw * 1.5f, by + 9.0f, "[+] Tamaño", 13.0f, COL_WHITE, true);
++        DrawText(barX + 20.0f + bw * 1.5f, by + 9.0f, "Larger", 13.0f, COL_WHITE, true);
+ 
+         // Button 3: [Restablecer]
+         DrawRoundedRect(barX + 30.0f + bw * 2.0f, by, bw, bh, 6.0f, { 0.35f, 0.15f, 0.15f, 0.85f }, { 0.80f, 0.30f, 0.30f, 0.90f });
+-        DrawText(barX + 30.0f + bw * 2.5f, by + 9.0f, "Restablecer", 13.0f, COL_WHITE, true);
++        DrawText(barX + 30.0f + bw * 2.5f, by + 9.0f, "Reset", 13.0f, COL_WHITE, true);
+ 
+         // Button 4: [Guardar y Salir]
+         DrawRoundedRect(barX + 40.0f + bw * 3.0f, by, bw, bh, 6.0f, COL_ACTIVE_CHIP, COL_CYAN);
+-        DrawText(barX + 40.0f + bw * 3.5f, by + 9.0f, "Guardar", 13.0f, COL_ACTIVE_TEXT, true);
++        DrawText(barX + 40.0f + bw * 3.5f, by + 9.0f, "Save", 13.0f, COL_ACTIVE_TEXT, true);
+ 
+         // Button 5: [Cancelar]
+         DrawRoundedRect(barX + 50.0f + bw * 4.0f, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
+-        DrawText(barX + 50.0f + bw * 4.5f, by + 9.0f, "Cancelar", 13.0f, COL_MUTED, true);
++        DrawText(barX + 50.0f + bw * 4.5f, by + 9.0f, "Cancel", 13.0f, COL_MUTED, true);
+     }
+ 
+     void RenderTabOnline(float x, float y, float w) {
++#ifdef MH3_PC_TOUCH_UI
++        DrawText(x,y,"PC network settings remain available in the original F1 menu.",16,COL_WHITE);
++#else
++
+         // Card 1: Modo de Conexión
+         float c1H = 108.0f;
+         DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+-        DrawText(x + 18.0f, y + 14.0f, "Conexión Multijugador Online", 19.0f, COL_WHITE);
+-        DrawText(x + 18.0f, y + 36.0f, "Conexión directa a los servidores comunitarios de Monster Hunter 3 (MH3SP).", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "Online multiplayer", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 36.0f, "Connect to the Monster Hunter 3 community servers (MH3SP).", 13.5f, COL_MUTED);
+ 
+         float mChipW = (w - 36.0f - 12.0f) / 2.0f;
+         float mChipH = 42.0f;
+@@ -1670,7 +2327,7 @@ private:
+         DrawRoundedRect(c0X, mChipY, mChipW, mChipH, 8.0f,
+                         c0Active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         c0Active ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(c0X + mChipW * 0.5f, mChipY + 12.0f, "Comunidad MH3SP (mh3sp.com)", 14.0f,
++        DrawText(c0X + mChipW * 0.5f, mChipY + 12.0f, "MH3SP community (mh3sp.com)", 14.0f,
+                  c0Active ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Chip 1: Desconectado
+@@ -1679,7 +2336,7 @@ private:
+         DrawRoundedRect(c1X, mChipY, mChipW, mChipH, 8.0f,
+                         c1Active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                         c1Active ? COL_CYAN : COL_CHIP_BORDER);
+-        DrawText(c1X + mChipW * 0.5f, mChipY + 12.0f, "Desconectado", 14.0f,
++        DrawText(c1X + mChipW * 0.5f, mChipY + 12.0f, "Offline", 14.0f,
+                  c1Active ? COL_ACTIVE_TEXT : COL_WHITE, true);
+ 
+         // Card 2: Detalles
+@@ -1688,31 +2345,58 @@ private:
+         DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+ 
+         if (m_onlineMode == 3) { // Community
+-            DrawText(x + 18.0f, c2Y + 14.0f, "Servidor de la Comunidad: mh3sp.com (SSL/TLS)", 19.0f, COL_CYAN);
+-            DrawText(x + 18.0f, c2Y + 44.0f, "• Conexión directa a los servidores globales de Monster Hunter 3 (MH3SP).", 14.5f, COL_WHITE);
+-            DrawText(x + 18.0f, c2Y + 74.0f, "• Eventos rotativos, misiones de evento y salas de cazadores en todo el mundo.", 14.5f, COL_WHITE);
+-            DrawText(x + 18.0f, c2Y + 104.0f, "• Certificado CA oficial de MH3SP integrado para validar la conexión.", 14.5f, COL_WHITE);
+-            DrawText(x + 18.0f, c2Y + 134.0f, "• Conexión optimizada directa a OPN (8200), NAS (80) y GameSpy.", 14.5f, COL_WHITE);
+-            DrawText(x + 18.0f, c2Y + 174.0f, "Entra a la Ciudad (Loc Lac) desde la puerta de la Aldea de Moga para jugar.", 13.5f, COL_MUTED);
++            DrawText(x + 18.0f, c2Y + 14.0f, "Community server: mh3sp.com (SSL/TLS)", 19.0f, COL_CYAN);
++            DrawText(x + 18.0f, c2Y + 44.0f, "Connect to the global Monster Hunter 3 community servers.", 14.5f, COL_WHITE);
++            DrawText(x + 18.0f, c2Y + 74.0f, "Rotating events, event quests and rooms with other hunters.", 14.5f, COL_WHITE);
++            DrawText(x + 18.0f, c2Y + 104.0f, "Includes the community server certificate.", 14.5f, COL_WHITE);
++            DrawText(x + 18.0f, c2Y + 134.0f, "Uses the existing OPN, NAS and GameSpy connection paths.", 14.5f, COL_WHITE);
++            DrawText(x + 18.0f, c2Y + 174.0f, "Enter Loc Lac from the Moga Village gate to play online.", 13.5f, COL_MUTED);
+         } else { // Offline
+-            DrawText(x + 18.0f, c2Y + 14.0f, "Modo Desconectado (Aldea de Moga)", 19.0f, COL_WHITE);
+-            DrawText(x + 18.0f, c2Y + 44.0f, "• La red está desactivada.", 14.5f, COL_WHITE);
+-            DrawText(x + 18.0f, c2Y + 74.0f, "• Juega las misiones de la historia individual en la Aldea de Moga sin conexión.", 14.5f, COL_WHITE);
+-            DrawText(x + 18.0f, c2Y + 104.0f, "• No se realizarán conexiones a la red ni consumirá batería adicional.", 14.5f, COL_WHITE);
++            DrawText(x + 18.0f, c2Y + 14.0f, "Offline mode (Moga Village)", 19.0f, COL_WHITE);
++            DrawText(x + 18.0f, c2Y + 44.0f, "Network connections are disabled.", 14.5f, COL_WHITE);
++            DrawText(x + 18.0f, c2Y + 74.0f, "Play the single-player story quests in Moga Village.", 14.5f, COL_WHITE);
++            DrawText(x + 18.0f, c2Y + 104.0f, "No multiplayer network activity.", 14.5f, COL_WHITE);
+         }
+ 
+         // Status Banner at bottom
+         float bannerY = c2Y + c2H + 12.0f;
+         float bannerH = 44.0f;
+         DrawRoundedRect(x, bannerY, w, bannerH, 8.0f, { 0.02f, 0.08f, 0.12f, 0.90f }, COL_PANEL_BORDER);
+-        DrawText(x + 18.0f, bannerY + 12.0f, "Estado:", 14.0f, COL_CYAN);
++        DrawText(x + 18.0f, bannerY + 12.0f, "Status:", 14.0f, COL_CYAN);
+         DrawText(x + 85.0f, bannerY + 12.0f, m_onlineStatusMsg.c_str(), 14.0f, COL_WHITE);
++    #endif
+     }
+ 
+     // -------------------------------------------------------------
+     // Menu & Edit Touch Handlers
+     // -------------------------------------------------------------
+     void HandleMenuTouchDown(float px, float py) {
++        if(m_restoreRestarting)return;
++#ifdef MH3_PC_TOUCH_UI
++        if(m_keyboardEditorOpen){HandleKeyboardEditorTouch(px,py);return;}
++#endif
++        if(m_saveBrowserOpen){HandleSaveBrowserTouch(px,py);return;}
++        if (IsSaveConfirmationOpen()) {
++            const float w = std::min(560.0f, float(m_width) - 48.0f);
++            const float x = (m_width - w) * 0.5f, y = (m_height - 220.0f) * 0.5f;
++            const float bw = (w - 64.0f) * 0.5f;
++            if (py >= y + 148.0f && py <= y + 196.0f) {
++                if (px >= x + 24.0f && px <= x + 24.0f + bw) CancelSaveConfirmation();
++                else if (px >= x + 40.0f + bw && px <= x + w - 24.0f) {
++                    const auto action = m_pendingSaveAction;
++                    const auto importFolder = m_pendingImportFolder;
++                    m_pendingSaveAction = SaveAction::None;
++                    m_pendingImportFolder.clear();
++                    switch (action) {
++                    case SaveAction::Export: ExportSaveFiles(); break;
++                    case SaveAction::Import: ImportSaveFiles(importFolder); break;
++                    case SaveAction::Backup: CreateQuickBackup(); break;
++                    default: break;
++                    }
++                }
++            }
++            return; // The confirmation consumes all taps on the background.
++        }
+         float padX = float(m_width) * 0.05f;
+         float padY = float(m_height) * 0.04f;
+         float panW = float(m_width) - padX * 2.0f;
+@@ -1723,27 +2407,29 @@ private:
+         float closeY = padY + 18.0f;
+         float closeS = 38.0f;
+         if (px >= closeX && px <= closeX + closeS + 10.0f && py >= closeY && py <= closeY + closeS + 10.0f) {
+-            m_menuOpen = false;
++            SetMenuOpen(false);
+             return;
+         }
+         if (px < padX || px > padX + panW || py < padY || py > padY + panH) {
+-            m_menuOpen = false;
++            SetMenuOpen(false);
+             return;
+         }
+ 
+         // Tabs
+         float tabY = padY + 86.0f;
+-        float tabW = (panW - 40.0f - 40.0f) / 5.0f;
++        float tabW = (panW - 40.0f - 50.0f) / 6.0f;
+         float tabH = 44.0f;
+         if (py >= tabY && py <= tabY + tabH) {
+-            for (int i = 0; i < 5; ++i) {
++            for (int i = 0; i < 6; ++i) {
+                 float tx = padX + 20.0f + float(i) * (tabW + 10.0f);
+                 if (px >= tx && px <= tx + tabW) {
+                     m_menuTab = i;
++                    if (m_menuTab == 2) RefreshLastBackup();
++#ifndef MH3_PC_TOUCH_UI
+                     if (m_menuTab == 4) {
+-                        LanBeacon::StartScanner();
+-                        LanBeacon::TriggerScan();
++                        LanBeacon::StartScanner(); LanBeacon::TriggerScan();
+                     }
++#endif
+                     return;
+                 }
+             }
+@@ -1752,6 +2438,7 @@ private:
+         float contentY = tabY + tabH + 16.0f;
+         float contentW = panW - 40.0f;
+         float x = padX + 20.0f;
++        if (m_menuTab == 5) { HandleComboTap(px, py, x, contentY, contentW); return; }
+ 
+         if (m_menuTab == 0) { // Gráficos
+             // Resolution chips
+@@ -1770,12 +2457,12 @@ private:
+                 }
+             }
+ 
+-            // Card 2: Pantalla Completa & Relación de aspecto
++            // Card 2: Pantalla Completa & Aspect de aspecto
+             float c2Y = contentY + 108.0f + 12.0f;
+             float colW = (contentW - 36.0f - 16.0f) * 0.5f;
+             float fsBtnY = c2Y + 54.0f;
+             if (py >= fsBtnY && py <= fsBtnY + chipH) {
+-                // Click on "Activar pantalla completa"
++                // Click on "Enable fullscreen"
+                 if (px >= x + 18.0f && px <= x + 18.0f + colW) {
+                     ToggleFullscreen();
+                     return;
+@@ -1803,7 +2490,7 @@ private:
+                 for (int i = 0; i < 4; ++i) {
+                     float fx = x + 18.0f + float(i) * (fChipW + 5.0f);
+                     if (px >= fx && px <= fx + fChipW) {
+-                        if (IsOnlineCity()) {
++                        if (IsOnlinePlay()) {
+                             // Locked to 30 FPS in Online City
+                             return;
+                         }
+@@ -1821,10 +2508,7 @@ private:
+                 // VSync click
+                 if (px >= syncColX && px <= syncColX + sChipW) {
+                     m_vsync = !m_vsync;
+-                    if (!m_vsync && m_fpsLimit == 60) {
+-                        m_fpsLimit = 120;
+-                        MH3FrameRateControl::SetTargetFPS(120);
+-                    }
++                    MH3FrameRateControl::SetTargetFPS(IsOnlinePlay() ? 30 : m_fpsLimit);
+                     aurora_enable_vsync(m_vsync);
+                     SaveSettings();
+                     return;
+@@ -1844,15 +2528,30 @@ private:
+             float tBtnY = c4Y + 54.0f;
+             if (py >= tBtnY && py <= tBtnY + chipH) {
+                 if (px >= x + 18.0f && px <= x + 18.0f + tBtnW) {
++#ifndef MH3_PC_TOUCH_UI
+                     bool cur = aurora::gfx::texture_replacement::is_enabled();
++#endif
++#ifndef MH3_PC_TOUCH_UI
+                     aurora::gfx::texture_replacement::set_enabled(!cur);
++#endif
+                     return;
+                 } else if (px >= x + 18.0f + tBtnW + 15.0f && px <= x + 18.0f + tBtnW * 2.0f + 15.0f) {
++#ifndef MH3_PC_TOUCH_UI
+                     aurora::gfx::texture_replacement::reload();
++#endif
+                     return;
+                 }
+             }
+         } else if (m_menuTab == 1) { // Sistema
++            const float speedY = contentY + 270.0f;
++            if (py >= speedY + 62.0f && py <= speedY + 102.0f) {
++                const float speedW = (contentW - 56.0f) / 3.0f;
++                const int speedValues[] = {100, 125, 150};
++                for (int i = 0; i < 3; ++i) {
++                    const float sx = x + 18.0f + i * (speedW + 10.0f);
++                    if (px >= sx && px <= sx + speedW) { MH3GameSpeed::Select(speedValues[i]); return; }
++                }
++            }
+             float chipY = contentY + 60.0f;
+             float chipW = (contentW - 36.0f - 20.0f) / 5.0f;
+             float chipH = 44.0f;
+@@ -1875,7 +2574,7 @@ private:
+             if (px >= rBtnX && px <= rBtnX + rBtnW && py >= rBtnY && py <= rBtnY + 44.0f) {
+                 SaveSettings();
+                 SaveLanguage();
+-                std::exit(0);
++                if(!RequestGameRestart())m_saveStatusMsg="Could not restart. Close and reopen the app.";
+                 return;
+             }
+         } else if (m_menuTab == 2) { // Guardados
+@@ -1889,17 +2588,22 @@ private:
+ 
+             if (py >= btnY && py <= btnY + btnH) {
+                 if (px >= b1X && px <= b1X + btnW) {
+-                    ExportSaveFiles();
++                    m_pendingSaveAction = SaveAction::Export;
+                     return;
+                 } else if (px >= b2X && px <= b2X + btnW) {
+-                    ImportSaveFiles();
++                    OpenSaveBrowser();
+                     return;
+                 } else if (px >= b3X && px <= b3X + btnW) {
+-                    CreateQuickBackup();
++                    m_pendingSaveAction = SaveAction::Backup;
+                     return;
+                 }
+             }
+         } else if (m_menuTab == 3) { // Controles
++#ifdef MH3_PC_TOUCH_UI
++            if(px>=x+contentW-228 && px<=x+contentW-18 && py>=contentY+12 && py<=contentY+44) {
++                m_keyboardEditorOpen=true;m_captureAction=-1;ResetInput();return;
++            }
++#endif
+             // Card 1: Touch Visibility & Opacity
+             float c1H = 176.0f;
+             float tvChipW = (contentW - 36.0f - 15.0f) / 2.0f;
+@@ -1915,7 +2619,7 @@ private:
+                     return;
+                 } else if (px >= tv2X && px <= tv2X + tvChipW) {
+                     m_touchVisible = false;
+-                    SaveLayoutConfig();
++                    ResetInput(); SaveLayoutConfig();
+                     return;
+                 }
+             }
+@@ -2002,8 +2706,9 @@ private:
+ 
+             if (py >= actBtnY && py <= actBtnY + actBtnH) {
+                 if (px >= editBtnX && px <= editBtnX + editBtnW) {
+-                    m_menuOpen = false;
++                    SetMenuOpen(false);
+                     m_editMode = true;
++                    ResetInput();
+                     m_selectedButtonIndex = -1;
+                     return;
+                 } else if (px >= rstBtnX && px <= rstBtnX + rstBtnW) {
+@@ -2015,7 +2720,8 @@ private:
+                     return;
+                 }
+             }
+-        } else if (m_menuTab == 4) { // Online / Multijugador
++        } else if (m_menuTab == 4) {
++#ifndef MH3_PC_TOUCH_UI // Online / Multijugador
+             HandleTabOnlineTouch(px, py, x, contentY, contentW);
+         }
+     }
+@@ -2030,15 +2736,16 @@ private:
+             if (px >= c0X && px <= c0X + mChipW) {
+                 m_onlineMode = 3;
+                 LocalOnlineServer::SetMode(LocalOnlineServer::Mode::Community, "mh3sp.com");
+-                m_onlineStatusMsg = "Servidor oficial de la comunidad mh3sp.com activado.";
++                m_onlineStatusMsg = "Community server mh3sp.com is selected.";
+                 return;
+             }
+             if (px >= c1X && px <= c1X + mChipW) {
+                 m_onlineMode = 0;
+                 LocalOnlineServer::SetMode(LocalOnlineServer::Mode::Offline);
+-                m_onlineStatusMsg = "Modo desconectado. Juega en la Aldea de Moga.";
++                m_onlineStatusMsg = "Offline mode. Play in Moga Village.";
+                 return;
+             }
++#endif
+         }
+     }
+ 
+@@ -2100,7 +2807,7 @@ private:
+         if (ldx * ldx + ldy * ldy <= (m_leftStickRadius * 1.3f) * (m_leftStickRadius * 1.3f)) {
+             m_selectedButtonIndex = -2;
+             m_editDragging = true;
+-            m_editFingerId = int(id);
++            m_editFingerId = id;
+             return;
+         }
+ 
+@@ -2113,7 +2820,7 @@ private:
+             if (dx * dx + dy * dy <= (btn.radius * 1.4f) * (btn.radius * 1.4f)) {
+                 m_selectedButtonIndex = int(i);
+                 m_editDragging = true;
+-                m_editFingerId = int(id);
++                m_editFingerId = id;
+                 return;
+             }
+         }
+@@ -2164,7 +2871,7 @@ private:
+ 
+     void LoadSettings() {
+         const char* user = std::getenv("MH3_USER_DIR");
+-        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3";
++        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
+         std::string gfxPath = dir + "/MH3UI.graphics";
+ 
+         std::ifstream in(gfxPath);
+@@ -2184,7 +2891,7 @@ private:
+         } else {
+             m_vsync = true;
+             m_resolutionIndex = 0; // 0: Original Wii by default!
+-            m_aspectIndex = 0;      // 0: 16:9 Panorámica by default!
++            m_aspectIndex = 0;      // 0: 16:9 Widescreen by default!
+             m_fpsLimit = 60;
+             m_showFpsHud = true;
+             m_fullscreen = false;
+@@ -2208,22 +2915,24 @@ private:
+             else if (code == "fr") m_langChoice = 2;
+             else if (code == "de") m_langChoice = 3;
+             else if (code == "it") m_langChoice = 4;
+-            else m_langChoice = 0;
++            else m_langChoice = 1;
+         } else {
+-            m_langChoice = 0; // Spanish default!
++            m_langChoice = 1; // English for new development installations.
+         }
+ 
++#ifndef MH3_PC_TOUCH_UI
+         m_onlineMode = static_cast<int>(LocalOnlineServer::GetMode());
++#endif
+         if (m_onlineMode != 0) m_onlineMode = 3;
+         m_onlineHostIp = "mh3sp.com";
+         m_onlineStatusMsg = (m_onlineMode == 0)
+-            ? "Modo desconectado. Juega en la Aldea de Moga."
+-            : "Servidor oficial de la comunidad mh3sp.com activado.";
++            ? "Offline mode. Play in Moga Village."
++            : "Community server mh3sp.com is selected.";
+     }
+ 
+     void SaveSettings() {
+         const char* user = std::getenv("MH3_USER_DIR");
+-        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3";
++        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
+         std::string gfxPath = dir + "/MH3UI.graphics";
+ 
+         std::ofstream out(gfxPath, std::ios::trunc);
+@@ -2236,7 +2945,7 @@ private:
+ 
+     void SaveLanguage() {
+         const char* user = std::getenv("MH3_USER_DIR");
+-        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3";
++        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
+         std::string langPath = dir + "/MH3UI.language";
+ 
+         const char* codes[] = { "es", "en", "fr", "de", "it" };
+@@ -2248,7 +2957,7 @@ private:
+ 
+     void SaveLayoutConfig() {
+         const char* user = std::getenv("MH3_USER_DIR");
+-        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3";
++        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
+         std::string cfgPath = dir + "/touch_layout.cfg";
+ 
+         std::ofstream out(cfgPath, std::ios::trunc);
+@@ -2261,6 +2970,8 @@ private:
+         out << "MACRO2 " << (m_macro2Enabled ? 1 : 0) << '\n';
+         out << "MACRO3 " << (m_macro3Enabled ? 1 : 0) << '\n';
+         out << "MACRO4 " << (m_macro4Enabled ? 1 : 0) << '\n';
++        out << "MACRO5 " << (m_macro5Enabled ? 1 : 0) << '\n';
++        for (int i=0;i<5;++i) out << "COMBO " << i << ' ' << m_comboMasks[i] << '\n';
+         out << "LEFT_STICK " << m_normLeftStickPos.x << ' ' << m_normLeftStickPos.y << ' ' << m_leftStickScale << '\n';
+ 
+         for (const auto& btn : m_buttons) {
+@@ -2270,7 +2981,7 @@ private:
+ 
+     void LoadLayoutConfig() {
+         const char* user = std::getenv("MH3_USER_DIR");
+-        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3";
++        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
+         std::string cfgPath = dir + "/touch_layout.cfg";
+ 
+         std::ifstream in(cfgPath);
+@@ -2293,6 +3004,8 @@ private:
+             else if (tag == "MACRO2") { int v; iss >> v; m_macro2Enabled = (v != 0); }
+             else if (tag == "MACRO3") { int v; iss >> v; m_macro3Enabled = (v != 0); }
+             else if (tag == "MACRO4") { int v; iss >> v; m_macro4Enabled = (v != 0); }
++            else if (tag == "MACRO5") { int v=1; if (iss>>v) m_macro5Enabled=(v!=0); }
++            else if (tag == "COMBO") { int i; unsigned mask; if (iss>>i>>mask && i>=0 && i<5 && mask<=65535) m_comboMasks[i]=uint16_t(mask); }
+             else if (tag == "LEFT_STICK") {
+                 iss >> m_normLeftStickPos.x >> m_normLeftStickPos.y >> m_leftStickScale;
+             } else if (tag == "BTN") {
+@@ -2301,95 +3014,90 @@ private:
+                 if (iss >> id >> nx >> ny >> sc) {
+                     for (auto& btn : m_buttons) {
+                         if (btn.id == id) {
+-                            btn.normPos = { nx, ny };
+-                            btn.scale = sc;
++                            if (std::isfinite(nx) && std::isfinite(ny) && std::isfinite(sc)) {
++                                btn.normPos = { std::clamp(nx,0.02f,0.98f), std::clamp(ny,0.02f,0.98f) };
++                                btn.scale = std::clamp(sc,0.4f,2.5f);
++                            }
+                             break;
+                         }
+                     }
+                 }
+             }
+         }
++        ApplyComboMasks();
+     }
+ 
+     void ExportSaveFiles() {
+         const char* user = std::getenv("MH3_USER_DIR");
+-        std::filesystem::path userDir = (user && *user) ? user : "/storage/emulated/0/MH3";
++        std::filesystem::path userDir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
+         std::filesystem::path saveData = userDir / "nand/title/00010000/524d4850/data";
+-        std::filesystem::path exportParent = "/storage/emulated/0/Download/MH3_Saves";
++        std::filesystem::path exportParent = userDir / "exports";
+ 
+         std::error_code ec;
+         std::filesystem::create_directories(exportParent, ec);
+ 
+         auto res = mh3_save_manager::ExportSave(saveData, exportParent);
+         if (res.success) {
+-            m_saveStatusMsg = "Exportado: " + res.output.filename().string() + " (en Download/MH3_Saves)";
++            m_saveStatusMsg = "Export created in MH3_Rowell_Dev/exports. Transfer the whole exported folder.";
+         } else {
+-            m_saveStatusMsg = "Error al exportar: " + res.detail;
++            m_saveStatusMsg = "Export failed: " + res.detail;
+         }
+     }
+ 
+-    void ImportSaveFiles() {
+-        const char* user = std::getenv("MH3_USER_DIR");
+-        std::filesystem::path userDir = (user && *user) ? user : "/storage/emulated/0/MH3";
+-        std::filesystem::path saveData = userDir / "nand/title/00010000/524d4850/data";
+-        std::filesystem::path backupsRoot = userDir / "saves";
+-
+-        std::filesystem::path searchRoots[] = {
+-            "/storage/emulated/0/Download/MH3_Saves",
+-            "/storage/emulated/0/Download",
+-            userDir / "saves"
+-        };
+-
+-        std::filesystem::path candidateFolder;
+-        for (const auto& root : searchRoots) {
+-            std::error_code ec;
+-            if (!std::filesystem::exists(root, ec)) continue;
+-            for (const auto& entry : std::filesystem::directory_iterator(root, ec)) {
+-                if (entry.is_directory()) {
+-                    if (std::filesystem::exists(entry.path() / "title/00010000/524d4850/data") ||
+-                        std::filesystem::exists(entry.path() / "nocopy/data00") ||
+-                        std::filesystem::exists(entry.path() / "data/nocopy/data00") ||
+-                        std::filesystem::exists(entry.path() / "data00")) {
+-                        candidateFolder = entry.path();
+-                        break;
+-                    }
+-                }
+-            }
+-            if (!candidateFolder.empty()) break;
+-        }
+-
++    void ImportSaveFiles(const std::filesystem::path& candidateFolder) {
+         if (candidateFolder.empty()) {
+-            m_saveStatusMsg = "No se halló partida Dolphin en Download/. Copia tu carpeta ahí.";
++            m_saveStatusMsg = "No import was confirmed. Your save was not changed.";
+             return;
+         }
+-
+-        mh3_save_manager::CreateBackup(saveData, backupsRoot);
+-
+-        std::filesystem::path pendingRoot = userDir / "PendingImport";
+-        auto stageRes = mh3_save_manager::StageImport(candidateFolder, pendingRoot);
++        const char* user = std::getenv("MH3_USER_DIR");
++        const std::filesystem::path userDir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
++        auto stageRes = mh3_save_manager::QueueRestore(candidateFolder,userDir);
+         if (!stageRes.success) {
+-            m_saveStatusMsg = "Error importando: " + stageRes.detail;
++            m_saveStatusMsg = "Import failed: " + stageRes.detail;
+             return;
+         }
+-        auto applyRes = mh3_save_manager::ApplyPendingImport(saveData, pendingRoot, backupsRoot);
+-        if (applyRes.success) {
+-            m_saveStatusMsg = "¡Partida Dolphin importada con éxito! (Backup de seguridad creado).";
+-        } else {
+-            m_saveStatusMsg = "Error al aplicar: " + applyRes.detail;
++        m_restoreRestarting=true;ResetInput();
++        m_saveStatusMsg="Restore prepared. Restarting the game...";
++        if(!RequestGameRestart()) {m_restoreRestarting=false;m_saveStatusMsg="Restore prepared. Close and reopen the app to finish.";}
++    }
++
++    static std::string BackupDisplayTime(const std::filesystem::path& folder) {
++        const auto value=mh3_save_manager::CopyCreatedTime(folder);
++        return value=="Creation time not recorded"?std::string():value;
++    }
++
++    void RefreshLastBackup() {
++        const char* user = std::getenv("MH3_USER_DIR");
++        const std::filesystem::path dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
++        std::error_code ec;
++        std::filesystem::path newest;
++        std::filesystem::directory_iterator it(dir / "saves", ec), end;
++        for (; !ec && it != end; it.increment(ec)) {
++            std::error_code entryError;
++            if (!BackupDisplayTime(it->path()).empty() &&
++                std::filesystem::is_directory(it->path() / "data", entryError) && !entryError &&
++                (newest.empty() || it->path().filename() > newest.filename())) newest = it->path();
++        }
++        m_lastBackupTime = newest.empty() ? "None yet" : BackupDisplayTime(newest);
++        if(!m_restoreStatusRead) {
++            std::ifstream status(dir/"restore-status.txt");std::string line;
++            if(std::getline(status,line) && !line.empty())m_saveStatusMsg=line;
++            m_restoreStatusRead=true;
+         }
+     }
+ 
+     void CreateQuickBackup() {
+         const char* user = std::getenv("MH3_USER_DIR");
+-        std::filesystem::path userDir = (user && *user) ? user : "/storage/emulated/0/MH3";
++        std::filesystem::path userDir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
+         std::filesystem::path saveData = userDir / "nand/title/00010000/524d4850/data";
+         std::filesystem::path backupsRoot = userDir / "saves";
+ 
+         auto res = mh3_save_manager::CreateBackup(saveData, backupsRoot);
+         if (res.success) {
+-            m_saveStatusMsg = "Copia guardada: " + res.output.filename().string();
++            m_saveStatusMsg = res.detail=="cleanup-incomplete"?"Backup verified, but older copies could not all be removed.":"Backup created. Keeping up to 3 recovery copies.";
++            m_lastBackupTime = BackupDisplayTime(res.output);
+         } else {
+-            m_saveStatusMsg = "Error creando copia: " + res.detail;
++            m_saveStatusMsg = "Backup failed: " + res.detail;
+         }
+     }
+ 
+@@ -2407,7 +3115,7 @@ private:
+     Vec2 m_leftStickPos{ 0, 0 };
+     float m_leftStickRadius = 0.0f;
+     float m_leftStickKnobRadius = 0.0f;
+-    int m_leftFingerId = -1;
++    std::optional<SDL_FingerID> m_leftFingerId;
+     int16_t m_leftX = 0;
+     int16_t m_leftY = 0;
+ 
+@@ -2418,7 +3126,7 @@ private:
+     Vec2 m_rightLastPos{ 0, 0 };
+     float m_rightStickRadius = 0.0f;
+     float m_rightStickKnobRadius = 0.0f;
+-    int m_rightFingerId = -1;
++    std::optional<SDL_FingerID> m_rightFingerId;
+     int16_t m_rightX = 0;
+     int16_t m_rightY = 0;
+     std::atomic<float> m_cameraDeltaX{ 0.0f };
+@@ -2432,31 +3140,47 @@ private:
+ 
+     // Settings Menu & Options State
+     bool m_menuOpen = false;
+-    int m_menuTab = 0;
++    int m_menuTab = 3;
+     int m_resolutionIndex = 0; // 0: Wii Original (1x)
+-    int m_aspectIndex = 1;     // 16:9 Panorámica
++    int m_aspectIndex = 1;     // 16:9 Widescreen
+     bool m_fullscreen = false;
+     bool m_vsync = true;
+     int m_fpsLimit = 60;
+     bool m_showFpsHud = true;
+     bool m_touchVisible = true;
+     float m_buttonOpacity = 1.0f;
+-    int m_langChoice = 0;      // 0: Español
++    int m_langChoice = 1;      // 1: English
+     double m_liveFps = 60.0;
+-    std::string m_saveStatusMsg = "Listo para exportar o importar partidas guardadas.";
++    std::string m_saveStatusMsg = "Only this development app saves are used.";
++    SaveAction m_pendingSaveAction = SaveAction::None;
++    std::filesystem::path m_pendingImportFolder;
++    std::string m_pendingImportLabel;
++    bool m_saveBrowserOpen=false,m_browseBackups=true,m_restoreRestarting=false,m_restoreStatusRead=false;
++    int m_savePage=0,m_selectedSave=-1;
++    std::vector<mh3_save_manager::SaveCopy> m_saveCopies;
++#ifdef MH3_PC_TOUCH_UI
++    bool m_keyboardEditorOpen=false;
++    int m_keyPage=0,m_captureAction=-1,m_captureSlot=0;
++    std::string m_keyStatus="F1/F2/F3 and Escape stay available for settings. Reset is always available with the mouse.";
++#endif
++    std::string m_lastBackupTime = "None yet";
+     int m_onlineMode = 3;
+     std::string m_onlineHostIp = "mh3sp.com";
+-    std::string m_onlineStatusMsg = "Servidor oficial de la comunidad mh3sp.com activado.";
++    std::string m_onlineStatusMsg = "Community server mh3sp.com is selected.";
+ 
+     // Macros & Edit Mode
+     bool m_macro1Enabled = true;
+     bool m_macro2Enabled = false;
+     bool m_macro3Enabled = false;
+     bool m_macro4Enabled = false;
++    bool m_macro5Enabled = true;
++    int m_comboEdit = 4;
++    std::array<uint16_t, 5> m_comboMasks{{MH3_CL_A|MH3_CL_X, MH3_CL_B|MH3_CL_Y,
++        MH3_CL_L|MH3_CL_R, MH3_CL_A|MH3_CL_B, MH3_CL_R|MH3_CL_X|MH3_CL_A}};
+     bool m_editMode = false;
+     int m_selectedButtonIndex = -1;
+     bool m_editDragging = false;
+-    int m_editFingerId = -1;
++    std::optional<SDL_FingerID> m_editFingerId;
+ 
+     // GL Resources
+     GLuint m_shaderProgram = 0;
+@@ -2466,22 +3190,34 @@ private:
+     GLuint m_vbo = 0;
+     GLuint m_fontTex = 0;
+ 
++    mh3_touch::Contacts m_buttonGestures;
++    mh3_touch::Contacts m_speedGestures;
+     std::vector<UIVertex> m_verts;
+ };
+ 
+ TouchSettingsEngine g_touchSettingsEngine;
++std::recursive_mutex g_touchMutex;
+ 
++#ifndef MH3_TOUCH_INPUT_TESTS
+ bool SDLCALL TouchSettingsEventWatcher(void* userdata, SDL_Event* event) {
+     (void)userdata;
+     TouchControls_HandleSdlEvent(event);
+     return true;
+ }
++#endif
+ 
+ } // namespace
+ 
+ extern "C" {
+ 
++#ifdef MH3_TOUCH_INPUT_TESTS
++bool TouchControls_RunInputChecks(void) {
++    std::lock_guard lock(g_touchMutex);
++    return g_touchSettingsEngine.RunInputChecks();
++}
++#else
+ void TouchControls_Init(void) {
++    std::lock_guard lock(g_touchMutex);
+     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
+     g_touchSettingsEngine.Init();
+@@ -2492,44 +3228,83 @@ void TouchControls_Init(void) {
+     }
+ }
+ 
++bool TouchControls_RunInputChecks(void) {
++    std::lock_guard lock(g_touchMutex);
++    return g_touchSettingsEngine.RunInputChecks();
++}
++
++bool TouchControls_WantsPointer(void) {
++    std::lock_guard lock(g_touchMutex);
++    return g_touchSettingsEngine.WantsPointer();
++}
++
+ void TouchControls_SetEnabled(bool enabled) {
++    std::lock_guard lock(g_touchMutex);
+     g_touchSettingsEngine.SetEnabled(enabled);
+ }
+ 
+ bool TouchControls_IsEnabled(void) {
++    std::lock_guard lock(g_touchMutex);
+     return g_touchSettingsEngine.IsEnabled();
+ }
+ 
+ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
++    std::lock_guard lock(g_touchMutex);
+     if (!sdlEvent) return;
+     const SDL_Event* event = reinterpret_cast<const SDL_Event*>(sdlEvent);
+ 
++    float pointerScaleX=1, pointerScaleY=1;
++    if (event->type==SDL_EVENT_MOUSE_BUTTON_DOWN || event->type==SDL_EVENT_MOUSE_BUTTON_UP || event->type==SDL_EVENT_MOUSE_MOTION) {
++        if(auto* window=aurora_get_window()) {
++            int ww=0,wh=0,pw=0,ph=0; SDL_GetWindowSize(window,&ww,&wh); SDL_GetWindowSizeInPixels(window,&pw,&ph);
++            if(ww>0 && wh>0) { pointerScaleX=720.0f/float(ph)*float(pw)/float(ww); pointerScaleY=720.0f/float(wh); }
++        }
++    }
+     switch (event->type) {
+     case SDL_EVENT_KEY_DOWN: {
+-        if (event->key.key == SDLK_F1) {
++#ifdef MH3_PC_TOUCH_UI
++        if(!event->key.repeat && g_touchSettingsEngine.HandleKeyboardEditorKey(event->key.scancode))break;
++#endif
++        if (g_touchSettingsEngine.IsModalOpen()) {
++            if (!event->key.repeat && (event->key.key == SDLK_ESCAPE || event->key.key == SDLK_AC_BACK))
++                g_touchSettingsEngine.CancelModal();
++            break;
++        }
++        if (!event->key.repeat && event->key.key ==
++#ifdef MH3_PC_TOUCH_UI
++            SDLK_F2
++#else
++            SDLK_F1
++#endif
++        ) {
+             g_touchSettingsEngine.ToggleMenu();
++        } else if (!event->key.repeat && event->key.key == SDLK_F3 && !g_touchSettingsEngine.IsMenuOpen()) {
++            MH3GameSpeed::Cycle();
+         } else if (event->key.key == SDLK_ESCAPE) {
+             if (g_touchSettingsEngine.IsMenuOpen()) {
+                 g_touchSettingsEngine.SetMenuOpen(false);
+             }
+-        } else if (event->key.key == SDLK_F11 ||
++        }
++#ifndef MH3_PC_TOUCH_UI
++        else if (event->key.key == SDLK_F11 ||
+                    ((event->key.mod & SDL_KMOD_ALT) && (event->key.key == SDLK_RETURN || event->key.key == SDLK_KP_ENTER))) {
+             g_touchSettingsEngine.ToggleFullscreen();
+         }
++#endif
+         break;
+     }
+     case SDL_EVENT_MOUSE_BUTTON_DOWN:
+         if (event->button.button == SDL_BUTTON_LEFT) {
+-            g_touchSettingsEngine.HandleMouseDown(event->button.x, event->button.y);
++            g_touchSettingsEngine.HandleMouseDown(event->button.x*pointerScaleX, event->button.y*pointerScaleY);
+         }
+         break;
+     case SDL_EVENT_MOUSE_BUTTON_UP:
+         if (event->button.button == SDL_BUTTON_LEFT) {
+-            g_touchSettingsEngine.HandleMouseUp(event->button.x, event->button.y);
++            g_touchSettingsEngine.HandleMouseUp(event->button.x*pointerScaleX, event->button.y*pointerScaleY);
+         }
+         break;
+     case SDL_EVENT_MOUSE_MOTION:
+-        g_touchSettingsEngine.HandleMouseMove(event->motion.x, event->motion.y);
++        g_touchSettingsEngine.HandleMouseMove(event->motion.x*pointerScaleX, event->motion.y*pointerScaleY);
+         break;
+     case SDL_EVENT_FINGER_DOWN:
+         g_touchSettingsEngine.HandleTouchDown(event->tfinger.fingerID, event->tfinger.x, event->tfinger.y);
+@@ -2538,13 +3313,21 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
+         g_touchSettingsEngine.HandleTouchMove(event->tfinger.fingerID, event->tfinger.x, event->tfinger.y);
+         break;
+     case SDL_EVENT_FINGER_UP:
+-    case SDL_EVENT_FINGER_CANCELED:
+         g_touchSettingsEngine.HandleTouchUp(event->tfinger.fingerID);
+         break;
++    case SDL_EVENT_FINGER_CANCELED:
++        g_touchSettingsEngine.CancelTouch(event->tfinger.fingerID);
++        break;
+     case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+     case SDL_EVENT_WINDOW_RESIZED:
+         g_touchSettingsEngine.UpdateLayout(event->window.data1, event->window.data2);
+         break;
++    case SDL_EVENT_WINDOW_FOCUS_LOST:
++    case SDL_EVENT_WINDOW_HIDDEN:
++    case SDL_EVENT_DID_ENTER_BACKGROUND:
++        g_touchSettingsEngine.ResetInput();
++        MH3GameSpeed::Reset();
++        break;
+     default:
+         break;
+     }
+@@ -2553,23 +3336,35 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
+ void TouchControls_UpdateSample(uint16_t* buttons, int16_t* leftX, int16_t* leftY,
+                                 int16_t* rightX, int16_t* rightY,
+                                 uint8_t* triggerL, uint8_t* triggerR) {
++    std::lock_guard lock(g_touchMutex);
+     g_touchSettingsEngine.UpdateSample(buttons, leftX, leftY, rightX, rightY, triggerL, triggerR);
+ }
+ 
+ void TouchControls_RenderGL(int windowWidth, int windowHeight) {
++    std::lock_guard lock(g_touchMutex);
+     g_touchSettingsEngine.RenderGL(windowWidth, windowHeight);
+ }
+ 
+ bool TouchControls_IsMenuOpen(void) {
++    std::lock_guard lock(g_touchMutex);
+     return g_touchSettingsEngine.IsMenuOpen();
+ }
++bool TouchControls_IsModalOpen(void) {
++    std::lock_guard lock(g_touchMutex);return g_touchSettingsEngine.IsModalOpen();
++}
++uint16_t TouchControls_GetComboMask(unsigned slot) {
++    std::lock_guard lock(g_touchMutex);return g_touchSettingsEngine.GetComboMask(slot);
++}
+ 
+ void TouchControls_ToggleMenu(void) {
++    std::lock_guard lock(g_touchMutex);
+     g_touchSettingsEngine.ToggleMenu();
+ }
+ 
+ void TouchControls_SetMenuOpen(bool open) {
++    std::lock_guard lock(g_touchMutex);
+     g_touchSettingsEngine.SetMenuOpen(open);
+ }
++#endif
+ 
+ } // extern "C"
+diff --git a/scripts/prepare_native_dispatch.py b/scripts/prepare_native_dispatch.py
+index a1d4b3b3a0dcd024a9b030774bd70870f919be3b..13e82c65ff3d1fa2ddd015308f02521545a8ae75 100644
+--- a/scripts/prepare_native_dispatch.py
++++ b/scripts/prepare_native_dispatch.py
+@@ -10,6 +10,7 @@ detect edited/missing generated artifacts.
+ """
+ from pathlib import Path
+ import argparse
++from concurrent.futures import ThreadPoolExecutor
+ import fcntl
+ import hashlib
+ import json
+@@ -105,7 +106,13 @@ def input_digests(args):
+         bundle = args.retro_cpp_dir.parent / 'translated_sources.bin'
+         if bundle.is_file():
+             paths.append(bundle)
+-    return {str(p.resolve()): digest(p) for p in sorted(set(paths))}
++    # Keep every SHA256 check, while overlapping independent bind-mount reads.
++    # These paths are manifest keys, not traversal-security decisions.
++    def hash_input(path):
++        return os.path.abspath(path), digest(path)
++    jobs = max(1, min(16, int(os.environ.get('MH3_HASH_JOBS', '8'))))
++    with ThreadPoolExecutor(max_workers=jobs) as pool:
++        return dict(pool.map(hash_input, sorted(set(paths))))
+ 
+ 
+ def prepare(args):

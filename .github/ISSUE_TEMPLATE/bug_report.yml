@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a problem with MH Tri - Rowell.
+title: "[Bug] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: "1.4-rowell.7 / Windows build date"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and operating system
+      placeholder: "POCO F5, Android version / Windows version and GPU"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: What happened and how to reproduce it
+      description: Include the quest/scene, weapon/control type and buttons used.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Graphics settings and comparison
+      description: Include resolution, FPS limit, test duration and the same scene in the original app when relevant.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log excerpt or screenshot
+      description: Keep personal data out of excerpts. Do not attach game images, private signing keys or personal save files.

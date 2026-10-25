@@ -1,0 +1,15 @@
+# These files have content digests in android/source.json. Keep their exact
+# bytes on Windows and Linux rather than converting their line endings.
+* text=auto eol=lf
+*.cmd text eol=crlf
+/android/** -text
+
+/.github/** text eol=lf
+/README.md text eol=lf
+/CREDITS.md text eol=lf
+/docs/ANDROID_INSTALL.md text eol=lf
+/docs/CONTROLS.md text eol=lf
+/docs/BUILDING.md text eol=lf
+/docs/CHANGES.md text eol=lf
+/LICENSES/** text eol=lf
+/docs/images/*.png binary
