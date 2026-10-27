@@ -1,4 +1,5 @@
 #include "controller_host.h"
+#include "gamepad_bindings.h"
 #include "touch_controls.h"
 #include "pc_keybindings.h"
 extern "C" int Gamepad_GetLayout();
@@ -233,6 +234,12 @@ ClassicControllerSample ReadLiveController() {
     if (!SDL_WasInit(SDL_INIT_GAMEPAD) && !SDL_InitSubSystem(SDL_INIT_GAMEPAD))
         MH3_THROW(std::runtime_error(std::string("SDL controller initialization: ") + SDL_GetError()));
 
+    if (TouchControls_WantsPointer()) {
+        if (auto* window = SDL_GetKeyboardFocus()) {
+            if (SDL_GetWindowRelativeMouseMode(window)) SDL_SetWindowRelativeMouseMode(window, false);
+            if (!SDL_CursorVisible()) SDL_ShowCursor();
+        }
+    }
     if (TouchControls_IsMenuOpen()) return sample;
     SDL_Window* focusedWindow = SDL_GetKeyboardFocus();
     const bool touchPointer = TouchControls_WantsPointer();
@@ -300,22 +307,6 @@ ClassicControllerSample ReadLiveController() {
     }
 
     if (touchPointer) { mouseDeltaX=mouseDeltaY=0; mouseButtons=0; }
-    static SDL_Gamepad* pad = nullptr;
-
-    if (pad && !SDL_GamepadConnected(pad)) {
-        SDL_CloseGamepad(pad);
-        pad = nullptr;
-    }
-
-    if (!pad) {
-        int count = 0;
-        auto* ids = SDL_GetGamepads(&count);
-
-        if (ids && count)
-            pad = SDL_OpenGamepad(ids[0]);
-
-        SDL_free(ids);
-    }
 // MH3_MOUSE_LOOK_TUNE: sensibilidad configurable desde Opciones > Controles.
     static double mh3MouseLookRemainderX = 0.0;
     static double mh3MouseLookRemainderY = 0.0;
@@ -337,48 +328,17 @@ const double mh3MouseLookSensitivity = mh3_mouse_look_sensitivity::GetSensitivit
         mh3MouseLookRemainderY = 0.0;
     }
 
-    if (pad) {
-        // Face buttons by position (east = A, south = B, north = X, west =
-        // Y). Upper bumpers are Classic L/R; lower analog triggers become ZL/ZR.
-        static const struct {
-            SDL_GamepadButton source;
-            uint16_t button;
-        } bindings[] = {
-            {SDL_GAMEPAD_BUTTON_EAST, MH3_CL_A},           {SDL_GAMEPAD_BUTTON_SOUTH, MH3_CL_B},          {SDL_GAMEPAD_BUTTON_NORTH, MH3_CL_X},
-            {SDL_GAMEPAD_BUTTON_WEST, MH3_CL_Y},           {SDL_GAMEPAD_BUTTON_DPAD_UP, MH3_CL_UP},       {SDL_GAMEPAD_BUTTON_DPAD_DOWN, MH3_CL_DOWN},
-            {SDL_GAMEPAD_BUTTON_DPAD_LEFT, MH3_CL_LEFT},   {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, MH3_CL_RIGHT}, {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, MH3_CL_L},
-            {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, MH3_CL_R}, {SDL_GAMEPAD_BUTTON_START, MH3_CL_PLUS},      {SDL_GAMEPAD_BUTTON_BACK, MH3_CL_MINUS},
-            {SDL_GAMEPAD_BUTTON_GUIDE, MH3_CL_HOME},
-        };
-
-        const bool xbox=Gamepad_GetLayout()==1;
-        const bool swap=Gamepad_GetSwapTriggers();
-        for (const auto& binding : bindings) {
-            uint16_t button=binding.button;
-            if(xbox) { if(button==MH3_CL_A) button=MH3_CL_B; else if(button==MH3_CL_B) button=MH3_CL_A;
-                       else if(button==MH3_CL_X) button=MH3_CL_Y; else if(button==MH3_CL_Y) button=MH3_CL_X; }
-            if(swap) { if(button==MH3_CL_L) button=MH3_CL_ZL; else if(button==MH3_CL_R) button=MH3_CL_ZR; }
-            if(SDL_GetGamepadButton(pad,binding.source)) sample.buttons|=button;
-        }
-        const auto axis = [&](SDL_GamepadAxis source) {
-            return std::clamp(SDL_GetGamepadAxis(pad, source) / 32767.0f, -1.0f, 1.0f);
-        };
-
-        // SDL's y axes point down; the Classic report's point up.
+    const auto physical = RowellPad::ReadForGame();
+    if (physical.connected) {
+        const auto mapped = RowellPad::Current().Read(physical.held, Gamepad_GetLayout(), Gamepad_GetSwapTriggers());
+        sample.buttons |= mapped.buttons;
+        for (unsigned i = 0; i < 5; ++i)
+            if (mapped.combos & (1u << i)) sample.buttons |= TouchControls_GetComboMask(i);
+        // Keep the existing analog stick curve and touch/keyboard precedence.
         if (!sample.leftX && !sample.leftY)
-            mh3_classic_stick(axis(SDL_GAMEPAD_AXIS_LEFTX), -axis(SDL_GAMEPAD_AXIS_LEFTY), &mh3_gamepad_stick_curve, &sample.leftX, &sample.leftY);
-
+            mh3_classic_stick(physical.sticks[0], -physical.sticks[1], &mh3_gamepad_stick_curve, &sample.leftX, &sample.leftY);
         if (!sample.rightX && !sample.rightY)
-            mh3_classic_stick(axis(SDL_GAMEPAD_AXIS_RIGHTX), -axis(SDL_GAMEPAD_AXIS_RIGHTY), &mh3_gamepad_stick_curve, &sample.rightX, &sample.rightY);
-
-        const uint8_t lowerLeftTrigger = uint8_t(std::lround(std::max(0.0f, axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER)) * 255));
-        const uint8_t lowerRightTrigger = uint8_t(std::lround(std::max(0.0f, axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)) * 255));
-
-        // Upper shoulders are Classic L/R; lower analog triggers become ZL/ZR.
-        if (lowerLeftTrigger > 127)
-            sample.buttons |= Gamepad_GetSwapTriggers() ? MH3_CL_L : MH3_CL_ZL;
-        if (lowerRightTrigger > 127)
-            sample.buttons |= Gamepad_GetSwapTriggers() ? MH3_CL_R : MH3_CL_ZR;
+            mh3_classic_stick(physical.sticks[2], -physical.sticks[3], &mh3_gamepad_stick_curve, &sample.rightX, &sample.rightY);
     }
 
     TouchControls_UpdateSample(&sample.buttons,&sample.leftX,&sample.leftY,

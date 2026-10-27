@@ -7,22 +7,26 @@ general-purpose Wii emulator. Supply your own European/PAL **RMHP08** game image
 
 ## Downloads
 
-**MH Tri - Rowell - Android 1.4-rowell.8 pre-release**
+**MH Tri - Rowell · 1.4-rowell.9 pre-release**
 
 | Platform | Version | Download |
 | --- | --- | --- |
-| Android phone | 1.4-rowell.8 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.8/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.8/MH3-Rowell-Dev-Android.zip) |
-| Windows PC | 1.4-rowell.7 | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.7/MH3-Rowell-Windows-x64.zip)** |
+| Android phone | 1.4-rowell.9 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.9/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.9/MH3-Rowell-Dev-Android.zip) |
+| Windows PC | 1.4-rowell.9 | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.9/MH3-Rowell-Windows-x64.zip)** |
 
-Android 1.4-rowell.8 includes the Moga Woods/solo-quest speed fix tested on a POCO F5.
+Version 1.4-rowell.9 adds controller remapping, a movable touch editor and thin-outline controls.
+Windows build and local checks passed; Android/DS4 gameplay testing is pending.
+It retains the offline-quest speed fix from 1.4-rowell.8.
 
-**Android:** tap the APK to install it. If you download the ZIP, extract it first.
+**Updating Android:** save inside Tri, then install the APK over your existing Rowell app.
+**Keep the app installed and keep its MH3_Rowell_Dev folder** to retain progress and game data.
+If you download the ZIP, extract it first.
 
 **Windows:** extract the whole ZIP, then run **START_ROWELL.cmd**.
 
 [Android installation](docs/ANDROID_INSTALL.md) ·
 [Windows installation](docs/WINDOWS_INSTALL.md) ·
-[Android release, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.8)
+[Android release, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.9)
 
 Supply your own PAL game image. GitHub's **Code > Download ZIP** downloads source
 code; use the links above to install the app.
@@ -32,6 +36,9 @@ code; use the links above to install the app.
 - English app settings and customizable touch controls.
 - Independent multi-touch and five combo buttons, including **R + X + A**.
 - Original Wii **+ / -** labels, adjustable layout, size and opacity.
+- Thin-outline touch buttons, fitted combo labels and a simple joystick.
+- A movable, collapsible editor with - / + sizing, Add combo, Undo and Save & play.
+- Physical controller remapping on Android and PC; touch and keyboard bindings stay separate.
 - Three retained save backups, readable timestamps and a selectable restore list.
 - Yes/No save-tool prompts; a confirmed restore backs up progress and restarts.
 - Experimental **1x / 1.25x / 1.5x** speed in solo play; City/online stays at 1x.

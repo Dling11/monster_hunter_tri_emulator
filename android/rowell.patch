@@ -29,7 +29,7 @@ index 1f2a88895e0793de983b1309a20e8a290aa4e783..faa306799ec1ad46b34e42b74e9fcbf1
    std::error_code ec;
  
 diff --git a/packaging/android/AndroidManifest.xml b/packaging/android/AndroidManifest.xml
-index 940453d42908a79e9e348b531648235292a11442..e1444431bc6ccb1956adf2e0dcb7b549679797bd 100644
+index 940453d42908a79e9e348b531648235292a11442..0b64b8e57e1820f1784663b41918a46461afba78 100644
 --- a/packaging/android/AndroidManifest.xml
 +++ b/packaging/android/AndroidManifest.xml
 @@ -1,8 +1,8 @@
@@ -39,8 +39,8 @@ index 940453d42908a79e9e348b531648235292a11442..e1444431bc6ccb1956adf2e0dcb7b549
 -    android:versionCode="4"
 -    android:versionName="1.4">
 +    package="com.rowell.mh3dev"
-+    android:versionCode="10008"
-+    android:versionName="1.4-rowell.8">
++    android:versionCode="10009"
++    android:versionName="1.4-rowell.9">
  
      <uses-sdk
          android:minSdkVersion="29"
@@ -289,7 +289,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
          searchDirs.add(new File("/sdcard/Wii"));
          searchDirs.add(new File("/sdcard"));
 diff --git a/runtime/CMakeLists.txt b/runtime/CMakeLists.txt
-index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..bc4f4827de5f875024dc2f7e4e2e1f2aab53b762 100644
+index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..fbdd247170d0796c1c729d7407c43f99643afd93 100644
 --- a/runtime/CMakeLists.txt
 +++ b/runtime/CMakeLists.txt
 @@ -208,6 +208,14 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
@@ -316,6 +316,15 @@ index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..bc4f4827de5f875024dc2f7e4e2e1f2a
  string(JSON native_dispatch_bundle_type ERROR_VARIABLE native_dispatch_bundle_error TYPE "${native_dispatch_metadata}" sourceBundlePath)
  
  if(NOT native_dispatch_bundle_error AND native_dispatch_bundle_type STREQUAL "STRING")
+@@ -285,7 +293,7 @@ else()
+ endif()
+ target_sources(MH3 PRIVATE
+   src/main.cpp src/memory.cpp ${MH3_GUEST_MEMORY_SOURCE} src/os_boot.cpp src/os_sleep.cpp src/os_alarm.cpp src/os_devices.cpp src/abi_bridge.cpp
+-  src/ppc_helpers.cpp src/fpu_helpers.cpp src/executable_guard.cpp src/rso_services.cpp src/wpad_services.cpp src/controller_host.cpp native/mh3_classic_map.c src/controller_tests.cpp src/village_boot.cpp src/audio_interface.cpp
++  src/ppc_helpers.cpp src/fpu_helpers.cpp src/executable_guard.cpp src/rso_services.cpp src/wpad_services.cpp src/controller_host.cpp src/gamepad_bindings.cpp native/mh3_classic_map.c src/controller_tests.cpp src/village_boot.cpp src/audio_interface.cpp
+   src/audio_tests.cpp src/audio_dma.cpp
+   src/audio/native_audio_api.cpp src/audio/native_audio_frame.cpp src/audio/native_audio_mixer.cpp src/audio/native_audio_tests.cpp src/audio/sdk_mix.cpp src/audio/sdk_synseq.cpp src/audio/sound_engine.cpp src/audio/sound_stream.cpp
+   src/device_tests.cpp src/efb_host.cpp src/ios.cpp src/usb_hid_services.cpp src/disc_image.cpp src/video_interface.cpp src/gx_registers.cpp src/gx_stream.cpp src/gx_services.cpp src/vi_services.cpp src/glare_filter.cpp src/frame_pacer.cpp src/fps_timers.cpp src/game_frame.cpp src/frame_draw.cpp src/hud_draw.cpp src/mhchar_motion.cpp src/game_step.cpp src/effect_step.cpp src/guest_worker.cpp src/guest_threads.cpp src/net/online_patches.cpp src/net/online_close.cpp src/net/net_ctrl.cpp src/net/ios_net.cpp ${MH3_NET_HOST_SOURCE} src/effect_calc.cpp src/effect_objects.cpp src/effect_draw_order.cpp src/particle_manager_calc.cpp src/map_sound.cpp src/player_timers.cpp src/port_check.cpp src/pulse.cpp src/rumble_timers.cpp src/pad_input.cpp src/camera_input.cpp src/field_camera.cpp src/player_aim.cpp src/step_counter.cpp src/swing_effect.cpp src/stamina.cpp src/player_turn.cpp src/field_jump.cpp src/quest_placement.cpp src/monster_heaps.cpp src/save_data.cpp src/game_tasks.cpp src/field_frame.cpp src/draw_buckets.cpp src/player_health.cpp src/cheats.cpp src/cheat_data.cpp src/cheat_items.cpp src/cheat_monsters.cpp src/cheat_quest.cpp src/cheat_hunter.cpp src/cheat_movement.cpp src/tick_sites.cpp src/camera_script.cpp src/movie_draw.cpp src/reset_fade.cpp src/loading_screen.cpp src/load_progress.cpp src/quest_clock.cpp src/ambient_hover.cpp src/fish_effects.cpp src/group_shuttle.cpp src/hit_timers.cpp src/enemy_glide.cpp src/creature_fade.cpp src/ambient_flutter.cpp src/yure_chain.cpp src/audio_reverb.cpp src/anm_chr_keys.cpp src/anm_chr_blend.cpp src/anm_obj_chr_res.cpp src/effect_texture.cpp src/effect_billboard.cpp src/effect_particle.cpp src/msl_math.cpp src/texture_scroll.cpp src/ceadeus_intro.cpp src/demo_pose.cpp src/event_demo.cpp src/alatreon_actions.cpp src/screen_fade.cpp src/enemy_timers.cpp src/shell_motion.cpp src/enemy_turn.cpp src/npc_turn.cpp src/field_actor.cpp src/object_ages.cpp src/village_player_actions.cpp src/field_player_actions.cpp src/g3d_res.cpp src/g3d_calc_world.cpp src/scene_world.cpp src/mtx.cpp src/ef_anim_curve.cpp src/nw4r_accessors.cpp src/g3d_anm_result.cpp src/nw4r_math.cpp src/scn_mdl_tasks.cpp src/gather_spots.cpp src/mhchar_move.cpp src/field_lists.cpp src/res_anm_keys.cpp src/drawshape.cpp src/particle_mtx.cpp src/particle_initialize.cpp src/hunter_parts.cpp src/player_skill.cpp src/sound_shells.cpp src/enemy_hit_shapes.cpp src/enemy_conditions.cpp src/small_monsters.cpp src/ef_mtx_scale.cpp src/ef_resource.cpp src/msl_string.cpp src/debug_font.cpp src/prim_buffers.cpp src/monster_intros.cpp src/monster_roars.cpp src/monster_attacks.cpp src/monster_control.cpp src/enemy_actions.cpp src/monster_waits.cpp src/g3d_destroy.cpp
 @@ -348,10 +356,9 @@ target_include_directories(MH3 PRIVATE include ..)
  if(ANDROID)
    set_target_properties(MH3 PROPERTIES OUTPUT_NAME "main")
@@ -395,17 +404,18 @@ index 05a42e587a8b389f5776cd6566c91b2902614eae..65d928c37dc24503dd360dfa2f45d23e
  #else
  inline std::filesystem::path mh3_self_exe() { return std::filesystem::read_symlink("/proc/self/exe"); }
 diff --git a/runtime/src/controller_host.cpp b/runtime/src/controller_host.cpp
-index 376bc7a1b84f836484c5e3c9d3d9249eb2211709..c2190b028396abb7517265a274b47dbac4f9d222 100644
+index 376bc7a1b84f836484c5e3c9d3d9249eb2211709..9cb728ceb9fc06abae3f73ece4d8bc7de9ae4119 100644
 --- a/runtime/src/controller_host.cpp
 +++ b/runtime/src/controller_host.cpp
-@@ -1,5 +1,5 @@
+@@ -1,5 +1,6 @@
  #include "controller_host.h"
 -#include "touch_controls.h"
++#include "gamepad_bindings.h"
 +#include "touch_controls.h"
  #include "mh3_mouse_look_sensitivity.h"
  #include "fatal.h"
  #include "dev_options.h"
-@@ -51,7 +51,7 @@ void Gamepad_LoadConfig() {
+@@ -51,7 +52,7 @@ void Gamepad_LoadConfig() {
      g_gamepadConfigLoaded = true;
  
      const char* user = std::getenv("MH3_USER_DIR");
@@ -414,7 +424,7 @@ index 376bc7a1b84f836484c5e3c9d3d9249eb2211709..c2190b028396abb7517265a274b47dba
      std::string path = dir + "/gamepad.cfg";
      std::ifstream in(path);
      if (in) {
-@@ -65,7 +65,7 @@ void Gamepad_LoadConfig() {
+@@ -65,7 +66,7 @@ void Gamepad_LoadConfig() {
  
  void Gamepad_SaveConfig() {
      const char* user = std::getenv("MH3_USER_DIR");
@@ -423,7 +433,7 @@ index 376bc7a1b84f836484c5e3c9d3d9249eb2211709..c2190b028396abb7517265a274b47dba
      std::string path = dir + "/gamepad.cfg";
      std::ofstream out(path, std::ios::trunc);
      if (out) {
-@@ -291,6 +291,7 @@ ClassicControllerSample ReadLiveController() {
+@@ -291,6 +292,7 @@ ClassicControllerSample ReadLiveController() {
      if (!SDL_WasInit(SDL_INIT_GAMEPAD) && !SDL_InitSubSystem(SDL_INIT_GAMEPAD))
          MH3_THROW(std::runtime_error(std::string("SDL controller initialization: ") + SDL_GetError()));
  
@@ -431,6 +441,102 @@ index 376bc7a1b84f836484c5e3c9d3d9249eb2211709..c2190b028396abb7517265a274b47dba
      SDL_Window* focusedWindow = SDL_GetKeyboardFocus();
      float mouseDeltaX = 0.0f, mouseDeltaY = 0.0f;
      SDL_MouseButtonFlags mouseButtons = 0;
+@@ -379,22 +381,6 @@ ClassicControllerSample ReadLiveController() {
+         // The mouse controls yaw/pitch through relative deltas, not a held virtual stick.
+     }
+ 
+-    static SDL_Gamepad* pad = nullptr;
+-
+-    if (pad && !SDL_GamepadConnected(pad)) {
+-        SDL_CloseGamepad(pad);
+-        pad = nullptr;
+-    }
+-
+-    if (!pad) {
+-        int count = 0;
+-        auto* ids = SDL_GetGamepads(&count);
+-
+-        if (ids && count)
+-            pad = SDL_OpenGamepad(ids[0]);
+-
+-        SDL_free(ids);
+-    }
+ // MH3_MOUSE_LOOK_TUNE: sensibilidad configurable desde Opciones > Controles.
+     static double mh3MouseLookRemainderX = 0.0;
+     static double mh3MouseLookRemainderY = 0.0;
+@@ -416,63 +402,17 @@ const double mh3MouseLookSensitivity = mh3_mouse_look_sensitivity::GetSensitivit
+         mh3MouseLookRemainderY = 0.0;
+     }
+ 
+-    if (pad) {
+-        Gamepad_LoadConfig();
+-        const int layout = Gamepad_GetLayout();
+-        const bool swapTriggers = Gamepad_GetSwapTriggers();
+-
+-        const uint16_t btnA = MH3_CL_A;
+-        const uint16_t btnB = MH3_CL_B;
+-        const uint16_t btnX = MH3_CL_X;
+-        const uint16_t btnY = MH3_CL_Y;
+-        const uint16_t btnL = swapTriggers ? MH3_CL_ZL : MH3_CL_L;
+-        const uint16_t btnR = swapTriggers ? MH3_CL_ZR : MH3_CL_R;
+-        const uint16_t triggerZL = swapTriggers ? MH3_CL_L : MH3_CL_ZL;
+-        const uint16_t triggerZR = swapTriggers ? MH3_CL_R : MH3_CL_ZR;
+-
+-        if (layout == 1) { // Estilo Xbox / Genérico
+-            if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_SOUTH)) sample.buttons |= btnA;
+-            if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_EAST))  sample.buttons |= btnB;
+-            if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_WEST))  sample.buttons |= btnX;
+-            if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_NORTH)) sample.buttons |= btnY;
+-        } else { // Estilo Nintendo (Original Classic Controller)
+-            if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_EAST))  sample.buttons |= btnA;
+-            if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_SOUTH)) sample.buttons |= btnB;
+-            if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_NORTH)) sample.buttons |= btnX;
+-            if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_WEST))  sample.buttons |= btnY;
+-        }
+-
+-        if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_UP))    sample.buttons |= MH3_CL_UP;
+-        if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_DOWN))  sample.buttons |= MH3_CL_DOWN;
+-        if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_LEFT))  sample.buttons |= MH3_CL_LEFT;
+-        if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT)) sample.buttons |= MH3_CL_RIGHT;
+-
+-        if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER))  sample.buttons |= btnL;
+-        if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER)) sample.buttons |= btnR;
+-
+-        if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_START)) sample.buttons |= MH3_CL_PLUS;
+-        if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_BACK))  sample.buttons |= MH3_CL_MINUS;
+-        if (SDL_GetGamepadButton(pad, SDL_GAMEPAD_BUTTON_GUIDE)) sample.buttons |= MH3_CL_PLUS; // Guide acts as Pause/Menu
+-
+-        const auto axis = [&](SDL_GamepadAxis source) {
+-            return std::clamp(SDL_GetGamepadAxis(pad, source) / 32767.0f, -1.0f, 1.0f);
+-        };
+-
+-        // SDL's y axes point down; the Classic report's point up.
++    const auto physical = RowellPad::ReadForGame();
++    if (physical.connected) {
++        const auto mapped = RowellPad::Current().Read(physical.held, Gamepad_GetLayout(), Gamepad_GetSwapTriggers());
++        sample.buttons |= mapped.buttons;
++        for (unsigned i = 0; i < 5; ++i)
++            if (mapped.combos & (1u << i)) sample.buttons |= TouchControls_GetComboMask(i);
++        // Keep the existing analog stick curve and touch/keyboard precedence.
+         if (!sample.leftX && !sample.leftY)
+-            mh3_classic_stick(axis(SDL_GAMEPAD_AXIS_LEFTX), -axis(SDL_GAMEPAD_AXIS_LEFTY), &mh3_gamepad_stick_curve, &sample.leftX, &sample.leftY);
+-
++            mh3_classic_stick(physical.sticks[0], -physical.sticks[1], &mh3_gamepad_stick_curve, &sample.leftX, &sample.leftY);
+         if (!sample.rightX && !sample.rightY)
+-            mh3_classic_stick(axis(SDL_GAMEPAD_AXIS_RIGHTX), -axis(SDL_GAMEPAD_AXIS_RIGHTY), &mh3_gamepad_stick_curve, &sample.rightX, &sample.rightY);
+-
+-        const uint8_t lowerLeftTrigger = uint8_t(std::lround(std::max(0.0f, axis(SDL_GAMEPAD_AXIS_LEFT_TRIGGER)) * 255));
+-        const uint8_t lowerRightTrigger = uint8_t(std::lround(std::max(0.0f, axis(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER)) * 255));
+-
+-        // Upper shoulders are Classic L/R; lower analog triggers become ZL/ZR.
+-        if (lowerLeftTrigger > 127)
+-            sample.buttons |= triggerZL;
+-        if (lowerRightTrigger > 127)
+-            sample.buttons |= triggerZR;
++            mh3_classic_stick(physical.sticks[2], -physical.sticks[3], &mh3_gamepad_stick_curve, &sample.rightX, &sample.rightY);
+     }
+ 
+     // Digital L/R inputs (keyboard, mouse or shoulder) report a full press.
 diff --git a/runtime/src/frame_pacer.cpp b/runtime/src/frame_pacer.cpp
 index 58240187f8d48f5ed0508173d6b3b660a3ad7d18..032edbb9b554a6e48a5e2367d051b2d706ab0abd 100644
 --- a/runtime/src/frame_pacer.cpp
@@ -877,13 +983,14 @@ index f121310357040dfaa513f4882949ffb4af3eae35..6864abc60e0d13c5c9236db9254c4f3a
 +}
 +}
 diff --git a/runtime/src/touch_controls.cpp b/runtime/src/touch_controls.cpp
-index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d51cf4fd2 100644
+index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b7894c7791ab 100644
 --- a/runtime/src/touch_controls.cpp
 +++ b/runtime/src/touch_controls.cpp
-@@ -1,12 +1,24 @@
+@@ -1,12 +1,25 @@
  #include "touch_controls.h"
 +#include "touch_contacts.h"
 +#include "game_speed.h"
++#include "gamepad_bindings.h"
 +#include <optional>
 +#include <array>
 +#include <mutex>
@@ -905,7 +1012,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
  #include <SDL3/SDL.h>
  #include <GLES3/gl3.h>
-@@ -18,6 +30,8 @@
+@@ -18,6 +31,8 @@
  #include <sstream>
  #include <filesystem>
  #include <chrono>
@@ -914,7 +1021,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  #include <atomic>
  #include <cstdio>
  #include <cstring>
-@@ -25,6 +39,7 @@
+@@ -25,6 +40,7 @@
  
  #if defined(__ANDROID__)
  #include <android/log.h>
@@ -922,7 +1029,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  #define LOG_TAG "MH3_TOUCH"
  #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
  #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-@@ -49,15 +64,56 @@ bool Gamepad_GetSwapTriggers();
+@@ -49,15 +65,56 @@ bool Gamepad_GetSwapTriggers();
  void Gamepad_SetSwapTriggers(bool swap);
  }
  
@@ -979,7 +1086,36 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  struct Vec2 {
      float x = 0.0f;
      float y = 0.0f;
-@@ -81,7 +137,7 @@ constexpr Color COL_CHIP_BORDER   { 0.106f, 0.345f, 0.431f, 1.0f };
+@@ -67,21 +124,25 @@ struct Color {
+     float r = 1.0f, g = 1.0f, b = 1.0f, a = 1.0f;
+ };
+ 
+-// Laguna de Moga Theme Palette (Matches PC port screenshot)
+-constexpr Color COL_WHITE         { 1.0f, 1.0f, 1.0f, 1.0f };
+-constexpr Color COL_MUTED         { 0.486f, 0.698f, 0.753f, 1.0f };
+-constexpr Color COL_CYAN          { 0.10f, 0.82f, 0.84f, 1.0f };
+-constexpr Color COL_BG_DARK       { 0.027f, 0.098f, 0.137f, 0.96f };
+-constexpr Color COL_PANEL_CARD    { 0.035f, 0.125f, 0.176f, 0.92f };
+-constexpr Color COL_PANEL_BORDER  { 0.086f, 0.282f, 0.353f, 1.0f };
+-constexpr Color COL_ACTIVE_CHIP   { 0.10f, 0.82f, 0.84f, 1.0f };
+-constexpr Color COL_ACTIVE_TEXT   { 0.027f, 0.098f, 0.137f, 1.0f };
+-constexpr Color COL_INACTIVE_CHIP { 0.043f, 0.145f, 0.200f, 0.90f };
+-constexpr Color COL_CHIP_BORDER   { 0.106f, 0.345f, 0.431f, 1.0f };
++// Plain dark surfaces and white/gray controls, shared by Android and PC.
++constexpr Color COL_WHITE         { 1, 1, 1, 1 };
++constexpr Color COL_MUTED         { .65f, .65f, .65f, 1 };
++constexpr Color COL_CYAN          { .92f, .92f, .92f, 1 };
++constexpr Color COL_BG_DARK       { .055f, .055f, .055f, .96f };
++constexpr Color COL_PANEL_CARD    { .095f, .095f, .095f, .94f };
++constexpr Color COL_PANEL_BORDER  { .24f, .24f, .24f, 1 };
++constexpr Color COL_ACTIVE_CHIP   { .87f, .87f, .87f, 1 };
++constexpr Color COL_ACTIVE_TEXT   { .06f, .06f, .06f, 1 };
++constexpr Color COL_INACTIVE_CHIP { .15f, .15f, .15f, .96f };
++constexpr Color COL_CHIP_BORDER   { .32f, .32f, .32f, 1 };
++Color Neutral(Color color) {
++    const float gray=.299f*color.r+.587f*color.g+.114f*color.b;
++    return {gray,gray,gray,color.a};
++}
  
  struct ConfigurableButton {
      std::string id;
@@ -988,7 +1124,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      uint16_t mask;
      Vec2 defaultNormPos;
      float defaultNormRadius;
-@@ -90,7 +146,7 @@ struct ConfigurableButton {
+@@ -90,7 +151,7 @@ struct ConfigurableButton {
      Vec2 pos;
      float radius = 0.0f;
      bool isPressed = false;
@@ -997,16 +1133,23 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      Color baseColor;
      Color borderColor;
  };
-@@ -106,6 +162,8 @@ struct UIVertex {
+@@ -106,14 +167,23 @@ struct UIVertex {
      float extra;         // half width (for type 2)
  };
  
 +enum class SaveAction { None, Export, Import, Backup };
 +
  class TouchSettingsEngine {
++    struct EditSnapshot {
++        std::vector<ConfigurableButton> buttons;
++        Vec2 stick;
++        float stickScale;
++        std::array<uint16_t,5> combos;
++        std::array<bool,5> enabled;
++    };
  public:
      TouchSettingsEngine() {
-@@ -113,7 +171,7 @@ public:
+         m_enabled = true;
  #if defined(__ANDROID__)
          m_touchVisible = true;
  #else
@@ -1015,7 +1158,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  #endif
      }
  
-@@ -128,14 +186,43 @@ public:
+@@ -128,14 +198,50 @@ public:
          LoadLayoutConfig();
      }
  
@@ -1027,9 +1170,14 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +        m_speedGestures.Clear();
 +        m_leftFingerId.reset(); m_rightFingerId.reset(); m_editFingerId.reset();
 +        m_leftX = m_leftY = m_rightX = m_rightY = 0;
-+        m_rightStickActive = false; m_editDragging = false;
++        m_rightStickActive = false; m_editDragging = false; m_editorPanelDragging=false;
 +        m_leftStickPos = m_leftStickCenter;
 +        m_cameraDeltaX.store(0); m_cameraDeltaY.store(0);
++    }
++    void CancelControllerCapture() {
++        if(m_padCaptureAction>=0) {
++            m_padCaptureAction=-1;m_padStatus="Binding canceled while the app was in the background.";
++        }
 +    }
 +    void SetEnabled(bool enabled) { if (!enabled) { ResetInput(); MH3GameSpeed::Reset(); } m_enabled = enabled; }
      bool IsEnabled() const { return m_enabled; }
@@ -1037,7 +1185,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 -    bool IsMenuOpen() const { return m_menuOpen; }
 +    bool IsMenuOpen() const { return m_menuOpen || m_editMode; }
 +    bool IsModalOpen() const {
-+        return IsSaveConfirmationOpen() || m_saveBrowserOpen || m_restoreRestarting
++        return IsSaveConfirmationOpen() || m_saveBrowserOpen || m_restoreRestarting || m_padEditorOpen
 +#ifdef MH3_PC_TOUCH_UI
 +            || m_keyboardEditorOpen
 +#endif
@@ -1047,13 +1195,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +    bool WantsPointer() const { return m_menuOpen || m_editMode || m_touchVisible; }
      void ToggleMenu() { SetMenuOpen(!m_menuOpen); }
      void SetMenuOpen(bool open) {
++        m_padEditorOpen=false; m_padCaptureAction=-1; m_padPendingPreset=-1;
++        if(!open)RowellPad::SuppressHeld();
 +        m_pendingSaveAction = SaveAction::None;
 +        m_pendingImportFolder.clear();
 +        m_saveBrowserOpen=false;
 +#ifdef MH3_PC_TOUCH_UI
 +        m_keyboardEditorOpen=false;m_captureAction=-1;
 +#endif
-+        if (m_editMode) { LoadLayoutConfig(); RecalculateButtonPositions(); m_editMode=false; }
++        if (m_editMode) { CancelLayoutEdit(); }
 +        ResetInput();
          m_menuOpen = open;
          if (m_menuOpen) {
@@ -1061,7 +1211,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              SDL_ShowCursor();
              if (SDL_Window* win = aurora_get_window()) {
                  SDL_SetWindowRelativeMouseMode(win, false);
-@@ -149,13 +236,51 @@ public:
+@@ -143,19 +249,64 @@ public:
+         } else {
+             if (SDL_Window* win = aurora_get_window()) {
+ #if !defined(__ANDROID__)
+-                SDL_HideCursor();
++                if(WantsPointer()){SDL_SetWindowRelativeMouseMode(win,false);SDL_ShowCursor();}
++                else SDL_HideCursor();
+ #endif
+             }
          }
      }
  
@@ -1080,6 +1238,12 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +    }
 +    void CancelModal() {
 +        if(m_restoreRestarting)return;
++        if(m_padEditorOpen) {
++            if(m_padPendingPreset>=0)m_padPendingPreset=-1;
++            else if(m_padCaptureAction>=0){m_padCaptureAction=-1;m_padStatus="Binding canceled.";}
++            else m_padEditorOpen=false;
++            return;
++        }
 +#ifdef MH3_PC_TOUCH_UI
 +        if(m_keyboardEditorOpen) {
 +            if(m_captureAction>=0){m_captureAction=-1;m_keyStatus="Binding canceled.";}
@@ -1114,7 +1278,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              SetWidescreenSetting(true);
  #if defined(__cpp_exceptions)
              try {
-@@ -180,13 +305,173 @@ public:
+@@ -180,13 +331,238 @@ public:
          ApplyFullscreen(!m_fullscreen);
      }
  
@@ -1251,6 +1415,71 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +        if(!check(!e.m_keyboardEditorOpen,"mouse close leaves keyboard editor"))return false;
 +        e.m_menuTab=2;
 +#endif
++        // A missing physical controller must not enter keyboard capture or alter touch settings.
++        e.m_menuTab=3;
++        const bool touchVisible=e.m_touchVisible;
++        e.HandleMenuTouchDown(contentX+contentW-123,contentY+176+12+25);
++        if(!check(e.m_padEditorOpen && e.IsModalOpen(),"controller editor opens independently"))return false;
++        const float pw=920,px=(e.m_width-pw)*.5f,py=(e.m_height-560)*.5f;
++        e.HandleMenuTouchDown(px+pw*.65f,py+126);
++        if(!check(e.m_padCaptureAction==-1 && e.m_touchVisible==touchVisible,
++                  "no controller leaves touch controls unchanged and does not capture a keyboard key"))return false;
++#ifdef MH3_PC_TOUCH_UI
++        if(!check(!e.m_keyboardEditorOpen,"controller editor never opens keyboard editor"))return false;
++#endif
++        e.m_padPendingPreset=3;e.CancelModal();
++        if(!check(e.m_padPendingPreset==-1 && e.m_padEditorOpen,"canceling reset retains controller editor"))return false;
++        e.CancelModal();
++        if(!check(!e.m_padEditorOpen,"controller editor closes safely"))return false;
++        e.m_menuTab=2;
++        e.BeginLayoutEdit();
++        const auto editOriginal=e.CaptureLayout();
++        const auto panelBefore=e.EditorPanelPosition();
++        e.HandleEditModeTouchDown(901,panelBefore.x+20,panelBefore.y+20);
++        e.HandleTouchMove(901,0,0);e.HandleTouchUp(901);
++        if(!check(e.EditorPanelPosition().x==12 && e.EditorPanelPosition().y==12 &&
++                  e.m_editorUndo.empty(),"toolbar moves within bounds independently of controls"))return false;
++        auto panel=e.EditorPanelPosition();const auto panelSize=e.EditorPanelSize();
++        e.HandleEditModeTouchDown(902,panel.x+panelSize.x-25,panel.y+20);
++        if(!check(e.m_editorCollapsed,"toolbar collapses"))return false;
++        e.HandleEditModeTouchDown(902,panel.x+panelSize.x-25,panel.y+20);
++        const auto aBefore=find("A").normPos;
++        e.HandleEditModeTouchDown(903,find("A").pos.x,find("A").pos.y);
++        e.HandleTouchMove(903,(find("A").pos.x-50)/e.m_width,(find("A").pos.y-30)/e.m_height);
++        e.HandleTouchUp(903);
++        if(!check(find("A").normPos.x!=aBefore.x && !e.m_editorUndo.empty(),"control moves and creates undo history"))return false;
++        const float scale=find("A").scale;
++        e.HandleEditModeTouchDown(904,panel.x+110,panel.y+98);
++        if(!check(find("A").scale>scale,"plus resizes the selected button"))return false;
++        e.HandleEditModeTouchDown(904,panel.x+panelSize.x*.5f,panel.y+148);
++        if(!check(std::abs(find("A").scale-scale)<.001f,"undo restores button size"))return false;
++        e.OpenEditorCombo(false);
++        if(!check(e.m_editorComboSlot>=0,"add combo chooses a hidden slot"))return false;
++        const int newSlot=e.m_editorComboSlot;
++        e.m_editorComboMask=MH3_CL_R|MH3_CL_X|MH3_CL_A;
++        const float editorDialogW=600,editorDialogX=(e.m_width-editorDialogW)*.5f,editorDialogY=(e.m_height-330)*.5f;
++        e.HandleEditorDialogTouch(editorDialogX+editorDialogW-120,editorDialogY+287);
++        if(!check(e.m_editorComboSlot==-1 && e.ComboEnabled(newSlot) &&
++                  e.m_comboMasks[newSlot]==(MH3_CL_R|MH3_CL_X|MH3_CL_A),"combo creation applies its selected buttons"))return false;
++        e.CancelLayoutEdit();
++        if(!check(!e.m_editMode && find("A").normPos.x==aBefore.x && e.m_comboMasks==editOriginal.combos &&
++                  e.ComboEnabled(newSlot)==editOriginal.enabled[newSlot],"Cancel restores positions and combo settings"))return false;
++        e.BeginLayoutEdit();e.m_selectedButtonIndex=int(&find("A")-e.m_buttons.data());e.AdjustSelectedButtonScale(.1f);
++        const float savedScale=find("A").scale;
++        panel=e.EditorPanelPosition();e.HandleEditModeTouchDown(905,panel.x+panelSize.x-80,panel.y+242);
++        e.LoadLayoutConfig();e.RecalculateButtonPositions();
++        if(!check(!e.m_editMode && std::abs(find("A").scale-savedScale)<.001f,"Save and play persists layout across reload"))return false;
++        // Check actual generated glyph geometry, including the text shadow.
++        for(float radius : {16.0f,28.0f,50.0f,90.0f}) {
++            e.m_verts.clear();e.DrawButtonLabel(100,100,"R+X+A",radius*.8f,COL_WHITE,radius*1.48f);
++            for(const auto& vertex:e.m_verts)if(vertex.type==3)
++                if(!check(vertex.x>100-radius && vertex.x<100+radius,"combo text fits inside its button"))return false;
++        }
++        e.m_verts.clear();e.RenderEditMode();
++        for(const auto& vertex:e.m_verts)
++            if(!check(std::abs(vertex.r-vertex.g)<.001f && std::abs(vertex.r-vertex.b)<.001f,
++                      "control UI uses only neutral colors"))return false;
++        e.m_verts.clear();e.SetMenuOpen(true);
 +        const auto beforeRestore=counts();
 +        std::filesystem::create_directories(importFolder.parent_path().parent_path()/"saves");
 +        e.HandleMenuTouchDown(importX,actionY);
@@ -1292,7 +1521,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          RecalculateButtonPositions();
      }
-@@ -228,15 +513,19 @@ public:
+@@ -228,15 +604,19 @@ public:
          float btnR = 0.058f;
  
          // Macro Buttons FIRST (checked before individual buttons for collision priority)
@@ -1315,7 +1544,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          // A, B, X, Y (after macros so macros win collision priority)
          AddBtn("A", "A", MH3_CL_A, { diamondNormX + spreadX, diamondNormY }, btnR,
                 { 0.85f, 0.25f, 0.25f, 0.55f }, { 1.0f, 0.40f, 0.40f, 0.90f });
-@@ -281,6 +570,9 @@ public:
+@@ -281,6 +661,9 @@ public:
                 { 0.15f, 0.22f, 0.28f, 0.55f }, { 0.65f, 0.85f, 1.00f, 0.85f });
          AddBtn("PLUS",  "+", MH3_CL_PLUS,  { 0.54f, menuY }, menuR,
                 { 0.15f, 0.22f, 0.28f, 0.55f }, { 0.65f, 0.85f, 1.00f, 0.85f });
@@ -1325,7 +1554,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      }
  
      void AddBtn(const std::string& id, const char* label, uint16_t mask, Vec2 normPos, float normRadius,
-@@ -298,12 +590,22 @@ public:
+@@ -298,12 +681,22 @@ public:
          m_buttons.push_back(b);
      }
  
@@ -1350,7 +1579,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          if (m_editMode) {
              HandleEditModeTouchDown(id, px, py);
-@@ -319,8 +621,8 @@ public:
+@@ -319,8 +712,8 @@ public:
          float gdx = px - m_gearPos.x;
          float gdy = py - m_gearPos.y;
          if (gdx * gdx + gdy * gdy <= (m_gearRadius * 1.8f) * (m_gearRadius * 1.8f)) {
@@ -1361,7 +1590,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              return;
          }
  
-@@ -329,28 +631,28 @@ public:
+@@ -329,28 +722,28 @@ public:
              return;
          }
  
@@ -1402,7 +1631,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                      UpdateLeftStickPosition(px, py);
                      return;
                  }
-@@ -359,8 +661,8 @@ public:
+@@ -359,8 +752,8 @@ public:
  
          // Right Stick (Free floating camera look)
          if (px >= float(m_width) * 0.45f) {
@@ -1413,16 +1642,22 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                  m_rightFloatingOrigin = { px, py };
                  m_rightStickPos = { px, py };
                  m_rightLastPos = { px, py };
-@@ -376,7 +678,7 @@ public:
+@@ -376,27 +769,30 @@ public:
          float py = normY * float(m_height);
  
          if (m_editMode) {
 -            if (m_editDragging && m_editFingerId == int(id)) {
-+            if (m_editDragging && m_editFingerId == id) {
-                 if (m_selectedButtonIndex >= 0 && m_selectedButtonIndex < int(m_buttons.size())) {
-                     m_buttons[m_selectedButtonIndex].pos = { px, py };
-                     m_buttons[m_selectedButtonIndex].normPos = { px / float(m_width), py / float(m_height) };
-@@ -390,13 +692,25 @@ public:
+-                if (m_selectedButtonIndex >= 0 && m_selectedButtonIndex < int(m_buttons.size())) {
+-                    m_buttons[m_selectedButtonIndex].pos = { px, py };
+-                    m_buttons[m_selectedButtonIndex].normPos = { px / float(m_width), py / float(m_height) };
+-                } else if (m_selectedButtonIndex == -2) {
+-                    m_leftStickCenter = { px, py };
+-                    m_normLeftStickPos = { px / float(m_width), py / float(m_height) };
+-                    m_leftStickPos = m_leftStickCenter;
+-                }
+-            }
++            if (m_editDragging && m_editFingerId == id) MoveEditorControl(px,py);
+             return;
          }
  
          if (m_menuOpen) return;
@@ -1450,7 +1685,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              float dx = px - m_rightLastPos.x;
              float dy = py - m_rightLastPos.y;
              m_rightLastPos = { px, py };
-@@ -422,12 +736,14 @@ public:
+@@ -422,12 +818,14 @@ public:
      }
  
      void HandleTouchUp(SDL_FingerID id) {
@@ -1460,14 +1695,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          if (m_editMode) {
 -            if (m_editFingerId == int(id)) {
-+            if (m_editFingerId == id) {
-                 m_editDragging = false;
+-                m_editDragging = false;
 -                m_editFingerId = -1;
++            if (m_editFingerId == id) {
++                m_editDragging = false; m_editorPanelDragging=false;
 +                m_editFingerId.reset();
              }
              return;
          }
-@@ -435,27 +751,30 @@ public:
+@@ -435,27 +833,30 @@ public:
          if (m_menuOpen) return;
  
          for (auto& btn : m_buttons) {
@@ -1506,7 +1742,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      void HandleMouseDown(float px, float py) {
          if (!m_enabled) return;
          if (m_editMode) {
-@@ -472,17 +791,23 @@ public:
+@@ -472,27 +873,24 @@ public:
              ToggleMenu();
              return;
          }
@@ -1519,19 +1755,31 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          (void)px; (void)py;
 +        HandleTouchUp(UINT64_MAX);
          if (m_editMode) {
-             m_editDragging = false;
+-            m_editDragging = false;
 -            m_editFingerId = -1;
++            m_editDragging = false; m_editorPanelDragging=false;
 +            m_editFingerId.reset();
          }
      }
  
      void HandleMouseMove(float px, float py) {
+-        if (m_editMode && m_editDragging) {
+-            if (m_selectedButtonIndex >= 0 && m_selectedButtonIndex < int(m_buttons.size())) {
+-                m_buttons[m_selectedButtonIndex].pos = { px, py };
+-                m_buttons[m_selectedButtonIndex].normPos = { px / float(m_width), py / float(m_height) };
+-            } else if (m_selectedButtonIndex == -2) {
+-                m_leftStickCenter = { px, py };
+-                m_normLeftStickPos = { px / float(m_width), py / float(m_height) };
+-                m_leftStickPos = m_leftStickCenter;
+-            }
+-        }
 +        if (!m_editMode && m_width > 0 && m_height > 0)
 +            HandleTouchMove(UINT64_MAX, px / m_width, py / m_height);
-         if (m_editMode && m_editDragging) {
-             if (m_selectedButtonIndex >= 0 && m_selectedButtonIndex < int(m_buttons.size())) {
-                 m_buttons[m_selectedButtonIndex].pos = { px, py };
-@@ -517,6 +842,7 @@ public:
++        if (m_editMode && m_editDragging) MoveEditorControl(px,py);
+     }
+ 
+     void UpdateLeftStickPosition(float px, float py) {
+@@ -517,6 +915,7 @@ public:
          if (btn.id == "M2") return m_macro2Enabled;
          if (btn.id == "M3") return m_macro3Enabled;
          if (btn.id == "M4") return m_macro4Enabled;
@@ -1539,7 +1787,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          return true;
      }
  
-@@ -526,19 +852,17 @@ public:
+@@ -526,19 +925,17 @@ public:
          if (!m_enabled || m_menuOpen || m_editMode) return;
  
          uint32_t latched = m_latchedMask.exchange(0, std::memory_order_relaxed);
@@ -1563,7 +1811,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              *leftX = m_leftX;
              *leftY = m_leftY;
          }
-@@ -550,10 +874,10 @@ public:
+@@ -550,10 +947,10 @@ public:
              }
          }
  
@@ -1578,7 +1826,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          float camX = m_cameraDeltaX.exchange(0.0f);
          float camY = m_cameraDeltaY.exchange(0.0f);
-@@ -566,7 +890,7 @@ public:
+@@ -566,7 +963,7 @@ public:
          static float s_cachedTemp = 0.0f;
          static auto s_lastRead = std::chrono::steady_clock::now();
          auto now = std::chrono::steady_clock::now();
@@ -1587,7 +1835,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              return s_cachedTemp;
          }
          s_lastRead = now;
-@@ -597,9 +921,9 @@ public:
+@@ -597,9 +994,9 @@ public:
          return s_cachedTemp;
      }
  
@@ -1600,7 +1848,22 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      }
  
      // -------------------------------------------------------------
-@@ -659,20 +983,11 @@ public:
+@@ -608,6 +1005,14 @@ public:
+     void RenderGL(int windowWidth, int windowHeight) {
+         if (!m_enabled) return;
+         UpdateLayout(windowWidth, windowHeight);
++#if defined(MH3_PC_TOUCH_UI)
++        // Reassert the visible pointer after menu changes and Alt Tab, even if
++        // the game input path has returned early because a menu is open.
++        if(auto* window=aurora_get_window(); window && (WantsPointer() || SDL_GetKeyboardFocus()!=window)) {
++            if(SDL_GetWindowRelativeMouseMode(window))SDL_SetWindowRelativeMouseMode(window,false);
++            if(!SDL_CursorVisible())SDL_ShowCursor();
++        }
++#endif
+ 
+         static bool s_firstFrameApplied = false;
+         if (!s_firstFrameApplied) {
+@@ -659,20 +1064,11 @@ public:
              lastStamp = now;
          }
  
@@ -1626,7 +1889,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          // Save OpenGL State
          GLint lastViewport[4]; glGetIntegerv(GL_VIEWPORT, lastViewport);
-@@ -684,12 +999,24 @@ public:
+@@ -684,12 +1080,24 @@ public:
          GLint lastProgram = 0; glGetIntegerv(GL_CURRENT_PROGRAM, &lastProgram);
          GLint lastVAO = 0; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &lastVAO);
          GLint lastVBO = 0; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &lastVBO);
@@ -1651,7 +1914,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          glDisable(GL_DEPTH_TEST);
          glDisable(GL_CULL_FACE);
  
-@@ -703,11 +1030,17 @@ public:
+@@ -703,11 +1111,18 @@ public:
          glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
  
          m_verts.clear();
@@ -1663,13 +1926,14 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              RenderSettingsMenu();
 +            if(m_saveBrowserOpen)RenderSaveBrowser();
 +            if (IsSaveConfirmationOpen()) RenderSaveConfirmation();
++            if(m_padEditorOpen)RenderPadEditor();
 +#ifdef MH3_PC_TOUCH_UI
 +            if(m_keyboardEditorOpen)RenderKeyboardEditor();
 +#endif
          } else {
              if (m_touchVisible) {
                  RenderGameplayOverlay();
-@@ -734,13 +1067,31 @@ public:
+@@ -734,13 +1149,31 @@ public:
          if (cullEnabled) glEnable(GL_CULL_FACE);
          glUseProgram(lastProgram);
          glBindTexture(GL_TEXTURE_2D, lastTex);
@@ -1702,16 +1966,121 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          const char* vertShaderSrc =
              "#version 300 es\n"
-@@ -1115,7 +1466,7 @@ private:
-         DrawAADisc(m_leftStickCenter.x - m_leftStickRadius, m_leftStickCenter.y, dotR, dotCol, dotCol);
-         DrawAADisc(m_leftStickCenter.x + m_leftStickRadius, m_leftStickCenter.y, dotR, dotCol, dotCol);
+@@ -780,14 +1213,10 @@ private:
+             "        float f = vParams.z;\n"
+             "        float alpha = smoothstep(1.0, 1.0 - f, d);\n"
+             "        if (alpha <= 0.0) discard;\n"
+-            "        float dome = 1.0 - d * d * 0.35;\n"
+-            "        float topLight = clamp(0.75 - vUV.y * 0.40, 0.0, 1.2);\n"
+-            "        float spec = pow(clamp(1.0 - length(vUV - vec2(0.0, -0.40)), 0.0, 1.0), 3.0) * 0.30;\n"
+-            "        vec4 bodyCol = vec4(vColor.rgb * (dome * 0.70 + topLight * 0.30) + vec3(spec), vColor.a);\n"
++            "        vec4 bodyCol = vColor;\n"
+             "        float ringThick = vParams.y;\n"
+             "        float isBorder = smoothstep(1.0 - ringThick - f, 1.0 - ringThick, d);\n"
+-            "        float rimGrad = smoothstep(1.0 - ringThick, 1.0, d);\n"
+-            "        vec4 rimCol = vec4(vBorderColor.rgb * (0.85 + 0.35 * rimGrad), vBorderColor.a);\n"
++            "        vec4 rimCol = vBorderColor;\n"
+             "        vec4 col = mix(bodyCol, rimCol, isBorder);\n"
+             "        FragColor = vec4(col.rgb, col.a * alpha);\n"
+             "    } else if (type < 1.5) {\n" // 1: Anti-aliased Ring
+@@ -883,6 +1312,9 @@ private:
  
+     // Geometry Helpers
+     void DrawAADisc(float cx, float cy, float radius, Color col, Color border, float borderThick = 0.08f) {
++        col=Neutral(col);border=Neutral(border);
++        // Keep the outline a thin, constant pixel width as controls resize.
++        borderThick=std::min(.12f,1.25f/std::max(radius,1.0f));
+         float x0 = cx - radius, y0 = cy - radius;
+         float x1 = cx + radius, y1 = cy + radius;
+         float feather = 1.5f / std::max(radius, 1.0f);
+@@ -897,6 +1329,7 @@ private:
+     }
+ 
+     void DrawAARing(float cx, float cy, float radius, float thickness, Color col) {
++        col=Neutral(col);
+         float x0 = cx - radius, y0 = cy - radius;
+         float x1 = cx + radius, y1 = cy + radius;
+         float feather = 1.5f / std::max(radius, 1.0f);
+@@ -912,6 +1345,7 @@ private:
+     }
+ 
+     void DrawRoundedRect(float x, float y, float w, float h, float radius, Color fill, Color border) {
++        fill=Neutral(fill);border=Neutral(border);
+         float halfW = w * 0.5f;
+         float halfH = h * 0.5f;
+         radius = std::min(radius, std::min(halfW, halfH));
+@@ -928,6 +1362,7 @@ private:
+     }
+ 
+     void DrawRectSolid(float x, float y, float w, float h, Color col) {
++        col=Neutral(col);
+         m_verts.push_back({ x,     y,     0, 0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 4.0f, 0, 0, 0 });
+         m_verts.push_back({ x + w, y,     0, 0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 4.0f, 0, 0, 0 });
+         m_verts.push_back({ x,     y + h, 0, 0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 4.0f, 0, 0, 0 });
+@@ -938,6 +1373,7 @@ private:
+     }
+ 
+     void DrawQuadTextured(float x, float y, float w, float h, float u0, float v0, float u1, float v1, Color col) {
++        col=Neutral(col);
+         m_verts.push_back({ x,     y,     u0, v0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 3.0f, 0, 0, 0 });
+         m_verts.push_back({ x + w, y,     u1, v0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 3.0f, 0, 0, 0 });
+         m_verts.push_back({ x,     y + h, u0, v1, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 3.0f, 0, 0, 0 });
+@@ -1017,8 +1453,12 @@ private:
+         }
+     }
+ 
+-    void DrawButtonLabel(float cx, float cy, const char* label, float size, Color col) {
++    void DrawButtonLabel(float cx, float cy, const char* label, float size, Color col, float maxWidth=0) {
+         if (!label) return;
++        if(maxWidth>0) {
++            const float measured=MeasureText(label,size);
++            if(measured>maxWidth)size*=maxWidth/measured;
++        }
+         float scale = size / BASE_FONT_SIZE;
+         float totalW = MeasureText(label, size);
+ 
+@@ -1043,8 +1483,8 @@ private:
+         float startY = cy - visualCenterY;
+ 
+         // Shadow pass for crisp contrast
+-        float shadowOffset = std::max(1.5f, size * 0.045f);
+-        Color shadowCol = { 0.0f, 0.0f, 0.0f, col.a * 0.75f };
++        float shadowOffset = .65f;
++        Color shadowCol = { 0.0f, 0.0f, 0.0f, col.a * 0.30f };
+         const char* p = label;
+         float curX = startX;
+         while (*p) {
+@@ -1104,23 +1544,12 @@ private:
+     void RenderGameplayOverlay() {
+         float op = std::clamp(m_buttonOpacity, 0.10f, 1.0f);
+ 
+-        // 1. Fixed Left Stick
+-        DrawAARing(m_leftStickCenter.x, m_leftStickCenter.y, m_leftStickRadius, 3.5f, { 0.30f, 0.70f, 0.88f, 0.55f * op });
+-        DrawAARing(m_leftStickCenter.x, m_leftStickCenter.y, m_leftStickRadius * 0.50f, 1.5f, { 0.20f, 0.50f, 0.70f, 0.25f * op });
+-
+-        float dotR = 3.0f;
+-        Color dotCol = { 0.45f, 0.85f, 1.00f, 0.70f * op };
+-        DrawAADisc(m_leftStickCenter.x, m_leftStickCenter.y - m_leftStickRadius, dotR, dotCol, dotCol);
+-        DrawAADisc(m_leftStickCenter.x, m_leftStickCenter.y + m_leftStickRadius, dotR, dotCol, dotCol);
+-        DrawAADisc(m_leftStickCenter.x - m_leftStickRadius, m_leftStickCenter.y, dotR, dotCol, dotCol);
+-        DrawAADisc(m_leftStickCenter.x + m_leftStickRadius, m_leftStickCenter.y, dotR, dotCol, dotCol);
+-
 -        bool leftHeld = (m_leftFingerId >= 0);
-+        bool leftHeld = (m_leftFingerId.has_value());
-         DrawAADisc(m_leftStickPos.x, m_leftStickPos.y, m_leftStickKnobRadius,
-                    leftHeld ? Color{ 0.15f, 0.50f, 0.70f, 0.90f * op } : Color{ 0.10f, 0.32f, 0.45f, 0.80f * op },
-                    leftHeld ? Color{ 1.0f, 1.0f, 1.0f, 0.98f * op } : Color{ 0.50f, 0.88f, 1.00f, 0.95f * op }, 0.12f);
-@@ -1129,20 +1480,32 @@ private:
+-        DrawAADisc(m_leftStickPos.x, m_leftStickPos.y, m_leftStickKnobRadius,
+-                   leftHeld ? Color{ 0.15f, 0.50f, 0.70f, 0.90f * op } : Color{ 0.10f, 0.32f, 0.45f, 0.80f * op },
+-                   leftHeld ? Color{ 1.0f, 1.0f, 1.0f, 0.98f * op } : Color{ 0.50f, 0.88f, 1.00f, 0.95f * op }, 0.12f);
+-        DrawAADisc(m_leftStickPos.x, m_leftStickPos.y, m_leftStickKnobRadius * 0.35f,
+-                   { 0.05f, 0.18f, 0.28f, 0.90f * op }, { 0.35f, 0.75f, 0.95f, 0.85f * op }, 0.20f);
++        // One thin outline and a plain thumb disc, like the MH4 touch overlay.
++        DrawAARing(m_leftStickCenter.x,m_leftStickCenter.y,m_leftStickRadius,1.25f,{.9f,.9f,.9f,.55f*op});
++        const bool leftHeld=m_leftFingerId.has_value();
++        DrawAADisc(m_leftStickPos.x,m_leftStickPos.y,m_leftStickKnobRadius,
++            leftHeld?Color{.27f,.27f,.27f,.55f*op}:Color{.12f,.12f,.12f,.30f*op},
++            {.95f,.95f,.95f,(leftHeld?.9f:.6f)*op});
+ 
+         // 2. Free Right Stick (Camera Look)
+         if (m_rightStickActive) {
+@@ -1129,20 +1558,32 @@ private:
                         { 0.15f, 0.45f, 0.60f, 0.45f * op }, { 0.40f, 0.80f, 1.00f, 0.70f * op }, 0.10f);
          }
  
@@ -1725,8 +2094,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 -            Color border = btn.isPressed ? Color{ 1.0f, 1.0f, 1.0f, 1.0f } : btn.borderColor;
 +            bool singleButton = btn.mask && (btn.mask & (btn.mask-1))==0;
 +            bool pressed = btn.isPressed || (singleButton && (heldMask & btn.mask) == btn.mask);
-+            Color base = pressed ? Color{ std::min(1.0f, btn.baseColor.r * 1.4f), std::min(1.0f, btn.baseColor.g * 1.4f), std::min(1.0f, btn.baseColor.b * 1.4f), 0.90f } : btn.baseColor;
-+            Color border = pressed ? Color{ 1.0f, 1.0f, 1.0f, 1.0f } : btn.borderColor;
++            Color base = pressed ? Color{ .32f,.32f,.32f,.88f } : Color{ .08f,.08f,.08f,.48f };
++            Color border = pressed ? Color{ 1,1,1,1 } : Color{ .85f,.85f,.85f,.72f };
              base.a *= op;
              border.a *= op;
  
@@ -1734,7 +2103,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +            DrawAADisc(btn.pos.x, btn.pos.y, btn.radius * (pressed ? 0.94f : 1.0f), base, border, 0.09f);
  
 -            float textSize = btn.radius * 0.95f;
-+            if (pressed) DrawAARing(btn.pos.x, btn.pos.y, btn.radius * 1.10f, 2.0f, {0.4f, 0.95f, 1.0f, op * 0.8f});
++            // A subtle fill change and shrink show presses without a bulky outer glow.
 +            const char* label = btn.label.c_str();
 +            if (btn.id == "SPEED") {
 +                label = MH3GameSpeed::Percent() == 125 ? "1.25x" : MH3GameSpeed::Percent() == 150 ? "1.5x" : "1x";
@@ -1745,11 +2114,11 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +            else if (btn.id == "SPEED" && MH3GameSpeed::Percent() != 100) textCol = COL_CYAN;
              textCol.a *= op;
 -            DrawButtonLabel(btn.pos.x, btn.pos.y, btn.label, textSize, textCol);
-+            DrawButtonLabel(btn.pos.x, btn.pos.y, label, textSize, textCol);
++            DrawButtonLabel(btn.pos.x, btn.pos.y, label, textSize, textCol,btn.radius*1.48f);
          }
  
          // 4. Gear / Menu Button
-@@ -1180,13 +1543,14 @@ private:
+@@ -1180,41 +1621,42 @@ private:
          }
  
          // Header Title & Subtitle (Larger readable fonts)
@@ -1763,14 +2132,38 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 -            "Multijugador local, ZeroTier y servidores comunitarios"
 +            "Display, resolution and presentation",
 +            "Game language and restart",
-+            "Save manager for this development app",
-+            "Touch layout, gamepad and combo buttons",
++            "Saved progress, backups and transfers",
++            "Touch layout and physical controllers",
 +            "Local and community multiplayer",
 +            "Choose the buttons each combo holds together"
          };
          DrawText(padX + 24.0f, padY + 16.0f, titles[m_menuTab], 28.0f, COL_WHITE);
-         DrawText(padX + 24.0f, padY + 48.0f, subtitles[m_menuTab], 14.5f, COL_MUTED);
-@@ -1212,9 +1576,9 @@ private:
+-        DrawText(padX + 24.0f, padY + 48.0f, subtitles[m_menuTab], 14.5f, COL_MUTED);
++        DrawClippedText(padX + 24.0f,padY + 48.0f,subtitles[m_menuTab],14,panW-340,COL_MUTED);
+ 
+         // Header Right: FPS Badge & Close Button
+         char fpsStr[32];
+         std::snprintf(fpsStr, sizeof(fpsStr), "FPS  %u", unsigned(m_liveFps + 0.5));
+-        float fpsW = 115.0f, fpsH = 38.0f;
+-        float fpsX = padX + panW - 185.0f;
++        float fpsW = 100.0f, fpsH = 38.0f;
++        float fpsX = padX + panW - 258.0f;
+         float fpsY = padY + 18.0f;
+         DrawRoundedRect(fpsX, fpsY, fpsW, fpsH, fpsH * 0.5f, { 0.035f, 0.125f, 0.176f, 0.95f }, COL_CYAN);
+         DrawText(fpsX + fpsW * 0.5f, fpsY + 10.0f, fpsStr, 15.0f, COL_CYAN, true);
+ 
+         // Close Button [✕]
+-        float closeX = padX + panW - 56.0f;
++        float closeX = padX + panW - 144.0f;
+         float closeY = padY + 18.0f;
+         float closeS = 38.0f;
+-        DrawRoundedRect(closeX, closeY, closeS, closeS, 8.0f, { 0.05f, 0.18f, 0.24f, 0.95f }, COL_PANEL_BORDER);
+-        DrawText(closeX + closeS * 0.5f, closeY + 8.0f, "✕", 20.0f, COL_WHITE, true);
++        DrawRoundedRect(closeX,closeY,126,closeS,8,COL_ACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(closeX+63,closeY+11,"Resume",16,COL_ACTIVE_TEXT,true);
+ 
+         // Horizontal divider line
+         DrawRectSolid(padX + 20.0f, padY + 76.0f, panW - 40.0f, 1.0f, COL_PANEL_BORDER);
  
          // Tab Navigation Bar
          float tabY = padY + 86.0f;
@@ -1782,7 +2175,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              float tx = padX + 20.0f + float(i) * (tabW + 10.0f);
              bool active = (m_menuTab == i);
              DrawRoundedRect(tx, tabY, tabW, tabH, 8.0f,
-@@ -1233,16 +1597,17 @@ private:
+@@ -1233,16 +1675,17 @@ private:
          else if (m_menuTab == 2) RenderTabSaves(padX + 20.0f, contentY, contentW);
          else if (m_menuTab == 3) RenderTabControls(padX + 20.0f, contentY, contentW);
          else if (m_menuTab == 4) RenderTabOnline(padX + 20.0f, contentY, contentW);
@@ -1803,7 +2196,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          float chipW = (w - 36.0f - 25.0f) / 6.0f;
          float chipH = 42.0f;
          float chipY = y + 54.0f;
-@@ -1256,7 +1621,7 @@ private:
+@@ -1256,7 +1699,7 @@ private:
                       active ? COL_ACTIVE_TEXT : COL_WHITE, true);
          }
  
@@ -1812,7 +2205,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          float c2Y = y + c1H + 12.0f;
          float c2H = 114.0f;
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
-@@ -1264,8 +1629,8 @@ private:
+@@ -1264,8 +1707,8 @@ private:
          float colW = (w - 36.0f - 16.0f) * 0.5f;
  
          // Left side: Fullscreen & 16:9 Fix
@@ -1823,7 +2216,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          float fsBtnY = c2Y + 54.0f;
          float fsBtnW = colW;
-@@ -1274,15 +1639,15 @@ private:
+@@ -1274,15 +1717,15 @@ private:
                          fsActive ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          fsActive ? COL_CYAN : COL_CHIP_BORDER);
          DrawText(x + 18.0f + fsBtnW * 0.5f, fsBtnY + 12.0f,
@@ -1844,7 +2237,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          float aChipW = (colW - 10.0f) / 3.0f;
          for (int i = 0; i < 3; ++i) {
              float ax = rightColX + float(i) * (aChipW + 5.0f);
-@@ -1300,13 +1665,13 @@ private:
+@@ -1300,13 +1743,13 @@ private:
          DrawRoundedRect(x, c3Y, w, c3H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
  
          float fpsColW = (w - 36.0f - 16.0f) * 0.52f;
@@ -1863,7 +2256,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          }
  
          const char* fpsLabels[] = { "30 FPS", "60 FPS", "90 FPS", "120 FPS" };
-@@ -1326,15 +1691,15 @@ private:
+@@ -1326,15 +1769,15 @@ private:
          // Right side: Sincronización y Contador
          float syncColX = x + 18.0f + fpsColW + 16.0f;
          float syncColW = (w - 36.0f - 16.0f) * 0.48f;
@@ -1882,7 +2275,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   m_vsync ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // HUD FPS chip
-@@ -1342,9 +1707,10 @@ private:
+@@ -1342,9 +1785,10 @@ private:
          DrawRoundedRect(hudX, fChipY, sChipW, chipH, 8.0f,
                          m_showFpsHud ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_showFpsHud ? COL_CYAN : COL_CHIP_BORDER);
@@ -1894,7 +2287,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          // Card 4: Reemplazo de Texturas HD (Dolphin Texture Pack)
          float c4Y = c3Y + c3H + 12.0f;
          float c4H = 108.0f;
-@@ -1353,9 +1719,9 @@ private:
+@@ -1353,9 +1797,9 @@ private:
          bool texEnabled = aurora::gfx::texture_replacement::is_enabled();
          size_t texCount = aurora::gfx::texture_replacement::get_replacement_count();
          char texSub[140];
@@ -1906,7 +2299,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          DrawText(x + 18.0f, c4Y + 36.0f, texSub, 13.0f, (texCount > 0) ? COL_CYAN : COL_MUTED);
  
          float tBtnW = (w - 36.0f - 15.0f) * 0.50f;
-@@ -1366,22 +1732,23 @@ private:
+@@ -1366,22 +1810,23 @@ private:
                          texEnabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          texEnabled ? COL_CYAN : COL_CHIP_BORDER);
          DrawText(x + 18.0f + tBtnW * 0.5f, tBtnY + 12.0f,
@@ -1934,7 +2327,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          const char* langLabels[] = { "Español", "English", "Français", "Deutsch", "Italiano" };
          float chipW = (w - 36.0f - 20.0f) / 5.0f;
-@@ -1399,28 +1766,51 @@ private:
+@@ -1399,28 +1844,51 @@ private:
  
          // Active Language status text
          float statusY = y + c1H + 12.0f;
@@ -1993,7 +2386,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          // Action Buttons
          float btnW = (w - 36.0f - 20.0f) / 3.0f;
-@@ -1430,32 +1820,297 @@ private:
+@@ -1430,32 +1898,414 @@ private:
          // 1. Export
          float b1X = x + 18.0f;
          DrawRoundedRect(b1X, btnY, btnW, btnH, 8.0f, { 0.08f, 0.35f, 0.45f, 0.95f }, COL_CYAN);
@@ -2138,6 +2531,123 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +                m_pendingImportLabel=copy.kind=="Backup"?copy.created:copy.folder.filename().string();
 +                m_pendingSaveAction=SaveAction::Import;m_saveBrowserOpen=false;
 +            }
++        }
++    }
++    void ApplyPadPreset(int preset) {
++        const auto error=RowellPad::Current().Reset();
++        if(!error.empty()){m_padStatus=error;return;}
++        if(preset==0 || preset==1)Gamepad_SetLayout(preset);
++        else if(preset==2)Gamepad_SetSwapTriggers(!Gamepad_GetSwapTriggers());
++        m_padPendingPreset=-1;
++        m_padStatus="Controller defaults restored. Touch and keyboard settings unchanged.";
++    }
++    void RequestPadPreset(int preset) {
++        if(RowellPad::Current().HasCustom()) {
++            m_padEditorOpen=true;m_padCaptureAction=-1;m_padPendingPreset=preset;
++        } else ApplyPadPreset(preset);
++    }
++    void SavePadBinding(int source,bool exchange=false) {
++        const auto error=RowellPad::Current().Assign(m_padCaptureAction,source,
++            Gamepad_GetLayout(),Gamepad_GetSwapTriggers(),exchange);
++        m_padStatus=error.empty()?"Controller binding saved. No restart needed.":error;
++        if(error.empty()){m_padCaptureAction=-1;RowellPad::SuppressHeld();}
++    }
++    void RenderPadEditor() {
++        const float w=std::min(920.0f,float(m_width)-64),x=(m_width-w)*.5f,y=(m_height-560)*.5f;
++        const auto state=RowellPad::Poll();
++        if(m_padCaptureAction>=0) {
++            // Stop capture even if a conflict prompt was already showing.
++            if(!state.connected || state.id!=m_padCaptureDevice) {
++                m_padCaptureAction=-1;m_padStatus="Controller disconnected. Reconnect and choose the action again.";
++            } else if(m_padConflictSource<0) {
++                const int source=m_padCapture.Update(state);
++                if(source>=0) {
++                    m_padConflictOwner=RowellPad::Current().Owner(source,Gamepad_GetLayout(),Gamepad_GetSwapTriggers(),m_padCaptureAction);
++                    if(m_padConflictOwner>=0)m_padConflictSource=source;
++                    else SavePadBinding(source);
++                }
++            }
++        }
++        DrawRectSolid(0,0,float(m_width),float(m_height),{0,0,0,.72f});
++        DrawRoundedRect(x,y,w,560,16,COL_BG_DARK,COL_CYAN);
++        DrawText(x+24,y+18,"Controller bindings",24,COL_WHITE);
++        DrawClippedText(x+24,y+53,state.connected?"Connected: "+state.name:"No controller connected. Pair a Bluetooth or USB controller first.",14,w-48,COL_CYAN);
++        DrawText(x+24,y+76,"Choose an action, then press a button. Touch and keyboard bindings stay separate.",13,COL_MUTED);
++        const auto bindings=RowellPad::Current().Get(Gamepad_GetLayout(),Gamepad_GetSwapTriggers());
++        const float labelW=w*.28f,bw=w-48-labelW;
++        for(int row=0;row<6;++row) {
++            const int action=m_padPage*6+row;if(action>=RowellPad::ActionCount)break;
++            const float ry=y+106+row*48;
++            DrawText(x+24,ry+12,RowellPad::Definition(action).label,16,COL_WHITE);
++            DrawRoundedRect(x+24+labelW,ry,bw,40,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawClippedText(x+36+labelW,ry+12,RowellPad::SourceName(bindings[action]),15,bw-24,
++                bindings[action]<0?COL_MUTED:COL_WHITE);
++        }
++        DrawClippedText(x+24,y+416,m_padStatus,13,w-48,COL_CYAN);
++        RenderPager(x,y+450,w,m_padPage,(RowellPad::ActionCount+5)/6);
++        DrawRoundedRect(x+24,y+500,160,38,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+104,y+511,"Close",15,COL_WHITE,true);
++        DrawRoundedRect(x+w-224,y+500,200,38,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+w-124,y+511,"Reset defaults",15,COL_WHITE,true);
++        if(m_padCaptureAction>=0 || m_padPendingPreset>=0) {
++            const float cw=std::min(660.0f,w-32),cx=(m_width-cw)*.5f,cy=(m_height-260)*.5f,buttonW=(cw-64)*.5f;
++            DrawRectSolid(0,0,float(m_width),float(m_height),{0,0,0,.70f});
++            DrawRoundedRect(cx,cy,cw,260,16,COL_BG_DARK,COL_CYAN);
++            if(m_padPendingPreset>=0) {
++                DrawText(cx+24,cy+24,"Reset controller bindings?",23,COL_WHITE);
++                DrawText(cx+24,cy+72,"This replaces your custom controller map with the selected defaults.",13,COL_MUTED);
++                DrawText(cx+24,cy+98,"Your touch layout, keyboard bindings and game saves stay unchanged.",13,COL_MUTED);
++            } else {
++                DrawText(cx+24,cy+24,m_padConflictSource>=0?"Input already assigned":"Press a controller button",23,COL_WHITE);
++                DrawText(cx+24,cy+64,(std::string("Wii action: ")+RowellPad::Definition(m_padCaptureAction).label).c_str(),17,COL_CYAN);
++                if(m_padConflictSource>=0) {
++                    DrawClippedText(cx+24,cy+100,RowellPad::SourceName(m_padConflictSource)+" is used by "+RowellPad::Definition(m_padConflictOwner).label+".",14,cw-48,COL_WHITE);
++                    const auto old=RowellPad::SourceName(bindings[m_padCaptureAction]);
++                    DrawClippedText(cx+24,cy+126,"Swap gives "+std::string(RowellPad::Definition(m_padConflictOwner).label)+" your old input: "+old,13,cw-48,COL_MUTED);
++                } else {
++                    DrawText(cx+24,cy+100,"Buttons, triggers and L3/R3 work. Keyboard keys are ignored.",13,COL_MUTED);
++                    DrawText(cx+24,cy+126,"Already-held buttons are ignored until released. Clear disables this action.",13,COL_MUTED);
++                }
++            }
++            DrawRoundedRect(cx+24,cy+190,buttonW,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(cx+24+buttonW*.5f,cy+202,"Cancel",15,COL_WHITE,true);
++            DrawRoundedRect(cx+40+buttonW,cy+190,buttonW,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(cx+40+buttonW*1.5f,cy+202,m_padPendingPreset>=0?"Yes, reset":m_padConflictSource>=0?"Swap bindings":"Clear binding",15,COL_WHITE,true);
++        }
++    }
++    void HandlePadEditorTouch(float px,float py) {
++        const float w=std::min(920.0f,float(m_width)-64),x=(m_width-w)*.5f,y=(m_height-560)*.5f;
++        if(m_padCaptureAction>=0 || m_padPendingPreset>=0) {
++            const float cw=std::min(660.0f,w-32),cx=(m_width-cw)*.5f,cy=(m_height-260)*.5f,bw=(cw-64)*.5f;
++            if(py>=cy+190 && py<=cy+232) {
++                if(px>=cx+24 && px<=cx+24+bw)CancelModal();
++                else if(px>=cx+40+bw && px<=cx+cw-24) {
++                    if(m_padPendingPreset>=0)ApplyPadPreset(m_padPendingPreset);
++                    else if(const auto state=RowellPad::Poll(); !state.connected || state.id!=m_padCaptureDevice) {
++                        m_padCaptureAction=-1;m_padStatus="Controller disconnected. Binding was not changed.";
++                    } else SavePadBinding(m_padConflictSource,m_padConflictSource>=0);
++                }
++            }
++            return;
++        }
++        if(px<x+24 || px>x+w-24)return;
++        for(int row=0;row<6;++row) {
++            const int action=m_padPage*6+row;if(action>=RowellPad::ActionCount)break;
++            const float ry=y+106+row*48;
++            if(py>=ry && py<=ry+40 && px>=x+24+w*.28f) {
++                const auto state=RowellPad::Poll();
++                if(!state.connected){m_padStatus="Connect a Bluetooth or USB controller first. Touch controls are still available.";return;}
++                m_padCaptureAction=action;m_padCaptureDevice=state.id;m_padConflictSource=-1;m_padConflictOwner=-1;
++                m_padCapture.Begin(state);ResetInput();return;
++            }
++        }
++        if(py>=y+450 && py<=y+482) {
++            if(px<=x+124 && m_padPage>0)--m_padPage;
++            else if(px>=x+w-124 && (m_padPage+1)*6<RowellPad::ActionCount)++m_padPage;
++        }
++        if(py>=y+500 && py<=y+538) {
++            if(px<=x+184)m_padEditorOpen=false;
++            else if(px>=x+w-224){m_padPendingPreset=3;}
 +        }
 +    }
 +#ifdef MH3_PC_TOUCH_UI
@@ -2298,7 +2808,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          float tvChipW = (w - 36.0f - 15.0f) / 2.0f;
          float tvChipH = 38.0f;
-@@ -1466,7 +2121,7 @@ private:
+@@ -1466,7 +2316,7 @@ private:
          DrawRoundedRect(tv1X, tvChipY, tvChipW, tvChipH, 8.0f,
                          m_touchVisible ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_touchVisible ? COL_CYAN : COL_CHIP_BORDER);
@@ -2307,7 +2817,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   m_touchVisible ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Hidden chip
-@@ -1474,12 +2129,12 @@ private:
+@@ -1474,12 +2324,12 @@ private:
          DrawRoundedRect(tv2X, tvChipY, tvChipW, tvChipH, 8.0f,
                          !m_touchVisible ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          !m_touchVisible ? COL_CYAN : COL_CHIP_BORDER);
@@ -2323,18 +2833,20 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          const float opValues[] = { 0.25f, 0.50f, 0.75f, 1.00f };
          float opChipW = (w - 36.0f - 30.0f) / 4.0f;
          float opChipH = 36.0f;
-@@ -1498,8 +2153,8 @@ private:
+@@ -1498,8 +2348,10 @@ private:
          float c2Y = y + c1H + 12.0f;
          float c2H = 116.0f;
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, c2Y + 14.0f, "Distribución de botones del Mando (Gamepad)", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, c2Y + 36.0f, "Para mandos Bluetooth/USB (Xbox, PlayStation, Nintendo o genéricos):", 13.5f, COL_MUTED);
-+        DrawText(x + 18.0f, c2Y + 14.0f, "Gamepad layout", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, c2Y + 36.0f, "For Bluetooth and USB gamepads. Touch button names keep their Wii meanings.", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, c2Y + 14.0f, "Physical controller", 19.0f, COL_WHITE);
++        DrawRoundedRect(x+w-228,c2Y+10,210,30,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+w-123,c2Y+18,"Remap buttons",14,COL_WHITE,true);
++        DrawText(x + 18.0f, c2Y + 39.0f, "USB / Bluetooth. Presets reset remaps after confirmation. Touch controls stay separate.", 13.0f, COL_MUTED);
  
          const int gpLayout = Gamepad_GetLayout();
          const bool swapTrig = Gamepad_GetSwapTriggers();
-@@ -1513,7 +2168,7 @@ private:
+@@ -1513,7 +2365,7 @@ private:
          DrawRoundedRect(l1X, gpChipY, lChipW, gpChipH, 8.0f,
                          (gpLayout == 0) ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          (gpLayout == 0) ? COL_CYAN : COL_CHIP_BORDER);
@@ -2343,7 +2855,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   (gpLayout == 0) ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Xbox/Generic layout
-@@ -1521,7 +2176,7 @@ private:
+@@ -1521,7 +2373,7 @@ private:
          DrawRoundedRect(l2X, gpChipY, lChipW, gpChipH, 8.0f,
                          (gpLayout == 1) ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          (gpLayout == 1) ? COL_CYAN : COL_CHIP_BORDER);
@@ -2352,7 +2864,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   (gpLayout == 1) ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Swap triggers
-@@ -1531,15 +2186,15 @@ private:
+@@ -1531,15 +2383,15 @@ private:
                          swapTrig ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          swapTrig ? COL_CYAN : COL_CHIP_BORDER);
          DrawText(trigX + trigW * 0.5f, gpChipY + 12.0f,
@@ -2366,12 +2878,12 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          DrawRoundedRect(x, c3Y, w, c3H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, c3Y + 14.0f, "Botones especiales (Macros) y Editor de pantalla", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, c3Y + 36.0f, "Activa combinaciones de botones simultáneos para armas o reposiciona controles:", 13.5f, COL_MUTED);
-+        DrawText(x + 18.0f, c3Y + 14.0f, "Existing combos and touch layout", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, c3Y + 36.0f, "Keep these presets, or use the Combos tab to choose up to eight simultaneous buttons.", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, c3Y + 14.0f, "Touch layout editor", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, c3Y + 36.0f, "Move and resize controls. Add or edit combo buttons inside the editor.", 13.5f, COL_MUTED);
  
          float mChipW = (w - 36.0f - 30.0f) / 4.0f;
          float mChipH = 40.0f;
-@@ -1550,7 +2205,7 @@ private:
+@@ -1550,7 +2402,7 @@ private:
          DrawRoundedRect(m1X, mChipY, mChipW, mChipH, 8.0f,
                          m_macro1Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_macro1Enabled ? COL_CYAN : COL_CHIP_BORDER);
@@ -2380,7 +2892,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   m_macro1Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Macro 2 (B+Y)
-@@ -1558,7 +2213,7 @@ private:
+@@ -1558,7 +2410,7 @@ private:
          DrawRoundedRect(m2X, mChipY, mChipW, mChipH, 8.0f,
                          m_macro2Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_macro2Enabled ? COL_CYAN : COL_CHIP_BORDER);
@@ -2389,7 +2901,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   m_macro2Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Macro 3 (L+R)
-@@ -1566,7 +2221,7 @@ private:
+@@ -1566,7 +2418,7 @@ private:
          DrawRoundedRect(m3X, mChipY, mChipW, mChipH, 8.0f,
                          m_macro3Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_macro3Enabled ? COL_CYAN : COL_CHIP_BORDER);
@@ -2398,7 +2910,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   m_macro3Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Macro 4 (A+B)
-@@ -1574,7 +2229,7 @@ private:
+@@ -1574,7 +2426,7 @@ private:
          DrawRoundedRect(m4X, mChipY, mChipW, mChipH, 8.0f,
                          m_macro4Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_macro4Enabled ? COL_CYAN : COL_CHIP_BORDER);
@@ -2407,7 +2919,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   m_macro4Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Row 2: Action Buttons
-@@ -1583,12 +2238,12 @@ private:
+@@ -1583,14 +2435,74 @@ private:
          float editBtnW = (w - 36.0f - 15.0f) * 0.58f;
          float editBtnX = x + 18.0f;
          DrawRoundedRect(editBtnX, actBtnY, editBtnW, actBtnH, 8.0f, { 0.10f, 0.50f, 0.65f, 0.95f }, COL_CYAN);
@@ -2421,51 +2933,191 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +        DrawText(rstBtnX + rstBtnW * 0.5f, actBtnY + 12.0f, "Reset positions", 15.0f, COL_WHITE, true);
      }
  
++    EditSnapshot CaptureLayout() {
++        return {m_buttons,m_normLeftStickPos,m_leftStickScale,m_comboMasks,
++            {m_macro1Enabled,m_macro2Enabled,m_macro3Enabled,m_macro4Enabled,m_macro5Enabled}};
++    }
++    void RestoreLayout(const EditSnapshot& saved) {
++        m_buttons=saved.buttons;m_normLeftStickPos=saved.stick;m_leftStickScale=saved.stickScale;
++        m_comboMasks=saved.combos;
++        for(int i=0;i<5;++i)ComboEnabled(i)=saved.enabled[i];
++        ApplyComboMasks();RecalculateButtonPositions();ResetInput();m_selectedButtonIndex=-1;
++    }
++    void CheckpointLayout() {
++        if(m_editorUndo.size()>=20)m_editorUndo.erase(m_editorUndo.begin());
++        m_editorUndo.push_back(CaptureLayout());
++    }
++    void BeginLayoutEdit() {
++        SetMenuOpen(false);ResetInput();m_editMode=true;m_selectedButtonIndex=-1;
++        m_editorOriginal=CaptureLayout();m_editorUndo.clear();m_editorComboSlot=-1;m_editorResetConfirm=false;
++        m_editorStatus="Drag a control. Drag this panel by its title.";
++    }
++    void CancelLayoutEdit() {
++        if(m_editorOriginal)RestoreLayout(*m_editorOriginal);
++        else {LoadLayoutConfig();RecalculateButtonPositions();}
++        m_editMode=false;m_editorComboSlot=-1;m_editorResetConfirm=false;m_editorUndo.clear();m_editorOriginal.reset();
++    }
++    Vec2 EditorPanelSize() const { return {std::min(360.0f,float(m_width)-24),m_editorCollapsed?42.0f:276.0f}; }
++    Vec2 EditorPanelPosition() const {
++        const auto size=EditorPanelSize();
++        return {12+m_editorPanelNorm.x*std::max(0.0f,m_width-size.x-24),
++                12+m_editorPanelNorm.y*std::max(0.0f,m_height-size.y-24)};
++    }
++    void MoveEditorControl(float px,float py) {
++        if(m_editorPanelDragging) {
++            const auto size=EditorPanelSize();
++            const float maxX=std::max(1.0f,m_width-size.x-24),maxY=std::max(1.0f,m_height-size.y-24);
++            m_editorPanelNorm={std::clamp((px-m_editorDragOffset.x-12)/maxX,0.0f,1.0f),
++                               std::clamp((py-m_editorDragOffset.y-12)/maxY,0.0f,1.0f)};
++        } else if(m_selectedButtonIndex>=0 && m_selectedButtonIndex<int(m_buttons.size())) {
++            auto& button=m_buttons[m_selectedButtonIndex];
++            button.pos={std::clamp(px,button.radius,float(m_width)-button.radius),
++                        std::clamp(py,button.radius,float(m_height)-button.radius)};
++            button.normPos={button.pos.x/m_width,button.pos.y/m_height};
++        } else if(m_selectedButtonIndex==-2) {
++            m_leftStickCenter={std::clamp(px,m_leftStickRadius,float(m_width)-m_leftStickRadius),
++                               std::clamp(py,m_leftStickRadius,float(m_height)-m_leftStickRadius)};
++            m_normLeftStickPos={m_leftStickCenter.x/m_width,m_leftStickCenter.y/m_height};
++            m_leftStickPos=m_leftStickCenter;
++        }
++    }
++    int SelectedCombo() const {
++        if(m_selectedButtonIndex<0 || m_selectedButtonIndex>=int(m_buttons.size()))return -1;
++        const auto& id=m_buttons[m_selectedButtonIndex].id;
++        return id.size()==2 && id[0]=='M' && id[1]>='1' && id[1]<='5'?id[1]-'1':-1;
++    }
++    void OpenEditorCombo(bool edit) {
++        int slot=edit?SelectedCombo():-1;
++        if(!edit)for(int i=0;i<5;++i)if(!ComboEnabled(i)){slot=i;break;}
++        if(slot<0){m_editorStatus=edit?"Select a combo to edit it.":"All 5 combos are visible. Select one and tap Edit combo.";return;}
++        m_editorComboSlot=slot;m_editorComboNew=!edit;m_editorComboMask=edit?m_comboMasks[slot]:0;
++        m_editDragging=false;m_editFingerId.reset();
++    }
      void RenderEditMode() {
-@@ -1603,7 +2258,7 @@ private:
-                        isSel ? Color{ 0.95f, 0.85f, 0.20f, 0.65f } : btn.baseColor,
-                        isSel ? Color{ 1.0f, 1.0f, 0.40f, 1.0f } : btn.borderColor, isSel ? 0.14f : 0.09f);
-             DrawAARing(btn.pos.x, btn.pos.y, btn.radius * 1.15f, 2.0f, isSel ? Color{ 1.0f, 0.9f, 0.2f, 0.9f } : Color{ 0.3f, 0.8f, 1.0f, 0.5f });
+         DrawRectSolid(0, 0, float(m_width), float(m_height), { 0.0f, 0.0f, 0.0f, 0.40f });
+ 
+@@ -1600,65 +2512,91 @@ private:
+             if (!IsButtonActive(btn)) continue;
+             bool isSel = (int(i) == m_selectedButtonIndex);
+             DrawAADisc(btn.pos.x, btn.pos.y, btn.radius,
+-                       isSel ? Color{ 0.95f, 0.85f, 0.20f, 0.65f } : btn.baseColor,
+-                       isSel ? Color{ 1.0f, 1.0f, 0.40f, 1.0f } : btn.borderColor, isSel ? 0.14f : 0.09f);
+-            DrawAARing(btn.pos.x, btn.pos.y, btn.radius * 1.15f, 2.0f, isSel ? Color{ 1.0f, 0.9f, 0.2f, 0.9f } : Color{ 0.3f, 0.8f, 1.0f, 0.5f });
 -            DrawButtonLabel(btn.pos.x, btn.pos.y, btn.label, btn.radius * 0.95f, isSel ? COL_CYAN : COL_WHITE);
-+            DrawButtonLabel(btn.pos.x, btn.pos.y, btn.label.c_str(), btn.radius * 0.95f, isSel ? COL_CYAN : COL_WHITE);
++                       isSel ? Color{ .30f,.30f,.30f,.80f } : Color{ .08f,.08f,.08f,.60f },
++                       isSel ? COL_WHITE : Color{ .80f,.80f,.80f,.75f }, isSel ? 0.14f : 0.09f);
++            if(isSel)DrawAARing(btn.pos.x,btn.pos.y,btn.radius*1.10f,1.25f,COL_WHITE);
++            DrawButtonLabel(btn.pos.x, btn.pos.y, btn.label.c_str(), btn.radius * 0.80f, COL_WHITE,btn.radius*1.48f);
          }
  
          // Left Stick
-@@ -1619,7 +2274,7 @@ private:
-         float banX = (float(m_width) - banW) * 0.5f;
-         float banY = 12.0f;
-         DrawRoundedRect(banX, banY, banW, banH, 8.0f, COL_BG_DARK, COL_CYAN);
+         bool stickSel = (m_selectedButtonIndex == -2);
+-        DrawAARing(m_leftStickCenter.x, m_leftStickCenter.y, m_leftStickRadius, stickSel ? 5.0f : 3.5f, stickSel ? COL_CYAN : Color{ 0.30f, 0.70f, 0.88f, 0.55f });
++        DrawAARing(m_leftStickCenter.x, m_leftStickCenter.y, m_leftStickRadius, stickSel ? 1.75f : 1.25f, stickSel ? COL_CYAN : Color{ 0.30f, 0.70f, 0.88f, 0.55f });
+         DrawAADisc(m_leftStickPos.x, m_leftStickPos.y, m_leftStickKnobRadius,
+-                   stickSel ? Color{ 0.95f, 0.85f, 0.20f, 0.65f } : Color{ 0.10f, 0.32f, 0.45f, 0.80f },
+-                   stickSel ? Color{ 1.0f, 1.0f, 0.40f, 1.0f } : Color{ 0.50f, 0.88f, 1.00f, 0.95f }, 0.12f);
+-
+-        // Top Banner Instructions
+-        float banW = float(m_width) * 0.70f;
+-        float banH = 40.0f;
+-        float banX = (float(m_width) - banW) * 0.5f;
+-        float banY = 12.0f;
+-        DrawRoundedRect(banX, banY, banW, banH, 8.0f, COL_BG_DARK, COL_CYAN);
 -        DrawText(banX + banW * 0.5f, banY + 11.0f, "MODO EDICIÓN: Arrastra para mover | Usa [-] y [+] para cambiar tamaño", 14.0f, COL_CYAN, true);
-+        DrawText(banX + banW * 0.5f, banY + 11.0f, "EDIT LAYOUT: Drag a control to move it. Use - and + to resize.", 14.0f, COL_CYAN, true);
- 
-         // Bottom Toolbar
-         float barW = float(m_width) * 0.80f;
-@@ -1634,31 +2289,35 @@ private:
- 
-         // Button 1: [- Tamaño]
-         DrawRoundedRect(barX + 10.0f, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
+-
+-        // Bottom Toolbar
+-        float barW = float(m_width) * 0.80f;
+-        float barH = 52.0f;
+-        float barX = (float(m_width) - barW) * 0.5f;
+-        float barY = float(m_height) - barH - 12.0f;
+-        DrawRoundedRect(barX, barY, barW, barH, 10.0f, COL_BG_DARK, COL_PANEL_BORDER);
+-
+-        float bw = (barW - 60.0f) / 5.0f;
+-        float bh = 36.0f;
+-        float by = barY + 8.0f;
+-
+-        // Button 1: [- Tamaño]
+-        DrawRoundedRect(barX + 10.0f, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
 -        DrawText(barX + 10.0f + bw * 0.5f, by + 9.0f, "[-] Tamaño", 13.0f, COL_WHITE, true);
-+        DrawText(barX + 10.0f + bw * 0.5f, by + 9.0f, "Smaller", 13.0f, COL_WHITE, true);
- 
-         // Button 2: [+ Tamaño]
-         DrawRoundedRect(barX + 20.0f + bw, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
+-
+-        // Button 2: [+ Tamaño]
+-        DrawRoundedRect(barX + 20.0f + bw, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
 -        DrawText(barX + 20.0f + bw * 1.5f, by + 9.0f, "[+] Tamaño", 13.0f, COL_WHITE, true);
-+        DrawText(barX + 20.0f + bw * 1.5f, by + 9.0f, "Larger", 13.0f, COL_WHITE, true);
- 
-         // Button 3: [Restablecer]
-         DrawRoundedRect(barX + 30.0f + bw * 2.0f, by, bw, bh, 6.0f, { 0.35f, 0.15f, 0.15f, 0.85f }, { 0.80f, 0.30f, 0.30f, 0.90f });
+-
+-        // Button 3: [Restablecer]
+-        DrawRoundedRect(barX + 30.0f + bw * 2.0f, by, bw, bh, 6.0f, { 0.35f, 0.15f, 0.15f, 0.85f }, { 0.80f, 0.30f, 0.30f, 0.90f });
 -        DrawText(barX + 30.0f + bw * 2.5f, by + 9.0f, "Restablecer", 13.0f, COL_WHITE, true);
-+        DrawText(barX + 30.0f + bw * 2.5f, by + 9.0f, "Reset", 13.0f, COL_WHITE, true);
- 
-         // Button 4: [Guardar y Salir]
-         DrawRoundedRect(barX + 40.0f + bw * 3.0f, by, bw, bh, 6.0f, COL_ACTIVE_CHIP, COL_CYAN);
+-
+-        // Button 4: [Guardar y Salir]
+-        DrawRoundedRect(barX + 40.0f + bw * 3.0f, by, bw, bh, 6.0f, COL_ACTIVE_CHIP, COL_CYAN);
 -        DrawText(barX + 40.0f + bw * 3.5f, by + 9.0f, "Guardar", 13.0f, COL_ACTIVE_TEXT, true);
-+        DrawText(barX + 40.0f + bw * 3.5f, by + 9.0f, "Save", 13.0f, COL_ACTIVE_TEXT, true);
++                   {.12f,.12f,.12f,.35f},stickSel?COL_WHITE:Color{.9f,.9f,.9f,.65f});
++
++        const auto size=EditorPanelSize(),panel=EditorPanelPosition();
++        const float x=panel.x,y=panel.y,w=size.x;
++        DrawRoundedRect(x,y,w,size.y,12,COL_BG_DARK,COL_CYAN);
++        DrawText(x+14,y+13,"Layout editor  : :  drag",16,COL_WHITE);
++        DrawRoundedRect(x+w-42,y+6,34,30,6,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+w-25,y+12,m_editorCollapsed?"+":"-",20,COL_WHITE,true);
++        if(!m_editorCollapsed) {
++            std::string selected="Select a control";
++            if(m_selectedButtonIndex==-2)selected="Selected: movement stick";
++            else if(m_selectedButtonIndex>=0 && m_selectedButtonIndex<int(m_buttons.size())) {
++                const auto& button=m_buttons[m_selectedButtonIndex];
++                selected="Selected: "+button.label+"  ("+std::to_string(int(std::lround(button.scale*100)))+"%)";
++            }
++            DrawClippedText(x+14,y+51,selected,14,w-28,COL_WHITE);
++            auto chip=[&](float bx,float by,float bw,const char* label,bool active=false) {
++                DrawRoundedRect(bx,by,bw,40,7,active?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++                DrawText(bx+bw*.5f,by+12,label,14,active?COL_ACTIVE_TEXT:COL_WHITE,true);
++            };
++            chip(x+14,y+78,60,"-");chip(x+82,y+78,60,"+");
++            chip(x+150,y+78,w-164,"Edit combo");
++            const float cw=(w-44)/3;
++            chip(x+14,y+128,cw,"Add combo");chip(x+22+cw,y+128,cw,"Undo");chip(x+30+cw*2,y+128,cw,"Reset");
++            DrawClippedText(x+14,y+181,m_editorStatus,12,w-28,COL_CYAN);
++            DrawText(x+14,y+199,"Save & play keeps edits. Cancel discards them.",12,COL_MUTED);
++            chip(x+14,y+222,(w-36)*.5f,"Cancel");chip(x+22+(w-36)*.5f,y+222,(w-36)*.5f,"Save & play",true);
++        }
++        if(m_editorComboSlot>=0 || m_editorResetConfirm)RenderEditorDialog();
++    }
  
-         // Button 5: [Cancelar]
-         DrawRoundedRect(barX + 50.0f + bw * 4.0f, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
+-        // Button 5: [Cancelar]
+-        DrawRoundedRect(barX + 50.0f + bw * 4.0f, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
 -        DrawText(barX + 50.0f + bw * 4.5f, by + 9.0f, "Cancelar", 13.0f, COL_MUTED, true);
-+        DrawText(barX + 50.0f + bw * 4.5f, by + 9.0f, "Cancel", 13.0f, COL_MUTED, true);
++    void RenderEditorDialog() {
++        const float w=std::min(600.0f,float(m_width)-48),x=(m_width-w)*.5f,y=(m_height-330)*.5f;
++        DrawRectSolid(0,0,float(m_width),float(m_height),{0,0,0,.66f});
++        DrawRoundedRect(x,y,w,330,14,COL_BG_DARK,COL_CYAN);
++        if(m_editorResetConfirm) {
++            DrawText(x+24,y+24,"Reset control positions?",23,COL_WHITE);
++            DrawText(x+24,y+78,"Restore default positions and sizes. Your combo choices stay.",14,COL_MUTED);
++            DrawText(x+24,y+112,"Undo can recover this change before you save.",14,COL_MUTED);
++        } else {
++            const auto title=std::string(m_editorComboNew?"Add combo ":"Edit combo ")+std::to_string(m_editorComboSlot+1);
++            DrawText(x+24,y+22,title.c_str(),23,COL_WHITE);
++            DrawText(x+24,y+60,"Choose the buttons this one touch will hold together.",14,COL_MUTED);
++            const char* names[]={"A","B","X","Y","L","R","ZL","ZR"};
++            const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR};
++            const float bw=(w-78)/4;
++            for(int i=0;i<8;++i) {
++                const float bx=x+24+(i%4)*(bw+10),by=y+96+(i/4)*58;
++                const bool active=(m_editorComboMask&bits[i])!=0;
++                DrawRoundedRect(bx,by,bw,46,8,active?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++                DrawText(bx+bw*.5f,by+14,names[i],17,active?COL_ACTIVE_TEXT:COL_WHITE,true);
++            }
++            DrawText(x+24,y+222,"Hold to press. Lift to release.",14,COL_MUTED);
++            if(!m_editorComboNew) {
++                DrawRoundedRect(x+w-160,y+214,136,32,7,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++                DrawText(x+w-92,y+224,"Hide combo",13,COL_WHITE,true);
++            }
++        }
++        const float bw=(w-64)*.5f;
++        DrawRoundedRect(x+24,y+266,bw,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+24+bw*.5f,y+278,"Cancel",15,COL_WHITE,true);
++        DrawRoundedRect(x+40+bw,y+266,bw,42,8,COL_ACTIVE_CHIP,COL_CYAN);
++        DrawText(x+40+bw*1.5f,y+278,m_editorResetConfirm?"Reset positions":m_editorComboNew?"Create combo":"Apply combo",15,COL_ACTIVE_TEXT,true);
      }
  
      void RenderTabOnline(float x, float y, float w) {
@@ -2483,7 +3135,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          float mChipW = (w - 36.0f - 12.0f) / 2.0f;
          float mChipH = 42.0f;
-@@ -1670,7 +2329,7 @@ private:
+@@ -1670,7 +2608,7 @@ private:
          DrawRoundedRect(c0X, mChipY, mChipW, mChipH, 8.0f,
                          c0Active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          c0Active ? COL_CYAN : COL_CHIP_BORDER);
@@ -2492,7 +3144,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   c0Active ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Chip 1: Desconectado
-@@ -1679,7 +2338,7 @@ private:
+@@ -1679,7 +2617,7 @@ private:
          DrawRoundedRect(c1X, mChipY, mChipW, mChipH, 8.0f,
                          c1Active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          c1Active ? COL_CYAN : COL_CHIP_BORDER);
@@ -2501,7 +3153,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                   c1Active ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Card 2: Detalles
-@@ -1688,31 +2347,58 @@ private:
+@@ -1688,62 +2626,92 @@ private:
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
  
          if (m_onlineMode == 3) { // Community
@@ -2543,6 +3195,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      // -------------------------------------------------------------
      void HandleMenuTouchDown(float px, float py) {
 +        if(m_restoreRestarting)return;
++        if(m_padEditorOpen){HandlePadEditorTouch(px,py);return;}
 +#ifdef MH3_PC_TOUCH_UI
 +        if(m_keyboardEditorOpen){HandleKeyboardEditorTouch(px,py);return;}
 +#endif
@@ -2571,11 +3224,16 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          float padX = float(m_width) * 0.05f;
          float padY = float(m_height) * 0.04f;
          float panW = float(m_width) - padX * 2.0f;
-@@ -1723,27 +2409,29 @@ private:
+         float panH = float(m_height) - padY * 2.0f;
+ 
+         // Close button [✕] or click outside panel
+-        float closeX = padX + panW - 56.0f;
++        float closeX = padX + panW - 144.0f;
          float closeY = padY + 18.0f;
          float closeS = 38.0f;
-         if (px >= closeX && px <= closeX + closeS + 10.0f && py >= closeY && py <= closeY + closeS + 10.0f) {
+-        if (px >= closeX && px <= closeX + closeS + 10.0f && py >= closeY && py <= closeY + closeS + 10.0f) {
 -            m_menuOpen = false;
++        if (px >= closeX && px <= closeX + 126.0f && py >= closeY && py <= closeY + closeS + 10.0f) {
 +            SetMenuOpen(false);
              return;
          }
@@ -2607,7 +3265,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                      return;
                  }
              }
-@@ -1752,6 +2440,7 @@ private:
+@@ -1752,6 +2720,7 @@ private:
          float contentY = tabY + tabH + 16.0f;
          float contentW = panW - 40.0f;
          float x = padX + 20.0f;
@@ -2615,7 +3273,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
          if (m_menuTab == 0) { // Gráficos
              // Resolution chips
-@@ -1770,12 +2459,12 @@ private:
+@@ -1770,12 +2739,12 @@ private:
                  }
              }
  
@@ -2630,7 +3288,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                  if (px >= x + 18.0f && px <= x + 18.0f + colW) {
                      ToggleFullscreen();
                      return;
-@@ -1803,7 +2492,7 @@ private:
+@@ -1803,7 +2772,7 @@ private:
                  for (int i = 0; i < 4; ++i) {
                      float fx = x + 18.0f + float(i) * (fChipW + 5.0f);
                      if (px >= fx && px <= fx + fChipW) {
@@ -2639,7 +3297,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                              // Locked to 30 FPS in Online City
                              return;
                          }
-@@ -1821,10 +2510,7 @@ private:
+@@ -1821,10 +2790,7 @@ private:
                  // VSync click
                  if (px >= syncColX && px <= syncColX + sChipW) {
                      m_vsync = !m_vsync;
@@ -2651,7 +3309,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                      aurora_enable_vsync(m_vsync);
                      SaveSettings();
                      return;
-@@ -1844,15 +2530,30 @@ private:
+@@ -1844,15 +2810,30 @@ private:
              float tBtnY = c4Y + 54.0f;
              if (py >= tBtnY && py <= tBtnY + chipH) {
                  if (px >= x + 18.0f && px <= x + 18.0f + tBtnW) {
@@ -2682,7 +3340,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              float chipY = contentY + 60.0f;
              float chipW = (contentW - 36.0f - 20.0f) / 5.0f;
              float chipH = 44.0f;
-@@ -1875,7 +2576,7 @@ private:
+@@ -1875,7 +2856,7 @@ private:
              if (px >= rBtnX && px <= rBtnX + rBtnW && py >= rBtnY && py <= rBtnY + 44.0f) {
                  SaveSettings();
                  SaveLanguage();
@@ -2691,7 +3349,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                  return;
              }
          } else if (m_menuTab == 2) { // Guardados
-@@ -1889,17 +2590,22 @@ private:
+@@ -1889,17 +2870,22 @@ private:
  
              if (py >= btnY && py <= btnY + btnH) {
                  if (px >= b1X && px <= b1X + btnW) {
@@ -2717,7 +3375,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              // Card 1: Touch Visibility & Opacity
              float c1H = 176.0f;
              float tvChipW = (contentW - 36.0f - 15.0f) / 2.0f;
-@@ -1915,7 +2621,7 @@ private:
+@@ -1915,7 +2901,7 @@ private:
                      return;
                  } else if (px >= tv2X && px <= tv2X + tvChipW) {
                      m_touchVisible = false;
@@ -2726,18 +3384,40 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
                      return;
                  }
              }
-@@ -2002,8 +2708,9 @@ private:
+@@ -1948,15 +2934,18 @@ private:
+             float trigX = x + contentW * 0.62f;
+             float trigW = contentW * 0.38f - 18.0f;
+ 
++            if(py>=c2Y+10 && py<=c2Y+40 && px>=x+contentW-228 && px<=x+contentW-18) {
++                m_padEditorOpen=true;m_padPage=0;m_padStatus="Choose a Wii action, then press a controller button.";return;
++            }
+             if (py >= gpChipY && py <= gpChipY + gpChipH) {
+                 if (px >= l1X && px <= l1X + lChipW) {
+-                    Gamepad_SetLayout(0);
++                    RequestPadPreset(0);
+                     return;
+                 } else if (px >= l2X && px <= l2X + lChipW) {
+-                    Gamepad_SetLayout(1);
++                    RequestPadPreset(1);
+                     return;
+                 } else if (px >= trigX && px <= trigX + trigW) {
+-                    Gamepad_SetSwapTriggers(!Gamepad_GetSwapTriggers());
++                    RequestPadPreset(2);
+                     return;
+                 }
+             }
+@@ -2002,9 +2991,7 @@ private:
  
              if (py >= actBtnY && py <= actBtnY + actBtnH) {
                  if (px >= editBtnX && px <= editBtnX + editBtnW) {
 -                    m_menuOpen = false;
-+                    SetMenuOpen(false);
-                     m_editMode = true;
-+                    ResetInput();
-                     m_selectedButtonIndex = -1;
+-                    m_editMode = true;
+-                    m_selectedButtonIndex = -1;
++                    BeginLayoutEdit();
                      return;
                  } else if (px >= rstBtnX && px <= rstBtnX + rstBtnW) {
-@@ -2015,7 +2722,8 @@ private:
+                     InitDefaultButtons();
+@@ -2015,7 +3002,8 @@ private:
                      return;
                  }
              }
@@ -2747,7 +3427,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              HandleTabOnlineTouch(px, py, x, contentY, contentW);
          }
      }
-@@ -2030,15 +2738,16 @@ private:
+@@ -2030,92 +3018,96 @@ private:
              if (px >= c0X && px <= c0X + mChipW) {
                  m_onlineMode = 3;
                  LocalOnlineServer::SetMode(LocalOnlineServer::Mode::Community, "mh3sp.com");
@@ -2766,25 +3446,152 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          }
      }
  
-@@ -2100,7 +2809,7 @@ private:
-         if (ldx * ldx + ldy * ldy <= (m_leftStickRadius * 1.3f) * (m_leftStickRadius * 1.3f)) {
-             m_selectedButtonIndex = -2;
-             m_editDragging = true;
--            m_editFingerId = int(id);
-+            m_editFingerId = id;
-             return;
-         }
- 
-@@ -2113,7 +2822,7 @@ private:
-             if (dx * dx + dy * dy <= (btn.radius * 1.4f) * (btn.radius * 1.4f)) {
-                 m_selectedButtonIndex = int(i);
-                 m_editDragging = true;
--                m_editFingerId = int(id);
-+                m_editFingerId = id;
+-    void HandleEditModeTouchDown(SDL_FingerID id, float px, float py) {
+-        float barW = float(m_width) * 0.80f;
+-        float barH = 52.0f;
+-        float barX = (float(m_width) - barW) * 0.5f;
+-        float barY = float(m_height) - barH - 12.0f;
+-
+-        // Toolbar clicks
+-        if (py >= barY && py <= barY + barH) {
+-            float bw = (barW - 60.0f) / 5.0f;
+-            float by = barY + 8.0f;
+-            float bh = 36.0f;
+-
+-            // 1. [- Tamaño]
+-            float b1X = barX + 10.0f;
+-            if (px >= b1X && px <= b1X + bw) {
+-                AdjustSelectedButtonScale(-0.10f);
+-                return;
++    void HandleEditorDialogTouch(float px,float py) {
++        const float w=std::min(600.0f,float(m_width)-48),x=(m_width-w)*.5f,y=(m_height-330)*.5f;
++        if(m_editorComboSlot>=0) {
++            const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR};
++            const float bw=(w-78)/4;
++            for(int i=0;i<8;++i) {
++                const float bx=x+24+(i%4)*(bw+10),by=y+96+(i/4)*58;
++                if(px>=bx && px<=bx+bw && py>=by && py<=by+46){m_editorComboMask^=bits[i];return;}
+             }
+-            // 2. [+ Tamaño]
+-            float b2X = barX + 20.0f + bw;
+-            if (px >= b2X && px <= b2X + bw) {
+-                AdjustSelectedButtonScale(+0.10f);
+-                return;
++            if(!m_editorComboNew && px>=x+w-160 && px<=x+w-24 && py>=y+214 && py<=y+246) {
++                CheckpointLayout();ComboEnabled(m_editorComboSlot)=false;m_editorComboSlot=-1;m_selectedButtonIndex=-1;
++                m_editorStatus="Combo hidden. Add combo can reuse its slot.";return;
+             }
+-            // 3. [Restablecer]
+-            float b3X = barX + 30.0f + bw * 2.0f;
+-            if (px >= b3X && px <= b3X + bw) {
+-                InitDefaultButtons();
+-                m_normLeftStickPos = { 0.12f, 0.76f };
+-                m_leftStickScale = 1.0f;
+-                RecalculateButtonPositions();
+-                return;
++        }
++        const float bw=(w-64)*.5f;
++        if(py<y+266 || py>y+308)return;
++        if(px>=x+24 && px<=x+24+bw){m_editorComboSlot=-1;m_editorResetConfirm=false;return;}
++        if(px<x+40+bw || px>x+w-24)return;
++        if(m_editorResetConfirm) {
++            CheckpointLayout();InitDefaultButtons();m_normLeftStickPos={.12f,.76f};m_leftStickScale=1;
++            ApplyComboMasks();RecalculateButtonPositions();m_selectedButtonIndex=-1;m_editorResetConfirm=false;
++        } else if(m_editorComboSlot>=0 && m_editorComboMask) {
++            CheckpointLayout();const int slot=m_editorComboSlot;
++            m_comboMasks[slot]=m_editorComboMask;ComboEnabled(slot)=true;ApplyComboMasks();
++            for(int i=0;i<int(m_buttons.size());++i)if(m_buttons[i].id=="M"+std::to_string(slot+1)) {
++                m_selectedButtonIndex=i;
++                if(m_editorComboNew)m_buttons[i].normPos={.50f,.56f};
++                break;
++            }
++            RecalculateButtonPositions();m_editorComboSlot=-1;m_editorStatus="Combo ready. Drag it into place, then Save & play.";
++        }
++    }
++    void HandleEditModeTouchDown(SDL_FingerID id, float px, float py) {
++        if(m_editorComboSlot>=0 || m_editorResetConfirm){HandleEditorDialogTouch(px,py);return;}
++        if(m_editDragging && m_editFingerId!=id)return;
++        const auto size=EditorPanelSize(),panel=EditorPanelPosition();
++        const float x=panel.x,y=panel.y,w=size.x;
++        if(px>=x && px<=x+w && py>=y && py<=y+size.y) {
++            if(py<=y+42) {
++                if(px>=x+w-46){m_editorCollapsed=!m_editorCollapsed;return;}
++                m_editorPanelDragging=true;m_editDragging=true;m_editFingerId=id;
++                m_editorDragOffset={px-x,py-y};return;
+             }
+-            // 4. [Guardar]
+-            float b4X = barX + 40.0f + bw * 3.0f;
+-            if (px >= b4X && px <= b4X + bw) {
+-                SaveLayoutConfig();
+-                m_editMode = false;
+-                m_selectedButtonIndex = -1;
++            if(py>=y+78 && py<=y+118) {
++                if(px<=x+142) {
++                    if(m_selectedButtonIndex==-2 || m_selectedButtonIndex>=0) {
++                        CheckpointLayout();AdjustSelectedButtonScale(px<x+78?-.10f:.10f);
++                    } else m_editorStatus="Select a control before changing its size.";
++                } else OpenEditorCombo(true);
                  return;
              }
+-            // 5. [Cancelar]
+-            float b5X = barX + 50.0f + bw * 4.0f;
+-            if (px >= b5X && px <= b5X + bw) {
+-                LoadLayoutConfig();
+-                RecalculateButtonPositions();
+-                m_editMode = false;
+-                m_selectedButtonIndex = -1;
++            if(py>=y+128 && py<=y+168) {
++                const float cw=(w-44)/3;
++                if(px<=x+14+cw)OpenEditorCombo(false);
++                else if(px<=x+22+cw*2) {
++                    if(!m_editorUndo.empty()) {
++                        const auto previous=m_editorUndo.back();m_editorUndo.pop_back();RestoreLayout(previous);
++                        m_editorStatus="Last layout change undone.";
++                    } else m_editorStatus="No layout change to undo.";
++                } else m_editorResetConfirm=true;
+                 return;
+             }
+-        }
+-
+-        // Left Stick touched
+-        float ldx = px - m_leftStickCenter.x;
+-        float ldy = py - m_leftStickCenter.y;
+-        if (ldx * ldx + ldy * ldy <= (m_leftStickRadius * 1.3f) * (m_leftStickRadius * 1.3f)) {
+-            m_selectedButtonIndex = -2;
+-            m_editDragging = true;
+-            m_editFingerId = int(id);
++            if(py>=y+222 && py<=y+262) {
++                if(px<x+w*.5f)CancelLayoutEdit();
++                else if(SaveLayoutConfig()) {
++                    m_editMode=false;m_selectedButtonIndex=-1;m_editorUndo.clear();m_editorOriginal.reset();ResetInput();
++                } else m_editorStatus="Could not save layout. Check available storage, then try again.";
++            }
+             return;
          }
-@@ -2164,7 +2873,7 @@ private:
+-
+-        // Check which button was touched
+-        for (size_t i = 0; i < m_buttons.size(); ++i) {
+-            auto& btn = m_buttons[i];
+-            if (!IsButtonActive(btn)) continue;
+-            float dx = px - btn.pos.x;
+-            float dy = py - btn.pos.y;
+-            if (dx * dx + dy * dy <= (btn.radius * 1.4f) * (btn.radius * 1.4f)) {
+-                m_selectedButtonIndex = int(i);
+-                m_editDragging = true;
+-                m_editFingerId = int(id);
+-                return;
+-            }
++        const float dx=px-m_leftStickCenter.x,dy=py-m_leftStickCenter.y;
++        if(dx*dx+dy*dy<=m_leftStickRadius*m_leftStickRadius*1.69f) {
++            CheckpointLayout();m_selectedButtonIndex=-2;m_editDragging=true;m_editFingerId=id;return;
++        }
++        if(auto* button=HitButton(px,py)) {
++            CheckpointLayout();m_selectedButtonIndex=int(button-m_buttons.data());
++            m_editDragging=true;m_editFingerId=id;
+         }
+     }
+ 
+@@ -2164,7 +3156,7 @@ private:
  
      void LoadSettings() {
          const char* user = std::getenv("MH3_USER_DIR");
@@ -2793,7 +3600,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          std::string gfxPath = dir + "/MH3UI.graphics";
  
          std::ifstream in(gfxPath);
-@@ -2184,7 +2893,7 @@ private:
+@@ -2184,7 +3176,7 @@ private:
          } else {
              m_vsync = true;
              m_resolutionIndex = 0; // 0: Original Wii by default!
@@ -2802,7 +3609,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              m_fpsLimit = 60;
              m_showFpsHud = true;
              m_fullscreen = false;
-@@ -2208,22 +2917,24 @@ private:
+@@ -2208,22 +3200,24 @@ private:
              else if (code == "fr") m_langChoice = 2;
              else if (code == "de") m_langChoice = 3;
              else if (code == "it") m_langChoice = 4;
@@ -2832,7 +3639,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          std::string gfxPath = dir + "/MH3UI.graphics";
  
          std::ofstream out(gfxPath, std::ios::trunc);
-@@ -2236,7 +2947,7 @@ private:
+@@ -2236,7 +3230,7 @@ private:
  
      void SaveLanguage() {
          const char* user = std::getenv("MH3_USER_DIR");
@@ -2841,16 +3648,26 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          std::string langPath = dir + "/MH3UI.language";
  
          const char* codes[] = { "es", "en", "fr", "de", "it" };
-@@ -2248,7 +2959,7 @@ private:
+@@ -2246,31 +3240,36 @@ private:
+         }
+     }
  
-     void SaveLayoutConfig() {
+-    void SaveLayoutConfig() {
++    bool SaveLayoutConfig() {
          const char* user = std::getenv("MH3_USER_DIR");
 -        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3";
 +        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
          std::string cfgPath = dir + "/touch_layout.cfg";
  
          std::ofstream out(cfgPath, std::ios::trunc);
-@@ -2261,6 +2972,8 @@ private:
+-        if (!out) return;
++        if (!out) return false;
+ 
+         out << "VERSION 1\n";
++        out << "EDITOR_PANEL " << m_editorPanelNorm.x << ' ' << m_editorPanelNorm.y << ' ' << (m_editorCollapsed?1:0) << '\n';
+         out << "TOUCH_VISIBLE " << (m_touchVisible ? 1 : 0) << '\n';
+         out << "OPACITY " << m_buttonOpacity << '\n';
+         out << "MACRO1 " << (m_macro1Enabled ? 1 : 0) << '\n';
          out << "MACRO2 " << (m_macro2Enabled ? 1 : 0) << '\n';
          out << "MACRO3 " << (m_macro3Enabled ? 1 : 0) << '\n';
          out << "MACRO4 " << (m_macro4Enabled ? 1 : 0) << '\n';
@@ -2859,7 +3676,11 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          out << "LEFT_STICK " << m_normLeftStickPos.x << ' ' << m_normLeftStickPos.y << ' ' << m_leftStickScale << '\n';
  
          for (const auto& btn : m_buttons) {
-@@ -2270,7 +2983,7 @@ private:
+             out << "BTN " << btn.id << ' ' << btn.normPos.x << ' ' << btn.normPos.y << ' ' << btn.scale << '\n';
+         }
++        out.close();
++        return bool(out);
+     }
  
      void LoadLayoutConfig() {
          const char* user = std::getenv("MH3_USER_DIR");
@@ -2868,7 +3689,20 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          std::string cfgPath = dir + "/touch_layout.cfg";
  
          std::ifstream in(cfgPath);
-@@ -2293,6 +3006,8 @@ private:
+@@ -2287,12 +3286,20 @@ private:
+             std::istringstream iss(line);
+             std::string tag;
+             if (!(iss >> tag)) continue;
+-            if (tag == "TOUCH_VISIBLE") { int v; iss >> v; m_touchVisible = (v != 0); }
++            if (tag == "EDITOR_PANEL") {
++                float x,y;int collapsed;
++                if(iss>>x>>y>>collapsed && std::isfinite(x) && std::isfinite(y)) {
++                    m_editorPanelNorm={std::clamp(x,0.0f,1.0f),std::clamp(y,0.0f,1.0f)};m_editorCollapsed=collapsed!=0;
++                }
++            }
++            else if (tag == "TOUCH_VISIBLE") { int v; iss >> v; m_touchVisible = (v != 0); }
+             else if (tag == "OPACITY") { iss >> m_buttonOpacity; m_buttonOpacity = std::clamp(m_buttonOpacity, 0.10f, 1.0f); }
+             else if (tag == "MACRO1") { int v; iss >> v; m_macro1Enabled = (v != 0); }
              else if (tag == "MACRO2") { int v; iss >> v; m_macro2Enabled = (v != 0); }
              else if (tag == "MACRO3") { int v; iss >> v; m_macro3Enabled = (v != 0); }
              else if (tag == "MACRO4") { int v; iss >> v; m_macro4Enabled = (v != 0); }
@@ -2877,7 +3711,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
              else if (tag == "LEFT_STICK") {
                  iss >> m_normLeftStickPos.x >> m_normLeftStickPos.y >> m_leftStickScale;
              } else if (tag == "BTN") {
-@@ -2301,95 +3016,90 @@ private:
+@@ -2301,95 +3308,90 @@ private:
                  if (iss >> id >> nx >> ny >> sc) {
                      for (auto& btn : m_buttons) {
                          if (btn.id == id) {
@@ -3019,7 +3853,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          }
      }
  
-@@ -2407,7 +3117,7 @@ private:
+@@ -2407,7 +3409,7 @@ private:
      Vec2 m_leftStickPos{ 0, 0 };
      float m_leftStickRadius = 0.0f;
      float m_leftStickKnobRadius = 0.0f;
@@ -3028,7 +3862,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      int16_t m_leftX = 0;
      int16_t m_leftY = 0;
  
-@@ -2418,7 +3128,7 @@ private:
+@@ -2418,7 +3420,7 @@ private:
      Vec2 m_rightLastPos{ 0, 0 };
      float m_rightStickRadius = 0.0f;
      float m_rightStickKnobRadius = 0.0f;
@@ -3037,7 +3871,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      int16_t m_rightX = 0;
      int16_t m_rightY = 0;
      std::atomic<float> m_cameraDeltaX{ 0.0f };
-@@ -2432,31 +3142,47 @@ private:
+@@ -2432,31 +3434,59 @@ private:
  
      // Settings Menu & Options State
      bool m_menuOpen = false;
@@ -3050,6 +3884,11 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      bool m_vsync = true;
      int m_fpsLimit = 60;
      bool m_showFpsHud = true;
++    bool m_padEditorOpen=false;
++    int m_padPage=0,m_padCaptureAction=-1,m_padConflictSource=-1,m_padConflictOwner=-1,m_padPendingPreset=-1;
++    RowellPad::Capture m_padCapture;
++    SDL_JoystickID m_padCaptureDevice=0;
++    std::string m_padStatus="Touch controls and PC keyboard bindings stay unchanged.";
      bool m_touchVisible = true;
      float m_buttonOpacity = 1.0f;
 -    int m_langChoice = 0;      // 0: Español
@@ -3084,6 +3923,13 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +    std::array<uint16_t, 5> m_comboMasks{{MH3_CL_A|MH3_CL_X, MH3_CL_B|MH3_CL_Y,
 +        MH3_CL_L|MH3_CL_R, MH3_CL_A|MH3_CL_B, MH3_CL_R|MH3_CL_X|MH3_CL_A}};
      bool m_editMode = false;
++    std::optional<EditSnapshot> m_editorOriginal;
++    std::vector<EditSnapshot> m_editorUndo;
++    Vec2 m_editorPanelNorm{.5f,.02f},m_editorDragOffset{};
++    bool m_editorCollapsed=false,m_editorPanelDragging=false,m_editorResetConfirm=false,m_editorComboNew=false;
++    int m_editorComboSlot=-1;
++    uint16_t m_editorComboMask=0;
++    std::string m_editorStatus="Drag a control. Drag this panel by its title.";
      int m_selectedButtonIndex = -1;
      bool m_editDragging = false;
 -    int m_editFingerId = -1;
@@ -3091,7 +3937,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
  
      // GL Resources
      GLuint m_shaderProgram = 0;
-@@ -2466,22 +3192,34 @@ private:
+@@ -2466,22 +3496,34 @@ private:
      GLuint m_vbo = 0;
      GLuint m_fontTex = 0;
  
@@ -3126,7 +3972,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
      SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
      SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
      g_touchSettingsEngine.Init();
-@@ -2492,44 +3230,83 @@ void TouchControls_Init(void) {
+@@ -2492,44 +3534,83 @@ void TouchControls_Init(void) {
      }
  }
  
@@ -3215,7 +4061,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
          break;
      case SDL_EVENT_FINGER_DOWN:
          g_touchSettingsEngine.HandleTouchDown(event->tfinger.fingerID, event->tfinger.x, event->tfinger.y);
-@@ -2538,13 +3315,21 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
+@@ -2538,13 +3619,22 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
          g_touchSettingsEngine.HandleTouchMove(event->tfinger.fingerID, event->tfinger.x, event->tfinger.y);
          break;
      case SDL_EVENT_FINGER_UP:
@@ -3233,12 +4079,13 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e44ed0e7ca93c901e584b9b260ab2f9d
 +    case SDL_EVENT_WINDOW_HIDDEN:
 +    case SDL_EVENT_DID_ENTER_BACKGROUND:
 +        g_touchSettingsEngine.ResetInput();
++        g_touchSettingsEngine.CancelControllerCapture();
 +        MH3GameSpeed::Reset();
 +        break;
      default:
          break;
      }
-@@ -2553,23 +3338,35 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
+@@ -2553,23 +3643,35 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
  void TouchControls_UpdateSample(uint16_t* buttons, int16_t* leftX, int16_t* leftY,
                                  int16_t* rightX, int16_t* rightY,
                                  uint8_t* triggerL, uint8_t* triggerR) {

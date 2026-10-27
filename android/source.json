@@ -13,7 +13,7 @@
                               "scripts",
                               "toolchain"
                           ],
-    "patchSha256":  "3a6c75993461294ce343cc47ffbb63bc467a8d3a9a0b4514cf337f416bbdac44",
+    "patchSha256":  "e9be03ae98f28f4392a989ef971766ba8397dae0fbf02a10307e3b97fe26ec93",
     "trackedFiles":  [
                          {
                              "path":  ".gitignore",
@@ -25,7 +25,7 @@
                          },
                          {
                              "path":  "packaging/android/AndroidManifest.xml",
-                             "sha256Lf":  "51260fb1b410bc8fe8bd80785ed4cf5c64babdb38f7f6871ddc62512ebf36341"
+                             "sha256Lf":  "391182401337c90229cbd77cc36cd18eb1b6a966fc37905faaf2334168986ee0"
                          },
                          {
                              "path":  "packaging/android/res/values/strings.xml",
@@ -37,7 +37,7 @@
                          },
                          {
                              "path":  "runtime/CMakeLists.txt",
-                             "sha256Lf":  "a8b620941091b3b3e6a4f9be4fc8652983bbb97054bfe1364a4741a03c9ebd11"
+                             "sha256Lf":  "ea896da94d46aef873fb9d9cbe3347d64e8fa5cd6caea2a9c7aea2f52c241dfb"
                          },
                          {
                              "path":  "runtime/include/save_manager.h",
@@ -53,7 +53,7 @@
                          },
                          {
                              "path":  "runtime/src/controller_host.cpp",
-                             "sha256Lf":  "c5dafc8bcc7db9f4301459d5a0aba2dc7fa21db302d21892defc63f19ccd7d7c"
+                             "sha256Lf":  "cc5df64c865d7e265729196d7dc31f7064413d6a615d1e85d5dd5e4ed9c0eb9f"
                          },
                          {
                              "path":  "runtime/src/frame_pacer.cpp",
@@ -73,7 +73,7 @@
                          },
                          {
                              "path":  "runtime/src/touch_controls.cpp",
-                             "sha256Lf":  "8bad2e890cd959b8be7897c8db20f53df4a5602f0f9b92b2cafc78db2e143664"
+                             "sha256Lf":  "1ba80570a0a37f9ce5d6395ae792460b91bc9555f3aaa4ca0d8d43ce23dea95c"
                          },
                          {
                              "path":  "scripts/prepare_native_dispatch.py",
@@ -102,8 +102,16 @@
                            "sha256":  "500ca894a10b59400b7348d342268f69f2a88e4d197b77a4ffa368e858015f14"
                        },
                        {
+                           "path":  "runtime/include/gamepad_bindings.h",
+                           "sha256":  "04ec4d2d173f482252c6ca8fd6bcb3a7f38ac53a0d837445414eb9b04cc8f1f6"
+                       },
+                       {
                            "path":  "runtime/include/touch_contacts.h",
                            "sha256":  "97ca4df6f6167b221600c80258357398623fe3ff9baa37cb82dcbfdfdc27604b"
+                       },
+                       {
+                           "path":  "runtime/src/gamepad_bindings.cpp",
+                           "sha256":  "59533468db186e7e7d2fd690cb399c4cc40f0095182e8f46814638ad1eb982ea"
                        },
                        {
                            "path":  "scripts/rowell_android_build.py",

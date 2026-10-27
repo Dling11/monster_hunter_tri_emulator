@@ -1,4 +1,18 @@
-# MH Tri - Rowell 1.4-rowell.8
+# MH Tri - Rowell 1.4-rowell.9 pre-release
+
+- Physical controller remapping on Android and Windows, separate from touch and
+  PC keyboard controls, with saved bindings, conflict confirmation and reset.
+- A movable, collapsible touch editor with - / + sizing, combo creation/editing,
+  Undo and explicit Save & play / Cancel.
+- Plain dark menus, thin-outline buttons, a simple joystick and fitted combo labels.
+- A visible Resume button and PC pointer recovery for settings and touch controls.
+- Existing character saves, data folders and save formats remain unchanged.
+
+Windows build, runtime self-checks and local input/save/editor tests passed.
+Android/DS4 gameplay testing is pending. Android retains its package, signing
+key and data folder for installation over the existing Rowell app.
+
+## 1.4-rowell.8
 
 - Fixed the solo speed button being disabled in Moga Woods/free hunting and
   offline counter quests. Both now support 1x, 1.25x and 1.5x.

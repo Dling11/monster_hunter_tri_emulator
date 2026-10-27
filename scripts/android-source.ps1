@@ -71,7 +71,7 @@ function Test-Patch {
 if($Mode -eq 'Export') {
     Assert-Baseline
     $additional=@('docker/.dockerignore','docker/AndroidTools.Dockerfile','rowell-android.ps1',
-        'runtime/include/touch_contacts.h','runtime/include/game_speed.h','scripts/rowell_android_build.py','scripts/rowell_android_package.py',
+        'runtime/include/touch_contacts.h','runtime/include/gamepad_bindings.h','runtime/src/gamepad_bindings.cpp','runtime/include/game_speed.h','scripts/rowell_android_build.py','scripts/rowell_android_package.py',
         'packaging/android/src/com/oceantri/mh3/RowellRestartActivity.java')
     $untracked=@(& git -C $Destination ls-files --others --exclude-standard)
     if($LASTEXITCODE -ne 0) { throw 'Could not inspect additional Android source files.' }
@@ -102,7 +102,7 @@ if($Mode -eq 'Export') {
         patchSha256=(Get-FileHash -LiteralPath $patch -Algorithm SHA256).Hash.ToLowerInvariant()
         trackedFiles=$tracked;extraFiles=$extras
     }
-    [IO.File]::WriteAllText((Join-Path $bundle 'source.json'),($manifest | ConvertTo-Json -Depth 8)+"`n",$utf8)
+    [IO.File]::WriteAllText((Join-Path $bundle 'source.json'),(($manifest | ConvertTo-Json -Depth 8).Replace("`r`n","`n")+"`n"),$utf8)
     Write-Host "Exported $($tracked.Count) changed files and $($extras.Count) additional files into android/."
     exit 0
 }

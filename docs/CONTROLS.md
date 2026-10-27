@@ -15,12 +15,21 @@ Pressed buttons shrink slightly and light up. A combo lights its component
 buttons too. **Controls > Edit touch layout** keeps movement, size, opacity and
 visibility settings available.
 
+In 1.4-rowell.9, the editor uses a movable, collapsible panel.
+Drag its title to uncover controls. Select a control and use **- / +** to resize;
+**Undo** keeps the last 20 layout changes. **Add combo** opens a button picker
+using a hidden slot among the existing five. Select a combo for **Edit combo**
+or **Hide combo**. **Save & play** saves the layout; **Cancel** restores the
+positions and combo settings from before this edit. Existing layouts still load.
+The menu and controls use neutral dark, gray and white colors; combo labels fit
+inside their buttons even at smaller sizes.
+
 The touch buttons use the original Wii Classic **+** and **-** labels.
 Controller/weapon settings determine what each action does in the game.
 Underwater, **ZL** moves toward the surface and **ZR** moves downward; see
 [Capcom's Tri manual](https://static.capcom.com/monsterhunter/tri_manual.pdf).
 
-## Single-player game speed (dev.4)
+## Single-player game speed
 
 Tap the **1x** touch button to cycle **1x > 1.25x > 1.5x > 1x**, or choose a
 rate in **Gear > System > Game speed**. The speed button can be moved/resized
@@ -128,5 +137,28 @@ simulate three separate fingers.
 Hide touch controls for the original mouse camera/attacks: left mouse = X,
 right mouse = A and middle mouse = R. Gamepads keep their own input; the shared
 Controls page offers Nintendo/Xbox layouts and shoulder/trigger options.
+
+## Physical controller remapping (1.4-rowell.9)
+
+On Android, open **Gear > Controls > Remap buttons**. On Windows, use
+**F2 > Controls > Remap buttons**. Connect a Bluetooth or USB controller,
+choose a Wii action, then press the physical button or trigger you want to use.
+Stick clicks (L3/R3) can replace a broken face button. Analog stick movement
+keeps its existing behavior. All Wii buttons and the five combo slots can be mapped.
+
+If that input already belongs to another action, choose **Swap bindings** to
+exchange the two assignments, or **Cancel**. **Clear binding** disables an
+action's controller input. **Reset defaults** asks before restoring the current
+Nintendo/Xbox and shoulder/trigger preset. Selecting a preset also asks before
+replacing custom mappings.
+
+Bindings save automatically in **MH3_Rowell_Dev/controller_bindings.cfg** and
+apply immediately. This map applies to physical controllers only; touch layout,
+PC keyboard bindings and character saves are separate. The keyboard editor stays
+absent from Android. Without a controller, touch controls work normally; no
+keyboard fallback is created. Buttons held when capture starts are ignored until
+released, and disconnecting cancels capture safely.
+
+A real Android/DS4 gameplay check is still required for this pre-release.
 
 English app settings and the game's language remain separate settings.
