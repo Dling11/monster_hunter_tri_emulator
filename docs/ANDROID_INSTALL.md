@@ -16,7 +16,8 @@ Monster Hunter Tri image, game ID **RMHP08**. Performance depends on the device.
    The app copies a selected image into its own folder and prepares it.
 5. Let preparation finish, then create a character or continue your Rowell save.
 
-The app creates **Internal storage/MH3_Rowell_Dev**. Your original app and its
+Version .13 creates **Internal storage/MH3_Rowell_Dev** and its **imports**,
+**exports** and **saves** folders after storage access is granted. Your original app and its
 **MH3** folder stay separate; their saves are not automatically imported.
 The download contains no game image or saved progress. Docker, Android Studio
 and BlueStacks are not needed on the phone.

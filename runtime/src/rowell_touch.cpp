@@ -51,6 +51,8 @@ void RowellTouch_InitializeUserDir() {
         } else _putenv_s("MH3_USER_DIR","MH3_Rowell_Dev");
     }
     std::filesystem::create_directories(UserDir());
+    for (const char* name : {"imports", "exports", "saves"})
+        std::filesystem::create_directories(UserDir() / name);
 }
 
 void RowellTouch_Attach(SDL_Window* window) {

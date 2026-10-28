@@ -1,4 +1,15 @@
-# MH Tri - Rowell 1.4-rowell.12 pre-release
+# MH Tri - Rowell 1.4-rowell.13 pre-release
+
+- Android creates imports, exports and saves folders after storage access is
+  granted, before selecting or preparing the game image.
+- Windows creates the same transfer folders at startup. Existing files and
+  folders are preserved.
+- For legacy-save migration, copy the complete exported MH3-RMHP08 folder into
+  MH3_Rowell_Dev/imports, then choose it under Saves > Restore / import > Other saves.
+- Includes the .12 controls, settings and stability changes below. Package,
+  signing identity and save-data folder are unchanged.
+
+## Version .12 stability changes
 
 - Integrated selected stable Android-upstream resource guards for equipment
   transitions: absent nodes/animations produce an empty result. Bounds and null

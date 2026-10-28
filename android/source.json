@@ -13,7 +13,7 @@
     "scripts",
     "toolchain"
   ],
-  "patchSha256": "f345544de99eb3cc18cd3abe6d13c286b5d65197f73f011543656a46af2287ae",
+  "patchSha256": "e4460176a2c6b9d17af94b803343c23747f483306b2e80aa4505945b682e36a0",
   "trackedFiles": [
     {
       "path": ".gitignore",
@@ -25,7 +25,7 @@
     },
     {
       "path": "packaging/android/AndroidManifest.xml",
-      "sha256Lf": "c32a2e4bdae30be0f1f7fa54f48447ec6d6f6309ec246c4e45f42877181ee8b4"
+      "sha256Lf": "41cafc3ee452955157f34eeb68b85b25076a903b3fc738f2325eb06c20d00db5"
     },
     {
       "path": "packaging/android/res/values/strings.xml",

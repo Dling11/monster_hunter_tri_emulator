@@ -29,7 +29,7 @@ index 1f2a88895e0793de983b1309a20e8a290aa4e783..faa306799ec1ad46b34e42b74e9fcbf1
    std::error_code ec;
  
 diff --git a/packaging/android/AndroidManifest.xml b/packaging/android/AndroidManifest.xml
-index 940453d42908a79e9e348b531648235292a11442..d973a1c6ca275b25fb6f0774db65699cfaabfa7c 100644
+index 940453d42908a79e9e348b531648235292a11442..e911b8d31f1a04be04e6dabee522ee7c08c55704 100644
 --- a/packaging/android/AndroidManifest.xml
 +++ b/packaging/android/AndroidManifest.xml
 @@ -1,8 +1,8 @@
@@ -39,8 +39,8 @@ index 940453d42908a79e9e348b531648235292a11442..d973a1c6ca275b25fb6f0774db65699c
 -    android:versionCode="4"
 -    android:versionName="1.4">
 +    package="com.rowell.mh3dev"
-+    android:versionCode="10012"
-+    android:versionName="1.4-rowell.12">
++    android:versionCode="10013"
++    android:versionName="1.4-rowell.13">
  
      <uses-sdk
          android:minSdkVersion="29"
