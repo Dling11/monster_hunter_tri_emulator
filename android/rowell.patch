@@ -77,7 +77,7 @@ index 6fd8e01debf27504aba142b74dc5d21ec8f9fee4..5aaa05c58948cbb60ea8b601c48e4d4d
 +    <string name="app_name">MH Tri - Rowell</string>
  </resources>
 diff --git a/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java b/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
-index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593d142e3c8 100644
+index 6dc682b37725de7be76dde5551e5ee3ddc620bda..a6544e7255f4efe1b339f29b43f9065834d77af1 100644
 --- a/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
 +++ b/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
 @@ -22,7 +22,6 @@ import org.libsdl.app.SDLActivity;
@@ -160,7 +160,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593
      @Override
      protected void main() {
          log("OceanTriActivity.main() thread waiting for ROM ready...");
-@@ -219,8 +230,8 @@ public class OceanTriActivity extends SDLActivity {
+@@ -219,17 +230,25 @@ public class OceanTriActivity extends SDLActivity {
              return;
          }
  
@@ -171,7 +171,16 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593
          if (!mh3Dir.exists()) {
              mh3Dir.mkdirs();
          }
-@@ -229,7 +240,7 @@ public class OceanTriActivity extends SDLActivity {
++        // Make transfer destinations visible even before a game image is selected.
++        // mkdirs preserves any existing saves and user-created folders.
++        for (String name : new String[] { "imports", "exports", "saves" }) {
++            File folder = new File(mh3Dir, name);
++            if (!folder.isDirectory() && !folder.mkdirs()) {
++                log("Unable to create save-transfer folder: " + folder.getAbsolutePath());
++            }
++        }
+ 
+         File existingMh3Rom = findRomInDir(mh3Dir);
          if (existingMh3Rom != null) {
              sRomPath = existingMh3Rom.getAbsolutePath();
              mRomReady = true;
@@ -180,7 +189,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593
              return;
          }
  
-@@ -256,22 +267,22 @@ public class OceanTriActivity extends SDLActivity {
+@@ -256,22 +275,22 @@ public class OceanTriActivity extends SDLActivity {
          final File file = new File(detectedPath);
          AlertDialog.Builder builder = new AlertDialog.Builder(this);
          builder.setTitle("Monster Hunter Tri");
@@ -209,7 +218,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593
              @Override
              public void onClick(DialogInterface dialog, int which) {
                  sRomPath = detectedPath;
-@@ -286,15 +297,15 @@ public class OceanTriActivity extends SDLActivity {
+@@ -286,15 +305,15 @@ public class OceanTriActivity extends SDLActivity {
      private void showRomSelectPrompt() {
          AlertDialog.Builder builder = new AlertDialog.Builder(this);
          builder.setTitle("Monster Hunter Tri");
@@ -229,7 +238,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593
              @Override
              public void onClick(DialogInterface dialog, int which) {
                  finish();
-@@ -361,7 +372,7 @@ public class OceanTriActivity extends SDLActivity {
+@@ -361,7 +380,7 @@ public class OceanTriActivity extends SDLActivity {
              log("Querying URI info: " + e.getMessage());
          }
  
@@ -238,7 +247,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593
          if (!targetDir.exists()) targetDir.mkdirs();
          final File targetFile = new File(targetDir, displayName);
  
-@@ -373,8 +384,8 @@ public class OceanTriActivity extends SDLActivity {
+@@ -373,8 +392,8 @@ public class OceanTriActivity extends SDLActivity {
          }
  
          final ProgressDialog progressDialog = new ProgressDialog(this);
@@ -249,7 +258,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593
          progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
          progressDialog.setCancelable(false);
          progressDialog.setCanceledOnTouchOutside(false);
-@@ -433,15 +444,15 @@ public class OceanTriActivity extends SDLActivity {
+@@ -433,15 +452,15 @@ public class OceanTriActivity extends SDLActivity {
                              progressDialog.dismiss();
                              if (targetFile.exists()) targetFile.delete();
                              AlertDialog.Builder b = new AlertDialog.Builder(OceanTriActivity.this);
@@ -269,7 +278,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593
                                  @Override
                                  public void onClick(DialogInterface dialog, int which) {
                                      finish();
-@@ -467,8 +478,8 @@ public class OceanTriActivity extends SDLActivity {
+@@ -467,8 +486,8 @@ public class OceanTriActivity extends SDLActivity {
  
          final long totalBytesExpected = sourceFile.length();
          final ProgressDialog progressDialog = new ProgressDialog(this);
@@ -280,7 +289,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593
          progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
          progressDialog.setCancelable(false);
          progressDialog.setCanceledOnTouchOutside(false);
-@@ -599,17 +610,31 @@ public class OceanTriActivity extends SDLActivity {
+@@ -599,17 +618,31 @@ public class OceanTriActivity extends SDLActivity {
          System.exit(0);
      }
  
@@ -1361,7 +1370,7 @@ index 60e663c256de33c1015e8b419c3d0d12aeb3f982..4f252db3bd84758120dedb265fa7debe
      }
      // An unrecognized, computed hardware pointer may bypass the translator's
 diff --git a/runtime/src/main.cpp b/runtime/src/main.cpp
-index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..50c4708c25e84ada4182eb90c5a10d4228b8cffe 100644
+index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..feb6f0dc6e2f6629c2fa3fec16817b74c9938ee7 100644
 --- a/runtime/src/main.cpp
 +++ b/runtime/src/main.cpp
 @@ -1,4 +1,5 @@
@@ -1475,7 +1484,16 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..50c4708c25e84ada4182eb90c5a10d42
  #else
          const char* envUser = std::getenv("MH3_USER_DIR");
          if (envUser && *envUser) {
-@@ -1078,9 +1071,9 @@ int main(int argc, char** argv) {
+@@ -1068,6 +1061,8 @@ int main(int argc, char** argv) {
+         std::error_code uec;
+         std::filesystem::create_directories(userDir, uec);
+         std::filesystem::create_directories(std::string(userDir) + "/saves", uec);
++        std::filesystem::create_directories(std::string(userDir) + "/imports", uec);
++        std::filesystem::create_directories(std::string(userDir) + "/exports", uec);
+         std::filesystem::create_directories(std::string(userDir) + "/nand", uec);
+         std::filesystem::create_directories(std::string(userDir) + "/graphics", uec);
+         std::filesystem::create_directories(std::string(userDir) + "/logs", uec);
+@@ -1078,9 +1073,9 @@ int main(int argc, char** argv) {
          std::cout << "MH3: MH3_USER_DIR set to: " << userDir << "\n";
  #endif
  
@@ -1487,7 +1505,7 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..50c4708c25e84ada4182eb90c5a10d42
          {
              std::ifstream in(langPath);
              std::string code;
-@@ -1088,11 +1081,11 @@ int main(int argc, char** argv) {
+@@ -1088,11 +1083,11 @@ int main(int argc, char** argv) {
                  langCode = code;
              } else {
                  std::ofstream out(langPath);
@@ -1501,7 +1519,7 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..50c4708c25e84ada4182eb90c5a10d42
          if (langCode == "en") sysLang = 1;
          else if (langCode == "de") sysLang = 2;
          else if (langCode == "fr") sysLang = 3;
-@@ -1173,6 +1166,15 @@ int main(int argc, char** argv) {
+@@ -1173,6 +1168,15 @@ int main(int argc, char** argv) {
  #else
      {
  #endif
@@ -1517,7 +1535,7 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..50c4708c25e84ada4182eb90c5a10d42
  #ifdef __vita__
          if (argc == 1 && !VitaLauncher::Run())
              return 0;
-@@ -1450,10 +1452,8 @@ int main(int argc, char** argv) {
+@@ -1450,10 +1454,8 @@ int main(int argc, char** argv) {
      catch (const std::exception& error) {
  #if defined(ANDROID) || defined(__ANDROID__)
          __android_log_print(ANDROID_LOG_FATAL, "MH3", "FATAL EXCEPTION in main(): %s", error.what());

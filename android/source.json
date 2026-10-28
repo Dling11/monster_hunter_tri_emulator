@@ -13,7 +13,7 @@
     "scripts",
     "toolchain"
   ],
-  "patchSha256": "ec27d8620e37a5ddd6d223b88ac62700966cf1fd1f97a1762678c16249f14527",
+  "patchSha256": "f345544de99eb3cc18cd3abe6d13c286b5d65197f73f011543656a46af2287ae",
   "trackedFiles": [
     {
       "path": ".gitignore",
@@ -33,7 +33,7 @@
     },
     {
       "path": "packaging/android/src/com/oceantri/mh3/OceanTriActivity.java",
-      "sha256Lf": "a8795e412c997481aff4526d0e200e8f150841e1668b6fb2674099ec0adbd545"
+      "sha256Lf": "b4217c62a7c8566aec342ebeb3ce49f88b40d1d0d728e6d624cfeff7eef7ac67"
     },
     {
       "path": "runtime/CMakeLists.txt",
@@ -109,7 +109,7 @@
     },
     {
       "path": "runtime/src/main.cpp",
-      "sha256Lf": "26c66f588527aee1d1327f9a0759240b50d61c010e7175a9e3794fa3ba30ab30"
+      "sha256Lf": "7f09d443cbd0a479dfba5fb428207a23a63be9e96d36db3610af6457e5b8ee41"
     },
     {
       "path": "runtime/src/model_assets.cpp",
