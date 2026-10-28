@@ -3,9 +3,29 @@
 #include <filesystem>
 #include <cstdlib>
 #include <cstdio>
+#include <cmath>
 #include "memory.h"
 #include "save_manager.h"
 #include "mh3_frame_rate_control.h"
+#include "rowell_touch.h"
+static bool MenuPreview();
+
+namespace TouchDisplayFixture {
+bool active=false,fullscreen=false,wide=false;
+int aspect=-1;
+float scale=-1;
+}
+void TouchDisplayFixtureBegin() { TouchDisplayFixture::active=true; }
+bool TouchDisplayFixtureMatches(int aspect,bool fullscreen) {
+    return TouchDisplayFixture::aspect==aspect && TouchDisplayFixture::fullscreen==fullscreen;
+}
+bool TouchDisplayFixtureScaleMatches(float scale) { return std::abs(TouchDisplayFixture::scale-scale)<.0001f; }
+void TouchDisplayFixtureEnd() { TouchDisplayFixture::active=false; }
+RowellPcGraphics::Settings RowellTouch_ReadGraphicsSettings() { if(MenuPreview())return {};std::abort(); }
+void RowellTouch_SetTargetAspect(int aspect) { if(!TouchDisplayFixture::active)std::abort();TouchDisplayFixture::aspect=aspect; }
+void RowellTouch_SetResolutionScale(float scale) { if(!TouchDisplayFixture::active)std::abort();TouchDisplayFixture::scale=scale; }
+void RowellTouch_OpenDataFolder() { std::abort(); }
+void RowellTouch_OpenAppFolder() { std::abort(); }
 
 // Input checks run the real touch engine without a game or renderer. Camera
 // output and the optional window are the only hooks used by these test cases.
@@ -13,17 +33,19 @@ void QueueTouchCameraDelta(float,float) { std::abort(); }
 extern "C" SDL_Window* aurora_get_window() { return nullptr; }
 // These production hooks are linked for the menu branches in the real engine.
 // The input-only cases must never invoke them; abort makes accidental use fail.
+// Visual captures may query fixed read-only defaults. All writes remain blocked.
+static bool MenuPreview() { return std::getenv("MH3_TOUCH_MENU_PREVIEW")!=nullptr; }
 void aurora_enable_vsync(bool) { std::abort(); }
-void SetWidescreenSetting(bool) { std::abort(); }
+void SetWidescreenSetting(bool value) { if(!TouchDisplayFixture::active)std::abort();TouchDisplayFixture::wide=value; }
 extern "C" void VISetFrameBufferScale(float) { std::abort(); }
-extern "C" void aurora_set_fullscreen(bool) { std::abort(); }
-extern "C" bool aurora_get_fullscreen() { std::abort(); }
+extern "C" void aurora_set_fullscreen(bool value) { if(!TouchDisplayFixture::active)std::abort();TouchDisplayFixture::fullscreen=value; }
+extern "C" bool aurora_get_fullscreen() { if(MenuPreview())return false;std::abort(); }
 extern "C" void aurora_set_native_target_aspect(int) { std::abort(); }
-extern "C" int Gamepad_GetLayout() { std::abort(); }
-extern "C" bool Gamepad_GetSwapTriggers() { std::abort(); }
+extern "C" int Gamepad_GetLayout() { if(MenuPreview())return 0;std::abort(); }
+extern "C" bool Gamepad_GetSwapTriggers() { if(MenuPreview())return false;std::abort(); }
 extern "C" void Gamepad_SetLayout(int) { std::abort(); }
 extern "C" void Gamepad_SetSwapTriggers(bool) { std::abort(); }
-bool Memory::Contains(uint32_t,size_t) { std::abort(); }
+bool Memory::Contains(uint32_t,size_t) { if(MenuPreview() || TouchDisplayFixture::active)return false;std::abort(); }
 namespace MH3FrameRateControl {
 void SetTargetFPS(int) noexcept { std::abort(); }
 uint64_t LogicalFrameCount() noexcept { std::abort(); }

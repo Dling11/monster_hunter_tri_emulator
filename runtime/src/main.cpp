@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include "abi_bridge.h"
 #include "fatal.h"
+#include "bounded_log.h"
 #include <aurora/fatal.hpp>
 #include "generated/RuntimeConfig.h"
 #include "disc_image.h"
@@ -132,10 +133,7 @@ void AppendCrashLog(std::string_view what, const CpuContext* cpu) noexcept {
     const char* user = std::getenv("MH3_USER_DIR");
     const std::string path = std::string(user ? user : "saves") + "/crash.txt";
 #endif
-    std::ofstream out(path, std::ios::app);
-
-    if (out)
-        out << text << '\n';
+    BoundedLog::AppendReport(path, text + '\n');
 }
 
 void WriteCrashArtifacts(std::string_view reason, std::string_view details, const uint32_t*) noexcept {

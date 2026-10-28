@@ -1,6 +1,6 @@
 # Install on Android
 
-App: **MH Tri - Rowell**. Version **1.4-rowell.7 (10007)**.
+App: **MH Tri - Rowell**.
 Requires **ARM64 Android 10+**, OpenGL ES 3.0 and your own European/PAL
 Monster Hunter Tri image, game ID **RMHP08**. Performance depends on the device.
 
@@ -54,6 +54,14 @@ See [controls](CONTROLS.md) for all options and speed limits.
 
 Report the app version, phone/Android version, scene and steps when reporting
 a problem. Relevant logs can help; keep personal data out of shared excerpts.
+
+Logs are in **MH3_Rowell_Dev/logs**: `game_log.txt` and `oceantri_log.txt`
+hold activity, and `oceantri_crash.txt` holds captured crashes. Each activity
+log keeps up to 2 MiB plus one `.previous` copy; each crash log keeps 256 KiB
+plus one previous copy. Send the relevant current and previous files soon after
+an error, since older entries are eventually replaced. The root `crash.txt` and
+the emergency `Download/oceantri_crash.txt` fallback also have crash limits.
+These limits do not remove saves, backups, settings or game files.
 
 ## Package verification
 

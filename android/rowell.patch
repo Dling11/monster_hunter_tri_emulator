@@ -29,7 +29,7 @@ index 1f2a88895e0793de983b1309a20e8a290aa4e783..faa306799ec1ad46b34e42b74e9fcbf1
    std::error_code ec;
  
 diff --git a/packaging/android/AndroidManifest.xml b/packaging/android/AndroidManifest.xml
-index 940453d42908a79e9e348b531648235292a11442..0b64b8e57e1820f1784663b41918a46461afba78 100644
+index 940453d42908a79e9e348b531648235292a11442..d973a1c6ca275b25fb6f0774db65699cfaabfa7c 100644
 --- a/packaging/android/AndroidManifest.xml
 +++ b/packaging/android/AndroidManifest.xml
 @@ -1,8 +1,8 @@
@@ -39,8 +39,8 @@ index 940453d42908a79e9e348b531648235292a11442..0b64b8e57e1820f1784663b41918a464
 -    android:versionCode="4"
 -    android:versionName="1.4">
 +    package="com.rowell.mh3dev"
-+    android:versionCode="10009"
-+    android:versionName="1.4-rowell.9">
++    android:versionCode="10012"
++    android:versionName="1.4-rowell.12">
  
      <uses-sdk
          android:minSdkVersion="29"
@@ -77,10 +77,18 @@ index 6fd8e01debf27504aba142b74dc5d21ec8f9fee4..5aaa05c58948cbb60ea8b601c48e4d4d
 +    <string name="app_name">MH Tri - Rowell</string>
  </resources>
 diff --git a/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java b/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
-index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d319027bdd5eda 100644
+index 6dc682b37725de7be76dde5551e5ee3ddc620bda..79763eb84fc305aa8a78c5bb7249f593d142e3c8 100644
 --- a/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
 +++ b/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
-@@ -55,7 +55,7 @@ public class OceanTriActivity extends SDLActivity {
+@@ -22,7 +22,6 @@ import org.libsdl.app.SDLActivity;
+ import java.io.File;
+ import java.io.FileInputStream;
+ import java.io.FileOutputStream;
+-import java.io.FileWriter;
+ import java.io.InputStream;
+ import java.io.PrintWriter;
+ import java.io.StringWriter;
+@@ -55,14 +54,12 @@ public class OceanTriActivity extends SDLActivity {
  
          // Try writing to MH3/logs file
          try {
@@ -89,7 +97,15 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
              if (!logDir.exists()) {
                  logDir.mkdirs();
              }
-@@ -99,7 +99,7 @@ public class OceanTriActivity extends SDLActivity {
+             File logFile = new File(logDir, "oceantri_log.txt");
+-            FileWriter fw = new FileWriter(logFile, true);
+-            fw.write(line + "\n");
+-            fw.close();
++            RowellLogStore.append(logFile, line + "\n", RowellLogStore.ACTIVITY_BYTES);
+         } catch (Exception ignored) {}
+     }
+ 
+@@ -99,7 +96,7 @@ public class OceanTriActivity extends SDLActivity {
  
      @Override
      protected void onCreate(Bundle savedInstanceState) {
@@ -98,7 +114,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
  
          // Request 120Hz high refresh rate display mode
          setHighRefreshRate();
-@@ -113,7 +113,7 @@ public class OceanTriActivity extends SDLActivity {
+@@ -113,14 +110,14 @@ public class OceanTriActivity extends SDLActivity {
                  String stackTrace = sw.toString();
                  log("FATAL JAVA UNCAUGHT EXCEPTION: " + stackTrace);
                  try {
@@ -107,7 +123,17 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
                      if (!crashDir.exists()) {
                          crashDir.mkdirs();
                      }
-@@ -141,12 +141,26 @@ public class OceanTriActivity extends SDLActivity {
+                     File crashFile = new File(crashDir, "oceantri_crash.txt");
+-                    FileWriter fw = new FileWriter(crashFile, true);
+-                    fw.write("UNCAUGHT EXCEPTION in thread " + t.getName() + ":\n" + stackTrace + "\n");
+-                    fw.close();
++                    RowellLogStore.append(crashFile,
++                        "UNCAUGHT EXCEPTION in thread " + t.getName() + ":\n" + stackTrace + "\n",
++                        RowellLogStore.CRASH_BYTES);
+                 } catch (Exception ignored) {}
+                 System.exit(1);
+             }
+@@ -141,12 +138,26 @@ public class OceanTriActivity extends SDLActivity {
      @Override
      protected void onResume() {
          super.onResume();
@@ -134,7 +160,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
      @Override
      protected void main() {
          log("OceanTriActivity.main() thread waiting for ROM ready...");
-@@ -219,8 +233,8 @@ public class OceanTriActivity extends SDLActivity {
+@@ -219,8 +230,8 @@ public class OceanTriActivity extends SDLActivity {
              return;
          }
  
@@ -145,7 +171,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
          if (!mh3Dir.exists()) {
              mh3Dir.mkdirs();
          }
-@@ -229,7 +243,7 @@ public class OceanTriActivity extends SDLActivity {
+@@ -229,7 +240,7 @@ public class OceanTriActivity extends SDLActivity {
          if (existingMh3Rom != null) {
              sRomPath = existingMh3Rom.getAbsolutePath();
              mRomReady = true;
@@ -154,7 +180,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
              return;
          }
  
-@@ -256,22 +270,22 @@ public class OceanTriActivity extends SDLActivity {
+@@ -256,22 +267,22 @@ public class OceanTriActivity extends SDLActivity {
          final File file = new File(detectedPath);
          AlertDialog.Builder builder = new AlertDialog.Builder(this);
          builder.setTitle("Monster Hunter Tri");
@@ -183,7 +209,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
              @Override
              public void onClick(DialogInterface dialog, int which) {
                  sRomPath = detectedPath;
-@@ -286,15 +300,15 @@ public class OceanTriActivity extends SDLActivity {
+@@ -286,15 +297,15 @@ public class OceanTriActivity extends SDLActivity {
      private void showRomSelectPrompt() {
          AlertDialog.Builder builder = new AlertDialog.Builder(this);
          builder.setTitle("Monster Hunter Tri");
@@ -203,7 +229,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
              @Override
              public void onClick(DialogInterface dialog, int which) {
                  finish();
-@@ -361,7 +375,7 @@ public class OceanTriActivity extends SDLActivity {
+@@ -361,7 +372,7 @@ public class OceanTriActivity extends SDLActivity {
              log("Querying URI info: " + e.getMessage());
          }
  
@@ -212,7 +238,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
          if (!targetDir.exists()) targetDir.mkdirs();
          final File targetFile = new File(targetDir, displayName);
  
-@@ -373,8 +387,8 @@ public class OceanTriActivity extends SDLActivity {
+@@ -373,8 +384,8 @@ public class OceanTriActivity extends SDLActivity {
          }
  
          final ProgressDialog progressDialog = new ProgressDialog(this);
@@ -223,7 +249,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
          progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
          progressDialog.setCancelable(false);
          progressDialog.setCanceledOnTouchOutside(false);
-@@ -433,15 +447,15 @@ public class OceanTriActivity extends SDLActivity {
+@@ -433,15 +444,15 @@ public class OceanTriActivity extends SDLActivity {
                              progressDialog.dismiss();
                              if (targetFile.exists()) targetFile.delete();
                              AlertDialog.Builder b = new AlertDialog.Builder(OceanTriActivity.this);
@@ -243,7 +269,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
                                  @Override
                                  public void onClick(DialogInterface dialog, int which) {
                                      finish();
-@@ -467,8 +481,8 @@ public class OceanTriActivity extends SDLActivity {
+@@ -467,8 +478,8 @@ public class OceanTriActivity extends SDLActivity {
  
          final long totalBytesExpected = sourceFile.length();
          final ProgressDialog progressDialog = new ProgressDialog(this);
@@ -254,7 +280,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
          progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
          progressDialog.setCancelable(false);
          progressDialog.setCanceledOnTouchOutside(false);
-@@ -599,17 +613,31 @@ public class OceanTriActivity extends SDLActivity {
+@@ -599,17 +610,31 @@ public class OceanTriActivity extends SDLActivity {
          System.exit(0);
      }
  
@@ -289,7 +315,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..ab379f1e8ae53a56da664993f6d31902
          searchDirs.add(new File("/sdcard/Wii"));
          searchDirs.add(new File("/sdcard"));
 diff --git a/runtime/CMakeLists.txt b/runtime/CMakeLists.txt
-index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..fbdd247170d0796c1c729d7407c43f99643afd93 100644
+index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..444eeddf3f816c1d15f49a615e4e138525c966b7 100644
 --- a/runtime/CMakeLists.txt
 +++ b/runtime/CMakeLists.txt
 @@ -208,6 +208,14 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
@@ -316,15 +342,17 @@ index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..fbdd247170d0796c1c729d7407c43f99
  string(JSON native_dispatch_bundle_type ERROR_VARIABLE native_dispatch_bundle_error TYPE "${native_dispatch_metadata}" sourceBundlePath)
  
  if(NOT native_dispatch_bundle_error AND native_dispatch_bundle_type STREQUAL "STRING")
-@@ -285,7 +293,7 @@ else()
+@@ -285,8 +293,8 @@ else()
  endif()
  target_sources(MH3 PRIVATE
    src/main.cpp src/memory.cpp ${MH3_GUEST_MEMORY_SOURCE} src/os_boot.cpp src/os_sleep.cpp src/os_alarm.cpp src/os_devices.cpp src/abi_bridge.cpp
 -  src/ppc_helpers.cpp src/fpu_helpers.cpp src/executable_guard.cpp src/rso_services.cpp src/wpad_services.cpp src/controller_host.cpp native/mh3_classic_map.c src/controller_tests.cpp src/village_boot.cpp src/audio_interface.cpp
+-  src/audio_tests.cpp src/audio_dma.cpp
 +  src/ppc_helpers.cpp src/fpu_helpers.cpp src/executable_guard.cpp src/rso_services.cpp src/wpad_services.cpp src/controller_host.cpp src/gamepad_bindings.cpp native/mh3_classic_map.c src/controller_tests.cpp src/village_boot.cpp src/audio_interface.cpp
-   src/audio_tests.cpp src/audio_dma.cpp
++  src/audio_tests.cpp src/equipment_tests.cpp src/audio_dma.cpp
    src/audio/native_audio_api.cpp src/audio/native_audio_frame.cpp src/audio/native_audio_mixer.cpp src/audio/native_audio_tests.cpp src/audio/sdk_mix.cpp src/audio/sdk_synseq.cpp src/audio/sound_engine.cpp src/audio/sound_stream.cpp
    src/device_tests.cpp src/efb_host.cpp src/ios.cpp src/usb_hid_services.cpp src/disc_image.cpp src/video_interface.cpp src/gx_registers.cpp src/gx_stream.cpp src/gx_services.cpp src/vi_services.cpp src/glare_filter.cpp src/frame_pacer.cpp src/fps_timers.cpp src/game_frame.cpp src/frame_draw.cpp src/hud_draw.cpp src/mhchar_motion.cpp src/game_step.cpp src/effect_step.cpp src/guest_worker.cpp src/guest_threads.cpp src/net/online_patches.cpp src/net/online_close.cpp src/net/net_ctrl.cpp src/net/ios_net.cpp ${MH3_NET_HOST_SOURCE} src/effect_calc.cpp src/effect_objects.cpp src/effect_draw_order.cpp src/particle_manager_calc.cpp src/map_sound.cpp src/player_timers.cpp src/port_check.cpp src/pulse.cpp src/rumble_timers.cpp src/pad_input.cpp src/camera_input.cpp src/field_camera.cpp src/player_aim.cpp src/step_counter.cpp src/swing_effect.cpp src/stamina.cpp src/player_turn.cpp src/field_jump.cpp src/quest_placement.cpp src/monster_heaps.cpp src/save_data.cpp src/game_tasks.cpp src/field_frame.cpp src/draw_buckets.cpp src/player_health.cpp src/cheats.cpp src/cheat_data.cpp src/cheat_items.cpp src/cheat_monsters.cpp src/cheat_quest.cpp src/cheat_hunter.cpp src/cheat_movement.cpp src/tick_sites.cpp src/camera_script.cpp src/movie_draw.cpp src/reset_fade.cpp src/loading_screen.cpp src/load_progress.cpp src/quest_clock.cpp src/ambient_hover.cpp src/fish_effects.cpp src/group_shuttle.cpp src/hit_timers.cpp src/enemy_glide.cpp src/creature_fade.cpp src/ambient_flutter.cpp src/yure_chain.cpp src/audio_reverb.cpp src/anm_chr_keys.cpp src/anm_chr_blend.cpp src/anm_obj_chr_res.cpp src/effect_texture.cpp src/effect_billboard.cpp src/effect_particle.cpp src/msl_math.cpp src/texture_scroll.cpp src/ceadeus_intro.cpp src/demo_pose.cpp src/event_demo.cpp src/alatreon_actions.cpp src/screen_fade.cpp src/enemy_timers.cpp src/shell_motion.cpp src/enemy_turn.cpp src/npc_turn.cpp src/field_actor.cpp src/object_ages.cpp src/village_player_actions.cpp src/field_player_actions.cpp src/g3d_res.cpp src/g3d_calc_world.cpp src/scene_world.cpp src/mtx.cpp src/ef_anim_curve.cpp src/nw4r_accessors.cpp src/g3d_anm_result.cpp src/nw4r_math.cpp src/scn_mdl_tasks.cpp src/gather_spots.cpp src/mhchar_move.cpp src/field_lists.cpp src/res_anm_keys.cpp src/drawshape.cpp src/particle_mtx.cpp src/particle_initialize.cpp src/hunter_parts.cpp src/player_skill.cpp src/sound_shells.cpp src/enemy_hit_shapes.cpp src/enemy_conditions.cpp src/small_monsters.cpp src/ef_mtx_scale.cpp src/ef_resource.cpp src/msl_string.cpp src/debug_font.cpp src/prim_buffers.cpp src/monster_intros.cpp src/monster_roars.cpp src/monster_attacks.cpp src/monster_control.cpp src/enemy_actions.cpp src/monster_waits.cpp src/g3d_destroy.cpp
+   src/dol_sections.cpp
 @@ -348,10 +356,9 @@ target_include_directories(MH3 PRIVATE include ..)
  if(ANDROID)
    set_target_properties(MH3 PROPERTIES OUTPUT_NAME "main")
@@ -339,6 +367,51 @@ index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..fbdd247170d0796c1c729d7407c43f99
    target_compile_definitions(MH3 PRIVATE MH3_HAS_OPENSSL)
  endif()
  
+diff --git a/runtime/include/fatal.h b/runtime/include/fatal.h
+index 0549df8d0fa1c49c1db9f1c49807ec21144ca732..bd36e701a047a5833314736b2b577f5884f32e72 100644
+--- a/runtime/include/fatal.h
++++ b/runtime/include/fatal.h
+@@ -3,6 +3,7 @@
+ #include <atomic>
+ #include <cstdio>
+ #include <cstdlib>
++#include "bounded_log.h"
+ #if defined(ANDROID) || defined(__ANDROID__)
+ #include <android/log.h>
+ #include <SDL3/SDL_messagebox.h>
+@@ -27,14 +28,8 @@ inline void (*fatalReportHook)(const char* what) = nullptr;
+ 
+ #if defined(ANDROID) || defined(__ANDROID__)
+     __android_log_print(ANDROID_LOG_FATAL, "MH3", "MH3 runtime stopped: %s", what ? what : "unknown");
+-    if (FILE* f = fopen("/sdcard/Download/oceantri_crash.txt", "a")) {
+-        fprintf(f, "MH3 FATAL: %s\n", what ? what : "unknown");
+-        fclose(f);
+-    }
+-    if (FILE* f2 = fopen("/storage/emulated/0/Download/oceantri_crash.txt", "a")) {
+-        fprintf(f2, "MH3 FATAL: %s\n", what ? what : "unknown");
+-        fclose(f2);
+-    }
++    BoundedLog::AppendReport("/storage/emulated/0/Download/oceantri_crash.txt",
++                             std::string("MH3 FATAL: ") + (what ? what : "unknown") + '\n');
+     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Monster Hunter Tri - Error", what ? what : "Error fatal", nullptr);
+ #endif
+ 
+diff --git a/runtime/include/game_step.h b/runtime/include/game_step.h
+index 951d6608f21d1a105cf9c57adb7dde6e7553f590..c60af55d81c687925570c8ed3287409fd45d0b0d 100644
+--- a/runtime/include/game_step.h
++++ b/runtime/include/game_step.h
+@@ -85,6 +85,11 @@ void ReleaseView();
+ // effect creation, the world split's worker job): joins the previous step's
+ // calculation if it still runs. Other threads return at once.
+ void Touch();
++
++// Game thread, before a call that changes `effect`'s particle managers (its
++// colour and light): runs the Effect::Calc calls collected for it this task
++// pass now, so the change follows the calculation as in the original order.
++void CalcCollected(CpuContext* cpu, uint32_t effect);
+ #ifdef MH3_DEVELOPMENT
+ // MH3_TRACE=particles: child emissions an Effect::Calc found queued.
+ void NoteQueuedChildren(uint32_t count);
 diff --git a/runtime/include/save_manager.h b/runtime/include/save_manager.h
 index 9edcecc4293fa61ec57aef60f6f2bcb263c1c10c..a37c935bc5146fe64480dbbdea23bb366db5630d 100644
 --- a/runtime/include/save_manager.h
@@ -403,6 +476,405 @@ index 05a42e587a8b389f5776cd6566c91b2902614eae..65d928c37dc24503dd360dfa2f45d23e
  }
  #else
  inline std::filesystem::path mh3_self_exe() { return std::filesystem::read_symlink("/proc/self/exe"); }
+diff --git a/runtime/src/anm_chr_keys.cpp b/runtime/src/anm_chr_keys.cpp
+index 89756eb185406d6f711829a5b3233d41187e85a8..206ab6b8cf1a194dfe1b6fc898829d951934c647 100644
+--- a/runtime/src/anm_chr_keys.cpp
++++ b/runtime/src/anm_chr_keys.cpp
+@@ -22,6 +22,7 @@
+ // boundary the translated functions had.
+ #include "abi_bridge.h"
+ #include "fatal.h"
++#include "resource_guard.h"
+ #include "g3d_native.h"
+ #include "guest_call.h"
+ #include "memory.h"
+@@ -665,7 +666,8 @@ struct ResultPort {
+     }
+ };
+ 
+-// 0x8008DA1C: the node dictionary's entry `index` (0x800627B4, whose checks it keeps).
++// 0x8008DA1C: optional animation entry; absent/out-of-range nodes have no result.
++// Malformed alignment remains a fatal error.
+ uint32_t NodeData(uint32_t data, uint32_t index) {
+     const uint32_t offset = MemoryInline::FlatRead32(data + 0x10);
+     const uint32_t dic = offset ? data + offset : 0;
+@@ -676,10 +678,11 @@ uint32_t NodeData(uint32_t data, uint32_t index) {
+     if (!dic)
+         return 0;
+ 
+-    const int32_t i = int32_t(index);
+-
+-    if (!(i >= 0 && i <= int32_t(MemoryInline::FlatRead32(dic + 4)) - 1))
+-        Panic("idx is out of bounds", index);
++    const uint32_t count = MemoryInline::FlatRead32(dic + 4);
++    if (count > 0x7FFFFFFFu || index >= count) {
++        ResourceGuard::Missing("animation node", data, index, count);
++        return 0;
++    }
+ 
+     const uint32_t entry = MemoryInline::FlatRead32(dic + (index + 1) * 16 + 0x14);
+     return entry ? dic + entry : 0;
+@@ -691,15 +694,27 @@ void GetAnmResult(CpuContext* ctx) {
+     const uint32_t anm = GuestFlat::CachedAlias(ctx->gpr[3]), result = GuestFlat::CachedAlias(ctx->gpr[4]), index = ctx->gpr[5];
+     const double frame = ctx->fpr[1].d;
+ 
++    if (!result) {
++        ResourceGuard::Missing("animation output", anm, index);
++        return;
++    }
++
+     if (!std::isfinite(frame))
+         Panic("NW4R:Floating Point Value Error frame", 0);
+ 
+-    const uint32_t data = MemoryInline::FlatRead32(anm);
++    const uint32_t data = anm ? MemoryInline::FlatRead32(anm) : 0;
+ 
+-    if (!data)
+-        Panic("NW4R:Failed assertion IsValid()", anm);
++    if (!data) {
++        ResourceGuard::Missing("animation reference", anm, index);
++        MemoryInline::FlatWrite32(result, 0);
++        return;
++    }
+ 
+     const uint32_t node = GuestFlat::CachedAlias(NodeData(data, index));
++    if (!node) {
++        MemoryInline::FlatWrite32(result, 0);
++        return;
++    }
+ 
+     const uint32_t flags = MemoryInline::FlatRead32(node + 4);
+     MemoryInline::FlatWrite32(result, flags & 0x1FFF);
+diff --git a/runtime/src/anm_obj_chr_res.cpp b/runtime/src/anm_obj_chr_res.cpp
+index 04a5bcc05d93265828f58f94bef766149313f539..a4604de7d849c930dc1ef65d74d5ced585912013 100644
+--- a/runtime/src/anm_obj_chr_res.cpp
++++ b/runtime/src/anm_obj_chr_res.cpp
+@@ -20,6 +20,7 @@
+ #include "anm_obj_chr_res.h"
+ #include "fatal.h"
+ #include "port_check.h"
++#include "resource_guard.h"
+ 
+ #include <cmath>
+ #include <cstdio>
+@@ -123,10 +124,15 @@ void UpdateFrame(GuestCall& game, uint32_t self, uint32_t r2, uint32_t r13) {
+ 
+ uint32_t GetResult(GuestCall& game, uint32_t self, uint32_t result, uint32_t index) {
+     FoldPointer(self);
+-
+-    if (int32_t(index) > int32_t(Memory::Read32(self + kCount)) - 1) [[unlikely]]
+-        Panic("Failed assertion idx < count", 1298, index);
+     FoldPointer(result);
++    if (!result)
++        return 0;
++    const uint32_t count = self ? Memory::Read32(self + kCount) : 0;
++    if (count > 0x7FFFFFFFu || index >= count) [[unlikely]] {
++        ResourceGuard::Missing("animation binding", self, index, count);
++        MemoryInline::FlatWrite32(result, 0);
++        return result;
++    }
+     const uint32_t binding = MemoryInline::FlatRead16(Memory::Read32(self + kBindings) + 2 * index);
+ 
+     if (binding & 0xC000) {
+@@ -204,8 +210,14 @@ uint32_t AnmObjChrResResultAt(GuestCall& game, uint32_t anim, uint32_t result, u
+         Panic("Floating Point Value Error frame", 1050, Bits(frame));
+     FoldPointer(result);
+ 
+-    if (int32_t(index) > int32_t(Memory::Read32(anim + kCount)) - 1) [[unlikely]]
+-        Panic("Failed assertion idx < count", 1298, index);
++    if (!result)
++        return 0;
++    const uint32_t count = anim ? Memory::Read32(anim + kCount) : 0;
++    if (count > 0x7FFFFFFFu || index >= count) [[unlikely]] {
++        ResourceGuard::Missing("animation binding", anim, index, count);
++        MemoryInline::FlatWrite32(result, 0);
++        return result;
++    }
+     const uint32_t binding = MemoryInline::FlatRead16(Memory::Read32(anim + kBindings) + 2 * index);
+ 
+     if (binding & 0xC000) {
+diff --git a/runtime/src/audio_output.cpp b/runtime/src/audio_output.cpp
+index 8f5c3dcdca217b475a42b00e593a023f91520527..913642bc332649cf6b4365aced07fbd04e82ef21 100644
+--- a/runtime/src/audio_output.cpp
++++ b/runtime/src/audio_output.cpp
+@@ -11,15 +11,17 @@
+ #include <chrono>
+ #include <cstdlib>
+ #include <cstdio>
+-#include <sched.h>
+ #ifdef _WIN32
+ #include <windows.h>
+ #define sched_getcpu() int(GetCurrentProcessorNumber())
++#else
++#include <sched.h>
++#include <sys/syscall.h>
+ #endif
+ #include <stdexcept>
+ #include <string>
+-#include <sys/syscall.h>
+ #include <thread>
++#include <mutex>
+ #include <unistd.h>
+ #include <vector>
+ namespace {
+@@ -102,7 +104,20 @@ namespace {
+ SDL_AudioStream* pullStream = nullptr;
+ std::thread nullSink;
+ std::atomic<bool> nullSinkStop{false};
+-constexpr uint32_t kChunkFrames = 384;  // 12 ms
++constexpr uint32_t kChunkFrames = 384; // 12 ms
++
++// Foreground recovery (ReopenIfStalled): frames SDL has pulled so far, the
++// fade-in still owed by a newly opened stream, and the app's lifecycle state.
++std::atomic<uint64_t> pulledFrames{0};
++std::atomic<uint32_t> fadeInFrames{0};
++constexpr uint32_t kFadeInFrames = 640; // 20 ms
++std::atomic<bool> foreground{true};
++std::atomic<bool> stallCheckRunning{false};
++std::atomic<bool> sdlPlayback{false};
++std::atomic<bool> stoppingPlayback{false};
++std::atomic<uint32_t> successfulReopens{0};
++std::mutex playbackLock;
++std::thread recoveryWorker;
+ 
+ #ifdef MH3_DEVELOPMENT
+ // MH3_CAPTURE=...,audio=FILE: the mixed output, raw s16le stereo at 32 kHz.
+@@ -136,11 +151,38 @@ void SDLCALL Pull(void*, SDL_AudioStream* audio, int additional, int) {
+     for (int frames = (additional + 3) / 4; frames > 0;) {
+         const uint32_t n = uint32_t(std::min<int>(frames, int(kChunkFrames)));
+         Render(buffer, n);
++
++        // Ramp a reopened stream up from silence: starting mid-waveform clicks.
++        if (uint32_t fade = fadeInFrames.load(std::memory_order_relaxed)) {
++            for (uint32_t i = 0; i < n && fade; ++i, --fade) {
++                const float gain = float(kFadeInFrames - fade) / float(kFadeInFrames);
++                buffer[i * 2] = int16_t(float(buffer[i * 2]) * gain);
++                buffer[i * 2 + 1] = int16_t(float(buffer[i * 2 + 1]) * gain);
++            }
++
++            fadeInFrames.store(fade, std::memory_order_relaxed);
++        }
++
+         SDL_PutAudioStreamData(audio, buffer, int(n * 4));
++        pulledFrames.fetch_add(n, std::memory_order_relaxed);
+         frames -= int(n);
+     }
+ }
+ 
++bool OpenPullStream() {
++    const SDL_AudioSpec spec{SDL_AUDIO_S16, 2, int(kSampleRate)};
++    pullStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, Pull, nullptr);
++
++    if (pullStream && SDL_ResumeAudioStreamDevice(pullStream))
++        return true;
++
++    if (pullStream)
++        SDL_DestroyAudioStream(pullStream);
++
++    pullStream = nullptr;
++    return false;
++}
++
+ void RunNullSink() {
+     NoteAudioThread();
+     using Clock = std::chrono::steady_clock;
+@@ -154,19 +196,84 @@ void RunNullSink() {
+         std::this_thread::sleep_until(next);
+     }
+ }
++
++void StartNullSink() {
++    nullSinkStop.store(false);
++    nullSink = std::thread(RunNullSink);
++    std::fprintf(stderr, "MH3 audio: null sink at %u Hz\n", unsigned(kSampleRate));
++}
++
++// Android can take the playback device from a backgrounded app (another app
++// claiming the output). SDL's restart on resume then fails with
++// AAUDIO_ERROR_DISCONNECTED and never recovers: the stream stops pulling and
++// the game stays silent. If nothing was pulled shortly after returning to the
++// foreground, close the stream (releasing the dead device) and open a new one.
++void ReopenIfStalled(uint64_t pulledAtResume) {
++    std::this_thread::sleep_for(std::chrono::milliseconds(300));
++    {
++        std::lock_guard lock(playbackLock);
++        // Without a stream (an earlier reopen failed) the null sink is mixing: retry.
++        if (!stoppingPlayback.load() && foreground.load() && (!pullStream || pulledFrames.load() == pulledAtResume)) {
++            if (pullStream) {
++                SDL_DestroyAudioStream(pullStream);
++                pullStream = nullptr;
++            }
++
++            if (nullSink.joinable()) {
++                nullSinkStop.store(true);
++                nullSink.join();
++            }
++
++            fadeInFrames.store(kFadeInFrames);
++
++            if (!OpenPullStream()) {
++                std::fprintf(stderr, "MH3 audio: SDL playback lost (%s); mixing to a null sink\n", SDL_GetError());
++                StartNullSink();
++            } else
++                successfulReopens.fetch_add(1);
++        }
++    }
++    stallCheckRunning.store(false);
++}
++
++// SDL sends these from the thread that pumps Android lifecycle events, the
++// foreground one after its own (possibly failed) restart of the paused device.
++bool SDLCALL OnAppLifecycle(void*, SDL_Event* event) {
++    if (event->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
++        foreground.store(false);
++    } else if (event->type == SDL_EVENT_DID_ENTER_FOREGROUND) {
++        foreground.store(true);
++
++        std::lock_guard lock(playbackLock);
++        if (sdlPlayback.load() && !stoppingPlayback.load() && !stallCheckRunning.exchange(true)) {
++            if (recoveryWorker.joinable())
++                recoveryWorker.join();
++            recoveryWorker = std::thread(ReopenIfStalled, pulledFrames.load());
++        }
++    }
++
++    return true;
++}
+ } // namespace
+ 
+ void NoteAudioThread() {
+ #ifndef __EMSCRIPTEN__
+     MixerStatistics& s = GetMixer().Statistics();
++#ifdef _WIN32
++    s.thread.store(int(GetCurrentThreadId()), std::memory_order_relaxed);
++#else
+     s.thread.store(int(syscall(SYS_gettid)), std::memory_order_relaxed);
++#endif
+     s.core.store(sched_getcpu(), std::memory_order_relaxed);
+ #endif
+ }
+ 
+ void StartAudioOutput() {
++    std::lock_guard lock(playbackLock);
+     if (pullStream || nullSink.joinable())
+         return;
++    stoppingPlayback.store(false);
++    foreground.store(true);
+ 
+     bool null = false;
+ #ifdef MH3_DEVELOPMENT
+@@ -181,31 +288,34 @@ void StartAudioOutput() {
+ #endif
+ 
+         if (SDL_InitSubSystem(SDL_INIT_AUDIO)) {
+-            const SDL_AudioSpec spec{SDL_AUDIO_S16, 2, int(kSampleRate)};
+-            pullStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, Pull, nullptr);
+-
+-            if (pullStream && SDL_ResumeAudioStreamDevice(pullStream)) {
++            if (OpenPullStream()) {
++                sdlPlayback = true;
++                SDL_AddEventWatch(OnAppLifecycle, nullptr);
+                 std::fprintf(stderr, "MH3 audio: SDL playback at %u Hz stereo (%s)\n", unsigned(kSampleRate), SDL_GetCurrentAudioDriver());
+                 std::atexit(StopAudioOutput);
+                 return;
+             }
+ 
+             std::fprintf(stderr, "MH3 audio: no SDL playback (%s); mixing to a null sink\n", SDL_GetError());
+-
+-            if (pullStream)
+-                SDL_DestroyAudioStream(pullStream);
+-
+-            pullStream = nullptr;
+         }
+     }
+ 
+-    nullSinkStop.store(false);
+-    nullSink = std::thread(RunNullSink);
++    StartNullSink();
+     std::atexit(StopAudioOutput);
+-    std::fprintf(stderr, "MH3 audio: null sink at %u Hz\n", unsigned(kSampleRate));
+ }
+ 
+ void StopAudioOutput() {
++    stoppingPlayback.store(true);
++    sdlPlayback.store(false);
++    SDL_RemoveEventWatch(OnAppLifecycle, nullptr);
++    std::thread pending;
++    {
++        std::lock_guard lock(playbackLock);
++        pending = std::move(recoveryWorker);
++    }
++    if (pending.joinable())
++        pending.join();
++    std::lock_guard lock(playbackLock);
+     if (pullStream) {
+         SDL_DestroyAudioStream(pullStream);
+         pullStream = nullptr;
+@@ -217,4 +327,40 @@ void StopAudioOutput() {
+     }
+ }
+ 
++// Explicit test mode only; the caller selects SDL's dummy driver in its own
++// process. Exercise the actual stream/recovery/shutdown code without speakers.
++void RunLifecycleChecks() {
++    StartAudioOutput();
++    const char* driver = SDL_GetCurrentAudioDriver();
++    if (!driver || std::string(driver) != "dummy" || !sdlPlayback.load())
++        MH3_THROW(std::runtime_error("Audio lifecycle checks require the SDL dummy driver"));
++    {
++        std::lock_guard lock(playbackLock);
++        if (!SDL_PauseAudioStreamDevice(pullStream))
++            MH3_THROW(std::runtime_error("Cannot pause the test audio stream"));
++    }
++    std::this_thread::sleep_for(std::chrono::milliseconds(50));
++    const auto reopens = successfulReopens.load();
++    SDL_Event event{};
++    event.type = SDL_EVENT_DID_ENTER_FOREGROUND;
++    OnAppLifecycle(nullptr, &event);
++    for (int i = 0; i < 150 && stallCheckRunning.load(); ++i)
++        std::this_thread::sleep_for(std::chrono::milliseconds(20));
++    if (stallCheckRunning.load() || successfulReopens.load() != reopens + 1)
++        MH3_THROW(std::runtime_error("Paused audio stream did not recover"));
++    const auto pulled = pulledFrames.load();
++    std::this_thread::sleep_for(std::chrono::milliseconds(100));
++    if (pulledFrames.load() <= pulled)
++        MH3_THROW(std::runtime_error("Recovered stream did not resume mixing"));
++    for (int i = 0; i < 10; ++i)
++        OnAppLifecycle(nullptr, &event);
++    StopAudioOutput();
++    const auto stoppedAt = successfulReopens.load();
++    std::this_thread::sleep_for(std::chrono::milliseconds(350));
++    if (successfulReopens.load() != stoppedAt || pullStream || nullSink.joinable() || recoveryWorker.joinable())
++        MH3_THROW(std::runtime_error("Audio recovery outlived shutdown"));
++    StopAudioOutput();
++    std::fprintf(stderr, "Audio lifecycle: stalled stream recovery and joined shutdown passed.\n");
++}
++
+ } // namespace NativeAudio
+diff --git a/runtime/src/audio_tests.cpp b/runtime/src/audio_tests.cpp
+index 9df3b62fd756ebd36c5dbe339af37c71361345e0..d0b2e25359eae1878396e267fcb1f06abf2ef438 100644
+--- a/runtime/src/audio_tests.cpp
++++ b/runtime/src/audio_tests.cpp
+@@ -2,15 +2,19 @@
+ #include "fatal.h"
+ #include "audio_dma.h"
+ #include <array>
++#include <cstdlib>
+ #include <iostream>
+ #include <stdexcept>
+ 
+ namespace NativeAudio {
+ void RunNativeMixerSelfTests();
++void RunLifecycleChecks();
+ }
+ 
+ void RunAudioSelfTests(CpuContext*) {
+     NativeAudio::RunNativeMixerSelfTests();
++    if (const char* test = std::getenv("MH3_AUDIO_RECOVERY_SELF_TEST"); test && test[0] == '1')
++        NativeAudio::RunLifecycleChecks();
+     AudioDmaState timing;
+     timing.enabled = true;
+     timing.length = 384;
 diff --git a/runtime/src/controller_host.cpp b/runtime/src/controller_host.cpp
 index 376bc7a1b84f836484c5e3c9d3d9249eb2211709..9cb728ceb9fc06abae3f73ece4d8bc7de9ae4119 100644
 --- a/runtime/src/controller_host.cpp
@@ -537,19 +1009,195 @@ index 376bc7a1b84f836484c5e3c9d3d9249eb2211709..9cb728ceb9fc06abae3f73ece4d8bc7d
      }
  
      // Digital L/R inputs (keyboard, mouse or shoulder) report a full press.
+diff --git a/runtime/src/device_tests.cpp b/runtime/src/device_tests.cpp
+index 6b03b9f8a8b9409326eff16e4d36c1dd3bc9a99b..5378a8b5ffdb9de2edcb978eab82ae16e3949487 100644
+--- a/runtime/src/device_tests.cpp
++++ b/runtime/src/device_tests.cpp
+@@ -48,6 +48,7 @@ extern "C" void MH3_IOSOpenAsync(CpuContext*);
+ void RunSleepSelfTests(CpuContext*);
+ void RunRsoOverlaySelfTests(CpuContext*);
+ void RunGxPanicSelfTests(CpuContext*);
++void RunEquipmentSelfTests(CpuContext*);
+ extern "C" void PPC_WriteSpr(uint32_t, uint32_t);
+ extern "C" uint32_t PPC_ReadSpr(uint32_t);
+ 
+@@ -132,6 +133,7 @@ void RunDeviceSelfTests(CpuContext* cpu) {
+ 
+     RunVideoTimingSelfTests();
+     RunControllerSelfTests(cpu);
++    RunEquipmentSelfTests(cpu);
+     RunRsoOverlaySelfTests(cpu);
+     {
+         constexpr uint32_t start = 0x81700004, end = 0x81701008;
+diff --git a/runtime/src/effect_objects.cpp b/runtime/src/effect_objects.cpp
+index 22120b9fe2ca7d7091324636165b3e2a14ad1949..5ebb1f645af53d731cd9760fc0a9a0604ae59753 100644
+--- a/runtime/src/effect_objects.cpp
++++ b/runtime/src/effect_objects.cpp
+@@ -1248,7 +1248,7 @@ void CameraGetPosition(GuestCall& game, uint32_t camera, uint32_t out) {
+     const uint32_t data = FlatRead32(camera);
+ 
+     if (!data)
+-        Panic("g3d_camera.cpp", 0xC3, "IsValid()");
++        return;
+ 
+     if (out)
+         for (uint32_t k = 0; k < 12; k += 4)
+@@ -1281,12 +1281,25 @@ void JointWpos(uint32_t chara, uint32_t joint, uint32_t out) {
+         return;
+     }
+ 
+-    const uint32_t node = G3dNative::ResDicAtOffset14(chara + 0x114, joint);
++    const uint32_t matrices = FlatRead32(model + 0xEC);
++    if (!matrices) {
++        const uint32_t word = FlatRead32(0x807988F8);
+ 
+-    if (!node)
+-        Panic("g3d_resnode_ac.h", 0x53, "IsValid()");
++        for (uint32_t k = 0; k < 12; k += 4)
++            FlatWrite32(out + k, word);
+ 
+-    const uint32_t m = FlatRead32(model + 0xEC) + FlatRead32(node + 0x10) * 0x30;
++        return;
++    }
++
++    const uint32_t node = G3dNative::ResDicAtOffset14(chara + 0x114, joint);
++    if (!node) {
++        const uint32_t word = FlatRead32(0x807988F8);
++        for (uint32_t k = 0; k < 12; k += 4)
++            FlatWrite32(out + k, word);
++        return;
++    }
++    const uint32_t id = node ? FlatRead32(node + 0x10) : 0;
++    const uint32_t m = matrices + id * 0x30;
+ 
+     for (uint32_t k = 0; k < 3; ++k)
+         FlatWrite32(out + 4 * k, FlatRead32(m + 0xC + 0x10 * k));
+@@ -1470,7 +1483,7 @@ uint32_t CopiedMatPart(uint32_t mdl, uint32_t mat, uint32_t bit, bool dirty) {
+ // (bit 1); alpha for those and for GX_COLOR0A0 / GX_COLOR1A1 (4, 5).
+ void MatChanSetColor(uint32_t data, uint32_t chan, uint32_t color) {
+     if (!data)
+-        Panic("g3d_resmat_ac.h", 0x1D1, "ResMatChan: Object not valid");
++        return;
+ 
+     const uint32_t at = data + (chan & 1) * 0x14;
+ 
+@@ -1488,10 +1501,12 @@ void MatChanSetColor(uint32_t data, uint32_t chan, uint32_t color) {
+ // ResMatChan::GetColor (0x80096EF0): the channel's colour into `out`.
+ uint32_t MatChanGetColor(uint32_t data, uint32_t chan, uint32_t out) {
+     if (!out)
+-        Panic("g3d_resmat.cpp", 0x903, "Pointer must not be NULL (color)");
++        return 0;
+ 
+-    if (!data)
+-        Panic("g3d_resmat_ac.h", 0x1D1, "ResMatChan: Object not valid");
++    if (!data) {
++        FlatWrite32(out, 0xFFFFFFFF);
++        return 0;
++    }
+ 
+     FlatWrite32(out, FlatRead32(data + (chan & 1) * 0x14 + 4));
+     return 1;
+@@ -1503,13 +1518,10 @@ uint32_t MatChanGetColor(uint32_t data, uint32_t chan, uint32_t out) {
+ // into `out`; whether it is set.
+ uint32_t TevKColorGet(uint32_t data, uint32_t id, uint32_t out) {
+     if (!out)
+-        Panic("g3d_resmat.cpp", 0x654, "Pointer must not be NULL (color)");
+-
+-    if (id > 3)
+-        Panic("g3d_resmat.cpp", 0x655, "id is out of bounds");
++        return 0;
+ 
+-    if (!data)
+-        Panic("g3d_resmat_ac.h", 0x17A, "ResMatTevColor: Object not valid");
++    if (id > 3 || !data)
++        return 0;
+ 
+     const uint32_t base = data + id * 10;
+ 
+@@ -2517,12 +2529,18 @@ MH3_EFFECT_PORT(800F9AD4, EffectSimpleLightCallback, {
+ REGISTER_NATIVE_FUNCTION_AS(0x800F9AD4, MH3_EffectSimpleLightCallback, "EffectSimpleLightCallback");
+ 
+ MH3_EFFECT_PORT(800F9A38, EffectSetSimpleLight, {
++    EffectStep::CalcCollected(cpu, frame.Arg(3));
+     EffectSetSimpleLight(frame.Arg(3), ReadSimpleLight(frame.Arg(4) & 0xFF, frame.Arg(5), frame.Arg(6), float(cpu->fpr[1].d), frame.Arg(7)), frame.Arg(8) != 0);
+     return cpu->gpr[3];
+ });
+ REGISTER_NATIVE_FUNCTION_AS(0x800F9A38, MH3_EffectSetSimpleLight, "EffectSetSimpleLight");
+ 
+ MH3_EFFECT_PORT(800F99EC, EffectChangeColor, {
++    // The light goes on the effect's particle managers. The original calls it
++    // after the effect's Effect::Calc; with that call collected (deferred) it
++    // came first and hit and footstep effects drew unlit (a white flash), so
++    // the collected calls run first.
++    EffectStep::CalcCollected(cpu, frame.Arg(3));
+     EffectChangeColor(game, frame.Arg(3), frame.Arg(4), frame.Arg(5));
+     return cpu->gpr[3];
+ });
+@@ -2709,7 +2727,7 @@ MH3_GAME_PORT(8006FE30, ResNodeGetId, {
+     const uint32_t node = FlatRead32(frame.Arg(3));
+ 
+     if (!node)
+-        Panic("g3d_resnode_ac.h", 0x53, "IsValid()");
++        return 0;
+ 
+     return FlatRead32(node + 0x10);
+ });
+diff --git a/runtime/src/effect_step.cpp b/runtime/src/effect_step.cpp
+index 3768236a11bb9a87982b852dff85fb438fee665e..8c164174bbff516f22a1b55c4f34c35da1aedb8b 100644
+--- a/runtime/src/effect_step.cpp
++++ b/runtime/src/effect_step.cpp
+@@ -986,6 +986,36 @@ void Touch() {
+     FinishPrevious();
+ }
+ 
++void CalcCollected(CpuContext* cpu, uint32_t effect) {
++    Touch();
++
++    if (!deferral.collecting || PpcThread::CurrentThread() != PpcThread::Game)
++        return;
++
++    auto& calls = deferral.calls;
++    const auto first = std::find_if(calls.begin(), calls.end(), [effect](const auto& call) { return call.first == effect; });
++
++    if (first == calls.end())
++        return;
++
++    // Run with the task pass's clock (the current one, as at the call site).
++    std::vector<std::pair<uint32_t, uint32_t>> own;
++    std::copy_if(first, calls.end(), std::back_inserter(own), [effect](const auto& call) { return call.first == effect; });
++    calls.erase(std::remove_if(first, calls.end(), [effect](const auto& call) { return call.first == effect; }), calls.end());
++
++    const CpuContext saved = *cpu;
++    {
++        GuestFrame frame(cpu, 0x10);
++
++        for (const auto& [owner, onlyBillboard] : own) {
++            cpu->gpr[3] = owner;
++            cpu->gpr[4] = onlyBillboard;
++            CalcEffect(cpu);
++        }
++    }
++    *cpu = saved;
++}
++
+ void Collected() {
+     deferral.collecting = false;
+ #if defined(MH3_DEVELOPMENT) && !defined(__vita__)
 diff --git a/runtime/src/frame_pacer.cpp b/runtime/src/frame_pacer.cpp
-index 58240187f8d48f5ed0508173d6b3b660a3ad7d18..032edbb9b554a6e48a5e2367d051b2d706ab0abd 100644
+index 58240187f8d48f5ed0508173d6b3b660a3ad7d18..252f3ab8566b8972a0b38fe410c6170d05ae656b 100644
 --- a/runtime/src/frame_pacer.cpp
 +++ b/runtime/src/frame_pacer.cpp
-@@ -22,6 +22,7 @@
+@@ -22,6 +22,9 @@
  #endif
  #include "field_jump.h"
  #include "game_step.h"
 +#include "game_speed.h"
++#include "rowell_frame_delta.h"
++#include "load_progress.h"
  #include "mh3_frame_rate_control.h"
  #include "guest_threads.h"
  #include "memory.h"
-@@ -204,6 +205,14 @@ extern "C" void MH3_FramePacer(CpuContext* ctx) {
+@@ -204,6 +207,14 @@ extern "C" void MH3_FramePacer(CpuContext* ctx) {
  
      started = true;
      GameStep::SetVariable(variableStep);
@@ -564,7 +1212,36 @@ index 58240187f8d48f5ed0508173d6b3b660a3ad7d18..032edbb9b554a6e48a5e2367d051b2d7
      double stepTicks; // game time of the step that just ran, in retraces
      if (variableStep) {
          const int targetFps = MH3FrameRateControl::TargetFPS();
-@@ -250,6 +259,7 @@ extern "C" void MH3_FramePacer(CpuContext* ctx) {
+@@ -224,32 +235,14 @@ extern "C" void MH3_FramePacer(CpuContext* ctx) {
+             frameEnd = targetDeadline;
+         }
+ 
+-        // Measure actual frame duration in seconds, clamped to realistic bounds.
+-        // If a massive stall occurred (e.g. loading screen or pause > 100ms), avoid physics spikes.
+-        double dt = std::chrono::duration<double>(actualFrameDuration).count();
+-        if (dt > 0.1) {
+-            dt = std::min(dt, 0.05); // cap single frame contribution to 50ms (20 FPS)
+-        } else if (dt < 1.0 / 240.0) {
+-            dt = 1.0 / 240.0;
+-        }
+-
+-        // Exponential moving average filter (alpha = 0.15).
+-        // Smooths out VSync frame-drop cadence (e.g. 16.6ms / 33.3ms alternating on 60Hz displays when dropping to 45 FPS)
+-        // so that logic does not jerk between 2.0x and 0.5x speed (eliminates the "mini-turbo"),
+-        // while tracking the true real-time framerate so the game NEVER runs in slow motion
+-        // even if FPS is 45, or if 120 FPS target is set on a 60 Hz display.
+-        static double smoothedDt = 1.0 / double(std::max(1, targetFps));
+-        static int lastTargetFps = targetFps;
+-        if (targetFps != lastTargetFps) {
+-            lastTargetFps = targetFps;
+-            smoothedDt = 1.0 / double(std::max(1, targetFps));
+-        }
+-
+-        smoothedDt = smoothedDt * 0.85 + dt * 0.15;
++        static RowellFrameDelta frameDelta;
++        const double elapsed = std::chrono::duration<double>(actualFrameDuration).count();
++        const double smoothedDt = frameDelta.Sample(elapsed, targetFps, LoadProgress::Showing());
+ 
          // Retrace period in seconds (e.g. 1 / 59.94 s)
          const double retraceSeconds = std::chrono::duration<double>(period).count();
          stepTicks = smoothedDt / retraceSeconds;
@@ -572,7 +1249,7 @@ index 58240187f8d48f5ed0508173d6b3b660a3ad7d18..032edbb9b554a6e48a5e2367d051b2d7
  
          GameStep::Begin(stepTicks / 2.0);
  
-@@ -266,6 +276,7 @@ extern "C" void MH3_FramePacer(CpuContext* ctx) {
+@@ -266,6 +259,7 @@ extern "C" void MH3_FramePacer(CpuContext* ctx) {
          else
              frameEnd += budget * period;
          stepTicks = budget;
@@ -580,8 +1257,111 @@ index 58240187f8d48f5ed0508173d6b3b660a3ad7d18..032edbb9b554a6e48a5e2367d051b2d7
          GameStep::Begin(budget / 2.0);
  
          // Flip one retrace before the end, as the original does.
+diff --git a/runtime/src/g3d_anm_result.cpp b/runtime/src/g3d_anm_result.cpp
+index e4fcf8d91c1bc947b11e322ceb4e8b9cdff3fb40..1b654492b89a0eb0e00c7e995eaa2e9fa0551527 100644
+--- a/runtime/src/g3d_anm_result.cpp
++++ b/runtime/src/g3d_anm_result.cpp
+@@ -115,12 +115,14 @@ uint32_t WithIdentityBits(uint32_t flags) {
+ 
+ void ChrAnmResult(uint32_t ref, uint32_t result) {
+     if (!result)
+-        Panic("NW4R panic (g3d_resnode.cpp:126): Pointer must not be NULL (pResult)");
++        return;
+ 
+-    const uint32_t node = Read32(ref);
++    const uint32_t node = ref ? Read32(ref) : 0;
+ 
+-    if (!node)
+-        Panic("NW4R panic (g3d_resnode.cpp:127): Failed assertion IsValid()");
++    if (!node) {
++        Write32(result, 0);
++        return;
++    }
+ 
+     const uint32_t nodeFlags = Read32(node + kNodeFlags);
+     uint32_t flags = 0;
+@@ -164,12 +166,12 @@ void ChrAnmResult(uint32_t ref, uint32_t result) {
+ 
+ void PatchChrAnmResult(uint32_t ref, uint32_t result) {
+     if (!result)
+-        Panic("NW4R panic (g3d_resnode.cpp:32): Pointer must not be NULL (pResult)");
++        return;
+ 
+-    const uint32_t node = Read32(ref);
++    const uint32_t node = ref ? Read32(ref) : 0;
+ 
+     if (!node)
+-        Panic("NW4R panic (g3d_resnode.cpp:33): Failed assertion IsValid()");
++        return;
+ 
+     const uint32_t nodeFlags = Read32(node + kNodeFlags);
+     uint32_t flags = Read32(result);
+diff --git a/runtime/src/g3d_calc_world.cpp b/runtime/src/g3d_calc_world.cpp
+index aa9e46c844fee7e02ac12d042531789d0e9f1c27..0583b04d3c9e9fc0101f01a25c79d0f7f190ff80 100644
+--- a/runtime/src/g3d_calc_world.cpp
++++ b/runtime/src/g3d_calc_world.cpp
+@@ -165,7 +165,10 @@ void Skinning(uint32_t out, uint32_t flags, uint32_t mdl, uint32_t code, const s
+             // 5 (anything else is an assert in the original).
+             const uint32_t dst = Read16(code + 1);
+             const uint32_t node = G3dNative::ResDicAtOffset14(mdl, Read16(code + 3));
+-            G3dNative::MtxConcat(out + 0x30 * dst, node + 0xA0, work + 0x30 * dst);
++            if (node)
++                G3dNative::MtxConcat(out + 0x30 * dst, node + 0xA0, work + 0x30 * dst);
++            else
++                G3dNative::MtxCopy(out + 0x30 * dst, work + 0x30 * dst);
+             code += 5;
+         }
+     }
+@@ -315,6 +318,8 @@ void CalcWorld(CpuContext* ctx) {
+ 
+         const uint32_t nodeIndex = a, parent = b;
+         const uint32_t node = G3dNative::ResDicAtOffset14(mdl, nodeIndex);
++        if (!node)
++            continue; // No node pose exists; do not overwrite the root matrix with stale result data.
+         MemoryInline::FlatWrite32(frame[kNode], node);
+         const uint32_t id = node ? Read32(node + 0x10) : 0;
+         MemoryInline::FlatWrite32(ids + 4 * count++, id);
+diff --git a/runtime/src/guest_flat_memory.cpp b/runtime/src/guest_flat_memory.cpp
+index 60e663c256de33c1015e8b419c3d0d12aeb3f982..4f252db3bd84758120dedb265fa7debe38b5a556 100644
+--- a/runtime/src/guest_flat_memory.cpp
++++ b/runtime/src/guest_flat_memory.cpp
+@@ -155,14 +155,8 @@ void Report(int signal, siginfo_t* info, void* context) {
+                       signal, reinterpret_cast<void*>(host), named ? symbol.dli_sname : "?", reinterpret_cast<void*>(pc));
+ #if defined(__ANDROID__)
+         __android_log_print(ANDROID_LOG_FATAL, "MH3", "%s", hostMsg);
+-        if (FILE* f = fopen("/sdcard/Download/oceantri_crash.txt", "a")) {
+-            fprintf(f, "%s", hostMsg);
+-            fclose(f);
+-        }
+-        if (FILE* f2 = fopen("/storage/emulated/0/Download/oceantri_crash.txt", "a")) {
+-            fprintf(f2, "%s", hostMsg);
+-            fclose(f2);
+-        }
++        BoundedLog::AppendEmergency("/storage/emulated/0/Download/oceantri_crash.txt",
++            "/storage/emulated/0/Download/oceantri_crash.txt.previous", hostMsg, std::strlen(hostMsg));
+ #endif
+         (void)!write(STDERR_FILENO, hostMsg, std::strlen(hostMsg));
+         sigaction(signal, signal == SIGBUS ? &previousBus : &previousSegv, nullptr);
+@@ -184,14 +178,9 @@ void Report(int signal, siginfo_t* info, void* context) {
+         (void)!write(STDERR_FILENO, text, size_t(length) < sizeof(text) ? size_t(length) : sizeof(text) - 1);
+ #if defined(__ANDROID__)
+         __android_log_print(ANDROID_LOG_FATAL, "MH3", "%s", text);
+-        if (FILE* f = fopen("/sdcard/Download/oceantri_crash.txt", "a")) {
+-            fprintf(f, "%s", text);
+-            fclose(f);
+-        }
+-        if (FILE* f2 = fopen("/storage/emulated/0/Download/oceantri_crash.txt", "a")) {
+-            fprintf(f2, "%s", text);
+-            fclose(f2);
+-        }
++        BoundedLog::AppendEmergency("/storage/emulated/0/Download/oceantri_crash.txt",
++            "/storage/emulated/0/Download/oceantri_crash.txt.previous", text,
++            size_t(length) < sizeof(text) ? size_t(length) : sizeof(text) - 1);
+ #endif
+     }
+     // An unrecognized, computed hardware pointer may bypass the translator's
 diff --git a/runtime/src/main.cpp b/runtime/src/main.cpp
-index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c96bd6a4dd 100644
+index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..50c4708c25e84ada4182eb90c5a10d4228b8cffe 100644
 --- a/runtime/src/main.cpp
 +++ b/runtime/src/main.cpp
 @@ -1,4 +1,5 @@
@@ -590,18 +1370,42 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c9
  #include "language.h"
  #include "mh3_frame_rate_control.h"
  #if defined(ANDROID) || defined(__ANDROID__)
-@@ -127,8 +128,8 @@ void AppendCrashLog(std::string_view what, const CpuContext* cpu) noexcept {
+@@ -22,6 +23,7 @@
+ #include <unistd.h>
+ #include "abi_bridge.h"
+ #include "fatal.h"
++#include "bounded_log.h"
+ #include <aurora/fatal.hpp>
+ #include "generated/RuntimeConfig.h"
+ #include "disc_image.h"
+@@ -127,12 +129,8 @@ void AppendCrashLog(std::string_view what, const CpuContext* cpu) noexcept {
  #if defined(ANDROID) || defined(__ANDROID__)
      __android_log_print(ANDROID_LOG_FATAL, "MH3", "MH3 CRASH REPORT:\n%s", text.c_str());
      std::error_code lec;
 -    std::filesystem::create_directories("/storage/emulated/0/MH3/logs", lec);
 -    if (FILE* f = fopen("/storage/emulated/0/MH3/logs/oceantri_crash.txt", "a")) {
+-        fputs(text.c_str(), f);
+-        fputc('\n', f);
+-        fclose(f);
+-    }
 +    std::filesystem::create_directories("/storage/emulated/0/MH3_Rowell_Dev/logs", lec);
-+    if (FILE* f = fopen("/storage/emulated/0/MH3_Rowell_Dev/logs/oceantri_crash.txt", "a")) {
-         fputs(text.c_str(), f);
-         fputc('\n', f);
-         fclose(f);
-@@ -648,7 +649,7 @@ bool PrepareGameData(const char* rom) {
++    BoundedLog::AppendReport("/storage/emulated/0/MH3_Rowell_Dev/logs/oceantri_crash.txt", text + '\n');
+ #endif
+ #ifdef __vita__
+     for (size_t at = 0; at < text.size();) {
+@@ -146,10 +144,7 @@ void AppendCrashLog(std::string_view what, const CpuContext* cpu) noexcept {
+     const char* user = std::getenv("MH3_USER_DIR");
+     const std::string path = std::string(user ? user : "saves") + "/crash.txt";
+ #endif
+-    std::ofstream out(path, std::ios::app);
+-
+-    if (out)
+-        out << text << '\n';
++    BoundedLog::AppendReport(path, text + '\n');
+ }
+ 
+ void WriteCrashArtifacts(std::string_view reason, std::string_view details, const uint32_t*) noexcept {
+@@ -648,7 +643,7 @@ bool PrepareGameData(const char* rom) {
      } else if (intFiles && intFiles[0]) {
          root = std::filesystem::path(intFiles);
      } else {
@@ -610,7 +1414,7 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c9
      }
      std::error_code rootEc;
      std::filesystem::create_directories(root, rootEc);
-@@ -684,13 +685,13 @@ bool PrepareGameData(const char* rom) {
+@@ -684,13 +679,13 @@ bool PrepareGameData(const char* rom) {
  #if defined(__ANDROID__)
              searchPaths = {
                  "/storage/emulated/0/Download",
@@ -626,7 +1430,7 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c9
                  "/sdcard/OceanTri",
                  "/sdcard/ROMs",
                  "/sdcard/Games",
-@@ -1009,10 +1010,10 @@ int main(int argc, char** argv) {
+@@ -1009,10 +1004,10 @@ int main(int argc, char** argv) {
              char buf[1024];
              ssize_t r;
              std::error_code ec;
@@ -640,16 +1444,29 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c9
                  if (!std::filesystem::exists(readmePath)) {
                      if (FILE* rf = fopen(readmePath.c_str(), "w")) {
                          fputs("=== MONSTER HUNTER TRI - TEXTURAS HD ===\n"
-@@ -1023,7 +1024,7 @@ int main(int argc, char** argv) {
+@@ -1023,17 +1018,15 @@ int main(int argc, char** argv) {
                      }
                  }
              }
 -            FILE* logFile = fopen("/storage/emulated/0/MH3/logs/game_log.txt", "a");
-+            FILE* logFile = fopen("/storage/emulated/0/MH3_Rowell_Dev/logs/game_log.txt", "a");
++            BoundedLog::File logFile;
++            logFile.Open("/storage/emulated/0/MH3_Rowell_Dev/logs/game_log.txt", BoundedLog::kActivityBytes);
              while ((r = read(fd, buf, sizeof(buf) - 1)) > 0) {
                  if (r > 0 && buf[r - 1] == '\n') --r;
                  buf[r] = '\0';
-@@ -1050,7 +1051,7 @@ int main(int argc, char** argv) {
+                 __android_log_print(ANDROID_LOG_INFO, "MH3", "%s", buf);
+-                if (logFile) {
+-                    fprintf(logFile, "%s\n", buf);
+-                    fflush(logFile);
+-                }
++                buf[r] = '\n';
++                logFile.Append(std::string_view(buf, size_t(r) + 1));
+             }
+-            if (logFile) fclose(logFile);
+             return nullptr;
+         }, (void*)(intptr_t)pfd[0]);
+         pthread_detach(thr);
+@@ -1050,7 +1043,7 @@ int main(int argc, char** argv) {
      {
          std::string userDirStr;
  #if defined(ANDROID) || defined(__ANDROID__)
@@ -658,7 +1475,7 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c9
  #else
          const char* envUser = std::getenv("MH3_USER_DIR");
          if (envUser && *envUser) {
-@@ -1078,9 +1079,9 @@ int main(int argc, char** argv) {
+@@ -1078,9 +1071,9 @@ int main(int argc, char** argv) {
          std::cout << "MH3: MH3_USER_DIR set to: " << userDir << "\n";
  #endif
  
@@ -670,7 +1487,7 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c9
          {
              std::ifstream in(langPath);
              std::string code;
-@@ -1088,11 +1089,11 @@ int main(int argc, char** argv) {
+@@ -1088,11 +1081,11 @@ int main(int argc, char** argv) {
                  langCode = code;
              } else {
                  std::ofstream out(langPath);
@@ -684,7 +1501,7 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c9
          if (langCode == "en") sysLang = 1;
          else if (langCode == "de") sysLang = 2;
          else if (langCode == "fr") sysLang = 3;
-@@ -1173,6 +1174,15 @@ int main(int argc, char** argv) {
+@@ -1173,6 +1166,15 @@ int main(int argc, char** argv) {
  #else
      {
  #endif
@@ -700,6 +1517,68 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..7de9b0ff6be43561c30e04ae7f81e2c9
  #ifdef __vita__
          if (argc == 1 && !VitaLauncher::Run())
              return 0;
+@@ -1450,10 +1452,8 @@ int main(int argc, char** argv) {
+     catch (const std::exception& error) {
+ #if defined(ANDROID) || defined(__ANDROID__)
+         __android_log_print(ANDROID_LOG_FATAL, "MH3", "FATAL EXCEPTION in main(): %s", error.what());
+-        if (FILE* f = fopen("/sdcard/Download/oceantri_crash.txt", "a")) {
+-            fprintf(f, "FATAL EXCEPTION: %s\n", error.what());
+-            fclose(f);
+-        }
++        BoundedLog::AppendReport("/storage/emulated/0/Download/oceantri_crash.txt",
++                                 std::string("FATAL EXCEPTION: ") + error.what() + '\n');
+         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "MH3 Error", error.what(), nullptr);
+         std::this_thread::sleep_for(std::chrono::seconds(3));
+ #endif
+diff --git a/runtime/src/model_assets.cpp b/runtime/src/model_assets.cpp
+index 55899e7aa523f29de98f2ae17359ab0ef4cdf993..6a987c8428c367122a371717d3d3a3a89436be3f 100644
+--- a/runtime/src/model_assets.cpp
++++ b/runtime/src/model_assets.cpp
+@@ -46,7 +46,7 @@ struct Assets {
+     mh3_mesh_pack pack{};
+     mh3_model_catalog catalog{};
+     uint64_t generation = 0, lastUse = 0, lastDemandFrame = UINT64_MAX;
+-    bool gpuRegistered = false, catalogRegistered = false;
++    bool gpuRegistered = false, catalogRegistered = false, gpuRetireQueued = false;
+     uintptr_t handle() const { return reinterpret_cast<uintptr_t>(this); }
+ };
+ 
+@@ -1098,21 +1098,29 @@ void PurgeUnusedNativeModelGPU() {
+         std::lock_guard lock(manager->lock);
+         for (auto& item : manager->loaded) {
+             auto& asset = *item.second;
+-            if (asset.gpuRegistered && !NativeModelPackHasLiveSources(asset.handle()) &&
++            if (asset.gpuRegistered && !asset.gpuRetireQueued && !NativeModelPackHasLiveSources(asset.handle()) &&
+                 (!manager->frameKnown || asset.lastDemandFrame != manager->demandFrame)) {
+                 toRetire.emplace_back(asset.handle(), asset.generation);
+-                asset.gpuRegistered = false;
+-                ++manager->stats.gpu_evictions;
++                asset.gpuRetireQueued = true;
+             }
+         }
+     }
+ 
+     if (!toRetire.empty()) {
+         QueueNativeGraphicsTask(NativeTaskOrder::AfterDraws, [toRetire = std::move(toRetire)] {
++            if (!manager) return;
++            std::lock_guard lock(manager->lock);
+             for (const auto& [handle, gen] : toRetire) {
+-                try {
+-                    UnregisterNativeModelGPU(handle, gen);
+-                } catch (...) {}
++                const auto it = manager->handles.find(handle);
++                if (it == manager->handles.end() || it->second->generation != gen) continue;
++                auto& asset = *it->second;
++                asset.gpuRetireQueued = false;
++                if (!asset.gpuRegistered) continue;
++                if (NativeModelPackHasLiveSources(handle) ||
++                    (manager->frameKnown && asset.lastDemandFrame == manager->demandFrame)) continue;
++                UnregisterNativeModelGPU(handle, gen);
++                asset.gpuRegistered = false;
++                ++manager->stats.gpu_evictions;
+             }
+         });
+     }
 diff --git a/runtime/src/net/local_server.cpp b/runtime/src/net/local_server.cpp
 index bee817f25e43e86f55d2ff6f4e7d9ca433cb2d81..a73442cc5d97bff1e3d332eff88062ac262e749a 100644
 --- a/runtime/src/net/local_server.cpp
@@ -717,6 +1596,60 @@ index bee817f25e43e86f55d2ff6f4e7d9ca433cb2d81..a73442cc5d97bff1e3d332eff88062ac
  }
  
  bool PortOpen(uint16_t port) {
+diff --git a/runtime/src/nw4r_accessors.cpp b/runtime/src/nw4r_accessors.cpp
+index 92a0876adf8ca978ef84162767caa8212f3de8a9..949d322e8e5a3e51011b5876808b892d25889cc1 100644
+--- a/runtime/src/nw4r_accessors.cpp
++++ b/runtime/src/nw4r_accessors.cpp
+@@ -14,7 +14,8 @@
+ //                                    the pointer is not 4-aligned
+ //   0x80097F7C ResDicAtOffset14      ResDic lookup r4 in the dictionary at
+ //                                    offset +0x14 of *r3; panics when not
+-//                                    4-aligned
++//                                    4-aligned; absent/out-of-range optional
++//                                    nodes return an empty resource
+ //   0x80062978, 0x8005D210 StoreAlignedPtr  *r3 = r4, panics when r4 is not
+ //                                    4-aligned; returns r3
+ //   0x80041EA4 Vec3Copy              3 floats r4 -> r3 (through lfs/stfs);
+@@ -29,6 +30,7 @@
+ #include "g3d_native.h"
+ #include "memory.h"
+ #include "port_check.h"
++#include "resource_guard.h"
+ #include "ppc_runtime.h"
+ 
+ #include <cstdint>
+@@ -96,15 +98,26 @@ uint32_t OffsetToPtr(uint32_t r, uint32_t offset) {
+ }
+ 
+ uint32_t DicAtOffset14(uint32_t r, uint32_t index) {
+-    const uint32_t dic = OffsetToPtr(r, Read32(RefChecked(r) + 0x14));
++    if (!r) {
++        ResourceGuard::Missing("model reference", r, index);
++        return 0;
++    }
++    const uint32_t ref = Read32(r);
++    if (!ref) {
++        ResourceGuard::Missing("model reference", r, index);
++        return Aligned(0);
++    }
++
++    const uint32_t dic = OffsetToPtr(r, Read32(ref + 0x14));
+ 
+     if (!dic)
+         return Aligned(0);
+ 
+-    const int32_t i = int32_t(index);
+-
+-    if (!(i >= 0 && i <= int32_t(Read32(dic + 4)) - 1))
+-        Panic("idx is out of bounds", index);
++    const uint32_t count = Read32(dic + 4);
++    if (count > 0x7FFFFFFFu || index >= count) {
++        ResourceGuard::Missing("model node", ref, index, count);
++        return Aligned(0);
++    }
+ 
+     const uint32_t offset = Read32(dic + (index + 1) * 16 + 0x14);
+     return Aligned(offset ? dic + offset : 0);
 diff --git a/runtime/src/save_manager.cpp b/runtime/src/save_manager.cpp
 index f121310357040dfaa513f4882949ffb4af3eae35..6864abc60e0d13c5c9236db9254c4f3a7de78fc6 100644
 --- a/runtime/src/save_manager.cpp
@@ -983,11 +1916,12 @@ index f121310357040dfaa513f4882949ffb4af3eae35..6864abc60e0d13c5c9236db9254c4f3a
 +}
 +}
 diff --git a/runtime/src/touch_controls.cpp b/runtime/src/touch_controls.cpp
-index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b7894c7791ab 100644
+index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca0a0df8b8 100644
 --- a/runtime/src/touch_controls.cpp
 +++ b/runtime/src/touch_controls.cpp
-@@ -1,12 +1,25 @@
+@@ -1,12 +1,31 @@
  #include "touch_controls.h"
+-#include "droid_sans_atlas.h"
 +#include "touch_contacts.h"
 +#include "game_speed.h"
 +#include "gamepad_bindings.h"
@@ -995,7 +1929,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +#include <array>
 +#include <mutex>
 +#include <limits>
- #include "droid_sans_atlas.h"
++#include "rowell_ui_atlas.h"
  #include "language.h"
  #include "save_manager.h"
  #include "mh3_frame_rate_control.h"
@@ -1004,6 +1938,12 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +#ifdef MH3_PC_TOUCH_UI
 +#include "pc_keybindings.h"
 +#include "rowell_touch.h"
++#ifdef MH3_TOUCH_INPUT_TESTS
++void TouchDisplayFixtureBegin();
++bool TouchDisplayFixtureMatches(int aspect,bool fullscreen);
++bool TouchDisplayFixtureScaleMatches(float scale);
++void TouchDisplayFixtureEnd();
++#endif
 +#endif
 +#ifndef MH3_PC_TOUCH_UI
  #include "net/local_server.h"
@@ -1012,7 +1952,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
  #include <SDL3/SDL.h>
  #include <GLES3/gl3.h>
-@@ -18,6 +31,8 @@
+@@ -18,6 +37,8 @@
  #include <sstream>
  #include <filesystem>
  #include <chrono>
@@ -1021,7 +1961,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  #include <atomic>
  #include <cstdio>
  #include <cstring>
-@@ -25,6 +40,7 @@
+@@ -25,6 +46,7 @@
  
  #if defined(__ANDROID__)
  #include <android/log.h>
@@ -1029,7 +1969,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  #define LOG_TAG "MH3_TOUCH"
  #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
  #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-@@ -49,15 +65,56 @@ bool Gamepad_GetSwapTriggers();
+@@ -49,15 +71,56 @@ bool Gamepad_GetSwapTriggers();
  void Gamepad_SetSwapTriggers(bool swap);
  }
  
@@ -1086,7 +2026,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  struct Vec2 {
      float x = 0.0f;
      float y = 0.0f;
-@@ -67,21 +124,25 @@ struct Color {
+@@ -67,21 +130,27 @@ struct Color {
      float r = 1.0f, g = 1.0f, b = 1.0f, a = 1.0f;
  };
  
@@ -1101,17 +2041,19 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 -constexpr Color COL_ACTIVE_TEXT   { 0.027f, 0.098f, 0.137f, 1.0f };
 -constexpr Color COL_INACTIVE_CHIP { 0.043f, 0.145f, 0.200f, 0.90f };
 -constexpr Color COL_CHIP_BORDER   { 0.106f, 0.345f, 0.431f, 1.0f };
-+// Plain dark surfaces and white/gray controls, shared by Android and PC.
-+constexpr Color COL_WHITE         { 1, 1, 1, 1 };
-+constexpr Color COL_MUTED         { .65f, .65f, .65f, 1 };
-+constexpr Color COL_CYAN          { .92f, .92f, .92f, 1 };
-+constexpr Color COL_BG_DARK       { .055f, .055f, .055f, .96f };
-+constexpr Color COL_PANEL_CARD    { .095f, .095f, .095f, .94f };
-+constexpr Color COL_PANEL_BORDER  { .24f, .24f, .24f, 1 };
-+constexpr Color COL_ACTIVE_CHIP   { .87f, .87f, .87f, 1 };
-+constexpr Color COL_ACTIVE_TEXT   { .06f, .06f, .06f, 1 };
-+constexpr Color COL_INACTIVE_CHIP { .15f, .15f, .15f, .96f };
-+constexpr Color COL_CHIP_BORDER   { .32f, .32f, .32f, 1 };
++// Faded blue settings palette; gameplay button shapes keep their neutral finish.
++constexpr Color COL_WHITE           { 0.929412f, 0.952941f, 0.980392f, 1.00f };
++constexpr Color COL_MUTED           { 0.662745f, 0.733333f, 0.815686f, 1.00f };
++constexpr Color COL_CYAN            { 0.513725f, 0.674510f, 0.847059f, 1.00f };
++constexpr Color COL_BG_DARK         { 0.043137f, 0.078431f, 0.133333f, 0.98f };
++constexpr Color COL_PANEL_CARD      { 0.090196f, 0.152941f, 0.231373f, 0.98f };
++constexpr Color COL_PANEL_BORDER    { 0.188235f, 0.282353f, 0.388235f, 1.00f };
++constexpr Color COL_ACTIVE_CHIP     { 0.141176f, 0.250980f, 0.372549f, 1.00f };
++constexpr Color COL_ACTIVE_TEXT     { 0.929412f, 0.952941f, 0.980392f, 1.00f };
++constexpr Color COL_INACTIVE_CHIP   { 0.101961f, 0.172549f, 0.254902f, 1.00f };
++constexpr Color COL_CHIP_BORDER     { 0.188235f, 0.282353f, 0.388235f, 1.00f };
++constexpr Color COL_CAUTION         { 0.847059f, 0.745098f, 0.537255f, 1.00f };
++constexpr Color COL_DANGER          { 0.839216f, 0.627451f, 0.670588f, 1.00f };
 +Color Neutral(Color color) {
 +    const float gray=.299f*color.r+.587f*color.g+.114f*color.b;
 +    return {gray,gray,gray,color.a};
@@ -1124,7 +2066,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      uint16_t mask;
      Vec2 defaultNormPos;
      float defaultNormRadius;
-@@ -90,7 +151,7 @@ struct ConfigurableButton {
+@@ -90,7 +159,7 @@ struct ConfigurableButton {
      Vec2 pos;
      float radius = 0.0f;
      bool isPressed = false;
@@ -1133,7 +2075,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      Color baseColor;
      Color borderColor;
  };
-@@ -106,14 +167,23 @@ struct UIVertex {
+@@ -106,14 +175,23 @@ struct UIVertex {
      float extra;         // half width (for type 2)
  };
  
@@ -1158,7 +2100,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  #endif
      }
  
-@@ -128,14 +198,50 @@ public:
+@@ -128,14 +206,50 @@ public:
          LoadLayoutConfig();
      }
  
@@ -1211,7 +2153,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              SDL_ShowCursor();
              if (SDL_Window* win = aurora_get_window()) {
                  SDL_SetWindowRelativeMouseMode(win, false);
-@@ -143,19 +249,64 @@ public:
+@@ -143,19 +257,69 @@ public:
          } else {
              if (SDL_Window* win = aurora_get_window()) {
  #if !defined(__ANDROID__)
@@ -1270,6 +2212,11 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      void ApplyFullscreen(bool enabled) {
          m_fullscreen = enabled;
          aurora_set_fullscreen(enabled);
++#ifdef MH3_PC_TOUCH_UI
++        // Window mode and picture shape are independent. Render-target changes
++        // are queued by ApplyAspectRatio rather than applied by the event thread.
++        ApplyAspectRatio(m_aspectIndex);
++#else
          if (enabled) {
              // Fix de resolución a pantalla completa: relación 16:9 estricta en Aurora y en la memoria del juego
              aurora_set_native_target_aspect(2); // AURORA_NATIVE_TARGET_ASPECT_16_9
@@ -1278,7 +2225,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              SetWidescreenSetting(true);
  #if defined(__cpp_exceptions)
              try {
-@@ -180,13 +331,238 @@ public:
+@@ -173,6 +337,7 @@ public:
+         } else {
+             ApplyAspectRatio(m_aspectIndex);
+         }
++#endif
+         SaveSettings();
+     }
+ 
+@@ -180,13 +345,388 @@ public:
          ApplyFullscreen(!m_fullscreen);
      }
  
@@ -1298,6 +2253,26 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +            e.UpdateSample(&buttons,&lx,&ly,&rx,&ry,&tl,&tr); lastTriggerR=tr; return buttons;
 +        };
 +        auto check=[](bool ok,const char* what) { if(!ok) std::fprintf(stderr,"Touch check failed: %s\n",what); return ok; };
++#if defined(MH3_TOUCH_INPUT_TESTS) && defined(MH3_PC_TOUCH_UI)
++        {
++            TouchSettingsEngine display;
++            TouchDisplayFixtureBegin();
++            display.m_aspectIndex=1;
++            display.ApplyFullscreen(true);
++            if(!check(display.m_aspectIndex==1 && TouchDisplayFixtureMatches(0,true),"fullscreen preserves classic aspect through PC graphics queue"))return false;
++            display.m_aspectIndex=2;
++            display.ApplyFullscreen(true);
++            if(!check(TouchDisplayFixtureMatches(1,true),"fullscreen preserves stretch aspect"))return false;
++            display.ToggleFullscreen();
++            if(!check(TouchDisplayFixtureMatches(1,false),"windowed mode preserves stretch aspect"))return false;
++            display.ApplyAspectRatio(0);
++            if(!check(TouchDisplayFixtureMatches(2,false),"widescreen reaches the PC graphics queue"))return false;
++            display.ApplyResolutionScale(1);
++            if(!check(TouchDisplayFixtureScaleMatches(1.6071429f),"resolution reaches the PC graphics queue"))return false;
++            TouchDisplayFixtureEnd();
++            std::printf("PC display UI: fullscreen/aspect independence and queued aspect/resolution hooks passed.\n");
++        }
++#endif
 +        constexpr uint64_t one=0x100000001ULL,two=0x200000001ULL,three=0x8000000000000001ULL;
 +        press(one,"R");press(two,"X");press(three,"A");
 +        if(!check(sample()==(MH3_CL_R|MH3_CL_X|MH3_CL_A),"three independent 64-bit contacts"))return false;
@@ -1453,8 +2428,9 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        if(!check(find("A").scale>scale,"plus resizes the selected button"))return false;
 +        e.HandleEditModeTouchDown(904,panel.x+panelSize.x*.5f,panel.y+148);
 +        if(!check(std::abs(find("A").scale-scale)<.001f,"undo restores button size"))return false;
++        e.m_comboMasks[1]=0;e.ComboEnabled(1)=false; // Explicit unused slot, not a hidden saved combo.
 +        e.OpenEditorCombo(false);
-+        if(!check(e.m_editorComboSlot>=0,"add combo chooses a hidden slot"))return false;
++        if(!check(e.m_editorComboSlot==1,"add combo chooses an unused slot without overwriting hidden combos"))return false;
 +        const int newSlot=e.m_editorComboSlot;
 +        e.m_editorComboMask=MH3_CL_R|MH3_CL_X|MH3_CL_A;
 +        const float editorDialogW=600,editorDialogX=(e.m_width-editorDialogW)*.5f,editorDialogY=(e.m_height-330)*.5f;
@@ -1469,16 +2445,114 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        panel=e.EditorPanelPosition();e.HandleEditModeTouchDown(905,panel.x+panelSize.x-80,panel.y+242);
 +        e.LoadLayoutConfig();e.RecalculateButtonPositions();
 +        if(!check(!e.m_editMode && std::abs(find("A").scale-savedScale)<.001f,"Save and play persists layout across reload"))return false;
++        // Library actions and the layout editor share one transactional combo store.
++        const auto libraryBefore=e.CaptureLayout();
++        const int menuBeforeLibrary=e.m_menuTab;
++        const auto padBefore=RowellPad::Current().Get(0,false);
++#ifdef MH3_PC_TOUCH_UI
++        std::array<std::array<SDL_Scancode,RowellKeys::Slots>,RowellKeys::ActionCount> keysBefore{};
++        for(int i=0;i<RowellKeys::ActionCount;++i)keysBefore[i]=RowellKeys::Current().Get(i);
++#endif
++        e.BeginLayoutEdit();
++        e.m_selectedButtonIndex=int(&find("A")-e.m_buttons.data());e.RequestComboDelete();
++        if(!check(e.m_editorDeleteSlot==-1,"original Wii controls cannot be deleted"))return false;
++        const int deleteSlot=0;
++        e.m_selectedButtonIndex=int(&find("M1")-e.m_buttons.data());
++        const auto originalMask=e.m_comboMasks[deleteSlot];const bool originalVisible=e.ComboEnabled(deleteSlot);
++        e.RequestComboDelete();
++        if(!check(e.m_editorDeleteSlot==deleteSlot && e.m_comboMasks[deleteSlot]==originalMask,
++                  "Delete opens confirmation without changing a combo"))return false;
++        e.HandleEditorDialogTouch(editorDialogX+100,editorDialogY+287);
++        if(!check(e.m_editorDeleteSlot==-1 && e.m_comboMasks[deleteSlot]==originalMask,
++                  "No keeps the selected custom combo"))return false;
++        auto confirmDelete=[&] {
++            e.RequestComboDelete(deleteSlot);e.HandleEditorDialogTouch(editorDialogX+editorDialogW-120,editorDialogY+287);
++        };
++        confirmDelete();
++        if(!check(e.m_comboMasks[deleteSlot]==0 && !e.ComboEnabled(deleteSlot) && !e.IsButtonActive(find("M1")) &&
++                  find("A").mask==MH3_CL_A,"Delete removes only the custom combo"))return false;
++        panel=e.EditorPanelPosition();
++        e.HandleEditModeTouchDown(906,panel.x+panelSize.x*.5f,panel.y+148);
++        if(!check(e.m_comboMasks[deleteSlot]==originalMask && e.ComboEnabled(deleteSlot)==originalVisible,
++                  "Undo restores a deleted combo and its visibility"))return false;
++        confirmDelete();e.CancelLayoutEdit();
++        if(!check(e.m_comboMasks==libraryBefore.combos,"Cancel restores combo definitions before editing"))return false;
++        // Save a deletion and reload it: no hidden default may recreate it.
++        e.BeginLayoutEdit();confirmDelete();panel=e.EditorPanelPosition();
++        e.HandleEditModeTouchDown(907,panel.x+panelSize.x-80,panel.y+242);
++        e.LoadLayoutConfig();e.RecalculateButtonPositions();
++        if(!check(!e.m_editMode && !e.m_comboMasks[deleteSlot] && !e.ComboEnabled(deleteSlot),
++                  "saved deletion survives reload"))return false;
++        e.BeginLayoutEdit();e.OpenEditorCombo(false);
++        if(!check(e.m_editorComboSlot==deleteSlot,"Add reuses a deleted slot"))return false;
++        e.m_editorComboMask=MH3_CL_R|MH3_CL_X|MH3_CL_A;
++        e.HandleEditorDialogTouch(editorDialogX+editorDialogW-120,editorDialogY+287);
++        panel=e.EditorPanelPosition();e.HandleEditModeTouchDown(908,panel.x+panelSize.x-80,panel.y+242);
++        e.LoadLayoutConfig();e.RecalculateButtonPositions();
++        if(!check(e.m_comboMasks[deleteSlot]==(MH3_CL_R|MH3_CL_X|MH3_CL_A) && e.ComboEnabled(deleteSlot),
++                  "new combo persists in the reused slot"))return false;
++        const auto reloaded=e.CaptureLayout();
++        e.SetMenuOpen(true);e.m_menuTab=5;
++        const float libraryX=e.m_width*.05f+20,libraryY=e.m_height*.04f+146,libraryW=e.m_width*.9f-40;
++        e.HandleComboTap(libraryX+libraryW-172,libraryY+82+30,libraryX,libraryY,libraryW);
++        if(!check(e.m_editMode && e.m_editorComboSlot==0 && !e.m_menuOpen,
++                  "library Edit opens the shared combo editor"))return false;
++        e.CancelLayoutEdit();
++        if(!check(e.m_menuOpen && e.m_menuTab==5 && e.m_comboMasks==reloaded.combos,
++                  "Cancel from the library returns without applying edits"))return false;
++        // Visibility is distinct from existence: hidden saved combos are not free slots.
++        e.OpenLibraryCombo(0);e.HandleEditorDialogTouch(editorDialogX+100,editorDialogY+230);
++        e.HandleEditorDialogTouch(editorDialogX+editorDialogW-120,editorDialogY+287);
++        if(!check(!e.ComboEnabled(0) && e.m_comboMasks[0]!=0,"hide preserves the combo definition"))return false;
++        e.CancelLayoutEdit();
++        if(!check(e.ComboEnabled(0),"Cancel restores visibility changes"))return false;
++        e.BeginLayoutEdit();
++        for(int i=0;i<5;++i){e.m_comboMasks[i]=MH3_CL_A|MH3_CL_X;e.ComboEnabled(i)=false;}
++        const auto fullLibrary=e.m_comboMasks;e.OpenEditorCombo(false);
++        if(!check(e.m_editorComboSlot==-1 && e.m_comboMasks==fullLibrary,
++                  "Add never overwrites hidden saved combinations when the library is full"))return false;
++        e.CancelLayoutEdit();
++        if(!check(RowellPad::Current().Get(0,false)==padBefore,"combo editing preserves physical controller mappings"))return false;
++#ifdef MH3_PC_TOUCH_UI
++        for(int i=0;i<RowellKeys::ActionCount;++i)
++            if(!check(RowellKeys::Current().Get(i)==keysBefore[i],"combo editing preserves keyboard mappings"))return false;
++        // Confirm the warning inspects real saved assignments, not device polling.
++        for(auto key:{SDL_SCANCODE_F8,SDL_SCANCODE_F9,SDL_SCANCODE_F10,SDL_SCANCODE_F11,SDL_SCANCODE_F12}) {
++            bool used=false;for(const auto& action:keysBefore)for(auto existing:action)used|=existing==key;
++            if(used)continue;
++            const int action=RowellKeys::ActionCount-5;
++            const auto previous=RowellKeys::Current().Get(action)[0];
++            if(!check(RowellKeys::Current().Assign(action,0,key).empty() && e.ComboHasShortcut(0),
++                      "delete warning detects an assigned keyboard shortcut"))return false;
++            if(!check(RowellKeys::Current().Assign(action,0,previous).empty(),"warning fixture restores the original key assignment"))return false;
++            break;
++        }
++#endif
++        e.RestoreLayout(libraryBefore);e.SaveLayoutConfig();e.m_menuTab=menuBeforeLibrary;
++        std::printf("Combo library: protected deletion, confirmation, Undo, Cancel, persistence, slot reuse and independent bindings passed.\n");
 +        // Check actual generated glyph geometry, including the text shadow.
 +        for(float radius : {16.0f,28.0f,50.0f,90.0f}) {
 +            e.m_verts.clear();e.DrawButtonLabel(100,100,"R+X+A",radius*.8f,COL_WHITE,radius*1.48f);
 +            for(const auto& vertex:e.m_verts)if(vertex.type==3)
 +                if(!check(vertex.x>100-radius && vertex.x<100+radius,"combo text fits inside its button"))return false;
 +        }
-+        e.m_verts.clear();e.RenderEditMode();
-+        for(const auto& vertex:e.m_verts)
++        e.m_verts.clear();e.RenderGameplayOverlay();
++        for(const auto& vertex:e.m_verts)if(vertex.type==0 || vertex.type==1)
 +            if(!check(std::abs(vertex.r-vertex.g)<.001f && std::abs(vertex.r-vertex.b)<.001f,
-+                      "control UI uses only neutral colors"))return false;
++                      "gameplay button shapes retain their neutral finish"))return false;
++        // Actual glyph quads must stay inside narrow buttons at every supported UI scale.
++        for(const char* label:{"Shoulders/triggers: ORIGINAL","R+X+A","Reset to defaults"}) {
++            e.m_verts.clear();e.DrawRoundedRect(20,20,172,40,8,COL_ACTIVE_CHIP,COL_CHIP_BORDER);
++            e.DrawText(106,30,label,18,COL_WHITE,true);
++            for(const auto& vertex:e.m_verts)if(vertex.type==3)
++                if(!check(vertex.x>=29.5f && vertex.x<=182.5f && vertex.y>=25.5f && vertex.y<=54.5f,
++                          "button text is fitted and vertically centered"))return false;
++        }
++        e.m_verts.clear();
++        e.DrawClippedText(10,10,"Village / solo quests. Actual FPS varies by device.",15,200,COL_MUTED);
++        for(const auto& vertex:e.m_verts)if(vertex.type==3)
++            if(!check(vertex.x>=9 && vertex.x<=210,"helper text stays in its own column"))return false;
++        if(!check(FONT_RAW_SIZE==524288,"two font weights and icons keep the original texture budget"))return false;
 +        e.m_verts.clear();e.SetMenuOpen(true);
 +        const auto beforeRestore=counts();
 +        std::filesystem::create_directories(importFolder.parent_path().parent_path()/"saves");
@@ -1504,6 +2578,37 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        if(!check(counts()[3]==beforeRestore[3]+1,"repeated taps while restarting cannot queue additional restores"))return false;
 +        std::printf("Save UI: export/backup confirmation, explicit older-copy selection, no automatic choice, cancel, staged restart and repeat-tap checks passed.\n");
 +#endif
++#ifdef MH3_TOUCH_INPUT_TESTS
++        // Optional geometry capture for visual QA; absent from normal app builds.
++        if(const char* directory=std::getenv("MH3_TOUCH_MENU_PREVIEW")) {
++            std::filesystem::create_directories(directory);
++            std::vector<uint8_t> pixels(FONT_RAW_SIZE);DecompressFontAtlas(pixels.data());
++            auto captureEditor=[&](const char* name) {
++                e.m_verts.clear();e.RenderEditMode();
++                const uint32_t header[]={uint32_t(e.m_width),720,uint32_t(e.m_verts.size())};
++                std::ofstream out(std::filesystem::path(directory)/(std::string(name)+".bin"),std::ios::binary);
++                out.write(reinterpret_cast<const char*>(header),sizeof(header));
++                out.write(reinterpret_cast<const char*>(pixels.data()),pixels.size());
++                out.write(reinterpret_cast<const char*>(e.m_verts.data()),e.m_verts.size()*sizeof(UIVertex));
++            };
++            e.SetMenuOpen(true);
++            for(int width:{960,1280,1600})for(int tab=0;tab<6;++tab) {
++                e.UpdateLayout(width,720);e.m_menuTab=tab;e.m_verts.clear();e.RenderSettingsMenu();
++                for(const auto& v:e.m_verts)if(v.type==3)
++                    if(!check(v.x>=-1 && v.x<=width+1 && v.y>=-1 && v.y<=721,
++                              "menu glyphs remain within compact and wide landscape screens"))return false;
++                const uint32_t header[]={uint32_t(width),720,uint32_t(e.m_verts.size())};
++                std::ofstream out(std::filesystem::path(directory)/("menu-"+std::to_string(width)+"-"+std::to_string(tab)+".bin"),std::ios::binary);
++                out.write(reinterpret_cast<const char*>(header),sizeof(header));
++                out.write(reinterpret_cast<const char*>(pixels.data()),pixels.size());
++                out.write(reinterpret_cast<const char*>(e.m_verts.data()),e.m_verts.size()*sizeof(UIVertex));
++                if(!check(bool(out),"menu geometry preview was written"))return false;
++            }
++            e.UpdateLayout(1280,720);e.OpenLibraryCombo(0);
++            captureEditor("edit-combo");e.RequestComboDelete(0);captureEditor("delete-combo");
++            e.CancelLayoutEdit();
++        }
++#endif
 +        std::printf("Touch controls: 21 input, persistence and speed-button checks passed.\n");return true;
 +    }
 +
@@ -1521,7 +2626,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
          RecalculateButtonPositions();
      }
-@@ -228,15 +604,19 @@ public:
+@@ -228,15 +768,19 @@ public:
          float btnR = 0.058f;
  
          // Macro Buttons FIRST (checked before individual buttons for collision priority)
@@ -1544,7 +2649,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          // A, B, X, Y (after macros so macros win collision priority)
          AddBtn("A", "A", MH3_CL_A, { diamondNormX + spreadX, diamondNormY }, btnR,
                 { 0.85f, 0.25f, 0.25f, 0.55f }, { 1.0f, 0.40f, 0.40f, 0.90f });
-@@ -281,6 +661,9 @@ public:
+@@ -281,6 +825,9 @@ public:
                 { 0.15f, 0.22f, 0.28f, 0.55f }, { 0.65f, 0.85f, 1.00f, 0.85f });
          AddBtn("PLUS",  "+", MH3_CL_PLUS,  { 0.54f, menuY }, menuR,
                 { 0.15f, 0.22f, 0.28f, 0.55f }, { 0.65f, 0.85f, 1.00f, 0.85f });
@@ -1554,7 +2659,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      }
  
      void AddBtn(const std::string& id, const char* label, uint16_t mask, Vec2 normPos, float normRadius,
-@@ -298,12 +681,22 @@ public:
+@@ -298,12 +845,22 @@ public:
          m_buttons.push_back(b);
      }
  
@@ -1579,7 +2684,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
          if (m_editMode) {
              HandleEditModeTouchDown(id, px, py);
-@@ -319,8 +712,8 @@ public:
+@@ -319,8 +876,8 @@ public:
          float gdx = px - m_gearPos.x;
          float gdy = py - m_gearPos.y;
          if (gdx * gdx + gdy * gdy <= (m_gearRadius * 1.8f) * (m_gearRadius * 1.8f)) {
@@ -1590,7 +2695,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              return;
          }
  
-@@ -329,28 +722,28 @@ public:
+@@ -329,28 +886,28 @@ public:
              return;
          }
  
@@ -1631,7 +2736,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                      UpdateLeftStickPosition(px, py);
                      return;
                  }
-@@ -359,8 +752,8 @@ public:
+@@ -359,8 +916,8 @@ public:
  
          // Right Stick (Free floating camera look)
          if (px >= float(m_width) * 0.45f) {
@@ -1642,7 +2747,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                  m_rightFloatingOrigin = { px, py };
                  m_rightStickPos = { px, py };
                  m_rightLastPos = { px, py };
-@@ -376,27 +769,30 @@ public:
+@@ -376,27 +933,30 @@ public:
          float py = normY * float(m_height);
  
          if (m_editMode) {
@@ -1685,7 +2790,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              float dx = px - m_rightLastPos.x;
              float dy = py - m_rightLastPos.y;
              m_rightLastPos = { px, py };
-@@ -422,12 +818,14 @@ public:
+@@ -422,12 +982,14 @@ public:
      }
  
      void HandleTouchUp(SDL_FingerID id) {
@@ -1703,7 +2808,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              }
              return;
          }
-@@ -435,27 +833,30 @@ public:
+@@ -435,27 +997,30 @@ public:
          if (m_menuOpen) return;
  
          for (auto& btn : m_buttons) {
@@ -1742,7 +2847,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      void HandleMouseDown(float px, float py) {
          if (!m_enabled) return;
          if (m_editMode) {
-@@ -472,27 +873,24 @@ public:
+@@ -472,27 +1037,24 @@ public:
              ToggleMenu();
              return;
          }
@@ -1779,7 +2884,13 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      }
  
      void UpdateLeftStickPosition(float px, float py) {
-@@ -517,6 +915,7 @@ public:
+@@ -513,10 +1075,13 @@ public:
+     }
+ 
+     bool IsButtonActive(const ConfigurableButton& btn) const {
++        if(btn.id.size()==2 && btn.id[0]=='M' && btn.id[1]>='1' && btn.id[1]<='5' &&
++           !m_comboMasks[btn.id[1]-'1'])return false;
+         if (btn.id == "M1") return m_macro1Enabled;
          if (btn.id == "M2") return m_macro2Enabled;
          if (btn.id == "M3") return m_macro3Enabled;
          if (btn.id == "M4") return m_macro4Enabled;
@@ -1787,7 +2898,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          return true;
      }
  
-@@ -526,19 +925,17 @@ public:
+@@ -526,19 +1091,17 @@ public:
          if (!m_enabled || m_menuOpen || m_editMode) return;
  
          uint32_t latched = m_latchedMask.exchange(0, std::memory_order_relaxed);
@@ -1811,7 +2922,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              *leftX = m_leftX;
              *leftY = m_leftY;
          }
-@@ -550,10 +947,10 @@ public:
+@@ -550,10 +1113,10 @@ public:
              }
          }
  
@@ -1826,7 +2937,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
          float camX = m_cameraDeltaX.exchange(0.0f);
          float camY = m_cameraDeltaY.exchange(0.0f);
-@@ -566,7 +963,7 @@ public:
+@@ -566,7 +1129,7 @@ public:
          static float s_cachedTemp = 0.0f;
          static auto s_lastRead = std::chrono::steady_clock::now();
          auto now = std::chrono::steady_clock::now();
@@ -1835,7 +2946,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              return s_cachedTemp;
          }
          s_lastRead = now;
-@@ -597,9 +994,9 @@ public:
+@@ -597,9 +1160,9 @@ public:
          return s_cachedTemp;
      }
  
@@ -1848,7 +2959,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      }
  
      // -------------------------------------------------------------
-@@ -608,6 +1005,14 @@ public:
+@@ -608,6 +1171,14 @@ public:
      void RenderGL(int windowWidth, int windowHeight) {
          if (!m_enabled) return;
          UpdateLayout(windowWidth, windowHeight);
@@ -1863,7 +2974,19 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
          static bool s_firstFrameApplied = false;
          if (!s_firstFrameApplied) {
-@@ -659,20 +1064,11 @@ public:
+@@ -628,7 +1199,11 @@ public:
+                 if (Memory::Contains(0x80797F68, 4) && Memory::Contains(0x8065B4C8, 4)) {
+                     uint32_t wideVal = Memory::Read32(0x80797F68);
+                     if (wideVal != 0) {
++#ifdef MH3_PC_TOUCH_UI
++                        if (m_aspectIndex != 1) {
++#else
+                         if (m_fullscreen || m_aspectIndex == 0) {
++#endif
+                             Memory::Write32(0x8065B4C8, wideVal);
+                             Memory::Write8(0x8065B4D5, 1);
+                         } else if (m_aspectIndex == 1) {
+@@ -659,20 +1234,11 @@ public:
              lastStamp = now;
          }
  
@@ -1889,7 +3012,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
          // Save OpenGL State
          GLint lastViewport[4]; glGetIntegerv(GL_VIEWPORT, lastViewport);
-@@ -684,12 +1080,24 @@ public:
+@@ -684,12 +1250,24 @@ public:
          GLint lastProgram = 0; glGetIntegerv(GL_CURRENT_PROGRAM, &lastProgram);
          GLint lastVAO = 0; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &lastVAO);
          GLint lastVBO = 0; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &lastVBO);
@@ -1914,7 +3037,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          glDisable(GL_DEPTH_TEST);
          glDisable(GL_CULL_FACE);
  
-@@ -703,11 +1111,18 @@ public:
+@@ -703,11 +1281,18 @@ public:
          glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
  
          m_verts.clear();
@@ -1933,7 +3056,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          } else {
              if (m_touchVisible) {
                  RenderGameplayOverlay();
-@@ -734,13 +1149,31 @@ public:
+@@ -734,13 +1319,31 @@ public:
          if (cullEnabled) glEnable(GL_CULL_FACE);
          glUseProgram(lastProgram);
          glBindTexture(GL_TEXTURE_2D, lastTex);
@@ -1966,7 +3089,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
          const char* vertShaderSrc =
              "#version 300 es\n"
-@@ -780,14 +1213,10 @@ private:
+@@ -780,14 +1383,10 @@ private:
              "        float f = vParams.z;\n"
              "        float alpha = smoothstep(1.0, 1.0 - f, d);\n"
              "        if (alpha <= 0.0) discard;\n"
@@ -1983,7 +3106,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              "        vec4 col = mix(bodyCol, rimCol, isBorder);\n"
              "        FragColor = vec4(col.rgb, col.a * alpha);\n"
              "    } else if (type < 1.5) {\n" // 1: Anti-aliased Ring
-@@ -883,6 +1312,9 @@ private:
+@@ -883,6 +1482,9 @@ private:
  
      // Geometry Helpers
      void DrawAADisc(float cx, float cy, float radius, Color col, Color border, float borderThick = 0.08f) {
@@ -1993,7 +3116,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          float x0 = cx - radius, y0 = cy - radius;
          float x1 = cx + radius, y1 = cy + radius;
          float feather = 1.5f / std::max(radius, 1.0f);
-@@ -897,6 +1329,7 @@ private:
+@@ -897,6 +1499,7 @@ private:
      }
  
      void DrawAARing(float cx, float cy, float radius, float thickness, Color col) {
@@ -2001,31 +3124,121 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          float x0 = cx - radius, y0 = cy - radius;
          float x1 = cx + radius, y1 = cy + radius;
          float feather = 1.5f / std::max(radius, 1.0f);
-@@ -912,6 +1345,7 @@ private:
+@@ -912,6 +1515,7 @@ private:
      }
  
      void DrawRoundedRect(float x, float y, float w, float h, float radius, Color fill, Color border) {
-+        fill=Neutral(fill);border=Neutral(border);
++        m_labelBox={x,y,w,h};
          float halfW = w * 0.5f;
          float halfH = h * 0.5f;
          radius = std::min(radius, std::min(halfW, halfH));
-@@ -928,6 +1362,7 @@ private:
+@@ -962,63 +1566,71 @@ private:
+         return c;
      }
  
-     void DrawRectSolid(float x, float y, float w, float h, Color col) {
-+        col=Neutral(col);
-         m_verts.push_back({ x,     y,     0, 0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 4.0f, 0, 0, 0 });
-         m_verts.push_back({ x + w, y,     0, 0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 4.0f, 0, 0, 0 });
-         m_verts.push_back({ x,     y + h, 0, 0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 4.0f, 0, 0, 0 });
-@@ -938,6 +1373,7 @@ private:
+-    float MeasureText(const char* text, float size) {
+-        if (!text) return 0.0f;
+-        float scale = size / BASE_FONT_SIZE;
+-        float totalW = 0.0f;
+-        const char* p = text;
+-        while (*p) {
+-            uint32_t cp = DecodeUtf8(p);
+-            const auto* g = FindFontGlyph(cp);
+-            totalW += (g ? g->advance : (BASE_FONT_SIZE * 0.5f)) * scale;
++    float MeasureText(const char* text, float size, bool strong=false) {
++        if (!text) return 0;
++        float width=0;const char* p=text;
++        while(*p) {
++            const auto* glyph=FindFontGlyph(DecodeUtf8(p),strong || size>=18);
++            if(glyph)width+=glyph->advance;
+         }
+-        return totalW;
++        return width*size/BASE_FONT_SIZE;
      }
  
-     void DrawQuadTextured(float x, float y, float w, float h, float u0, float v0, float u1, float v1, Color col) {
-+        col=Neutral(col);
-         m_verts.push_back({ x,     y,     u0, v0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 3.0f, 0, 0, 0 });
-         m_verts.push_back({ x + w, y,     u1, v0, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 3.0f, 0, 0, 0 });
-         m_verts.push_back({ x,     y + h, u0, v1, col.r, col.g, col.b, col.a, 0, 0, 0, 0, 3.0f, 0, 0, 0 });
-@@ -1017,8 +1453,12 @@ private:
+-    void DrawText(float x, float y, const char* text, float size, Color col, bool center = false) {
+-        if (!text) return;
+-        float scale = size / BASE_FONT_SIZE;
+-        if (center) {
+-            float w = MeasureText(text, size);
+-            x -= w * 0.5f;
+-        }
+-
+-        // Drop shadow for crisp readability
+-        float shadowOffset = std::max(1.0f, size * 0.05f);
+-        Color shadowCol = { 0.0f, 0.0f, 0.0f, col.a * 0.85f };
+-        const char* p = text;
+-        float curX = x;
+-        while (*p) {
+-            uint32_t cp = DecodeUtf8(p);
+-            const auto* g = FindFontGlyph(cp);
+-            if (g && g->w > 0 && g->h > 0) {
+-                float gx = curX + g->offX * scale + shadowOffset;
+-                float gy = y + g->offY * scale + shadowOffset;
+-                float gw = g->w * scale;
+-                float gh = g->h * scale;
+-                DrawQuadTextured(gx, gy, gw, gh, g->u0, g->v0, g->u1, g->v1, shadowCol);
+-            }
+-            curX += (g ? g->advance : (BASE_FONT_SIZE * 0.5f)) * scale;
+-        }
++    void DrawMenuIcon(int icon,float x,float y,float size,Color color) {
++        const auto* glyph=FindFontGlyph(0xe100u+unsigned(icon));
++        if(glyph)DrawQuadTextured(x,y,size,size,glyph->u0,glyph->v0,glyph->u1,glyph->v1,color);
++    }
+ 
+-        p = text;
+-        curX = x;
+-        while (*p) {
+-            uint32_t cp = DecodeUtf8(p);
+-            const auto* g = FindFontGlyph(cp);
+-            if (g && g->w > 0 && g->h > 0) {
+-                float gx = curX + g->offX * scale;
+-                float gy = y + g->offY * scale;
+-                float gw = g->w * scale;
+-                float gh = g->h * scale;
+-                DrawQuadTextured(gx, gy, gw, gh, g->u0, g->v0, g->u1, g->v1, col);
++    void DrawText(float x,float y,const char* text,float size,Color col,bool center=false) {
++        if(!text || !*text)return;
++        const bool strong=size>=18;
++        float scale=size/BASE_FONT_SIZE;
++        if(center) {
++            float advance=0,minX=1e9f,maxX=-1e9f,minY=1e9f,maxY=-1e9f;
++            const char* p=text;
++            while(*p) {
++                const auto* g=FindFontGlyph(DecodeUtf8(p),strong);
++                if(!g)continue;
++                if(g->w>0 && g->h>0) {
++                    minX=std::min(minX,advance+g->offX);maxX=std::max(maxX,advance+g->offX+g->w);
++                    minY=std::min(minY,g->offY);maxY=std::max(maxY,g->offY+g->h);
++                }
++                advance+=g->advance;
+             }
+-            curX += (g ? g->advance : (BASE_FONT_SIZE * 0.5f)) * scale;
++            const bool insideChip=m_labelBox[3]>0 && m_labelBox[3]<=64 &&
++                std::abs(x-(m_labelBox[0]+m_labelBox[2]*.5f))<1 &&
++                y>=m_labelBox[1] && y<=m_labelBox[1]+m_labelBox[3];
++            if(insideChip && maxX>minX && maxY>minY) {
++                scale=std::min(scale,std::max(1.0f,m_labelBox[2]-20)/(maxX-minX));
++                scale=std::min(scale,std::max(1.0f,m_labelBox[3]-12)/(maxY-minY));
++                x-=(minX+maxX)*scale*.5f;
++                y=m_labelBox[1]+m_labelBox[3]*.5f-(minY+maxY)*scale*.5f;
++            } else x-=advance*scale*.5f;
++        }
++        float right=float(m_width)-12;
++        if(m_menuOpen)right=float(m_width)*.95f-20;
++        if(!center && m_labelBox[2]>=200 && m_labelBox[3]>64 &&
++           x>=m_labelBox[0] && y>=m_labelBox[1] && y<m_labelBox[1]+m_labelBox[3])
++            right=std::min(right,m_labelBox[0]+m_labelBox[2]-18);
++        const char* p=text;float current=x;
++        // One glyph pass on opaque menu panels. No duplicated shadow geometry.
++        while(*p) {
++            const auto* g=FindFontGlyph(DecodeUtf8(p),strong);
++            if(!g)continue;
++            const float gx=current+g->offX*scale,gy=y+g->offY*scale;
++            const float gw=g->w*scale,gh=g->h*scale;
++            if(gx+gw>right+.5f)break;
++            if(g->w>0 && g->h>0)DrawQuadTextured(gx,gy,gw,gh,g->u0,g->v0,g->u1,g->v1,col);
++            current+=g->advance*scale;
          }
      }
  
@@ -2033,13 +3246,22 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +    void DrawButtonLabel(float cx, float cy, const char* label, float size, Color col, float maxWidth=0) {
          if (!label) return;
 +        if(maxWidth>0) {
-+            const float measured=MeasureText(label,size);
++            const float measured=MeasureText(label,size,true);
 +            if(measured>maxWidth)size*=maxWidth/measured;
 +        }
          float scale = size / BASE_FONT_SIZE;
          float totalW = MeasureText(label, size);
  
-@@ -1043,8 +1483,8 @@ private:
+@@ -1027,7 +1639,7 @@ private:
+         const char* pCheck = label;
+         while (*pCheck) {
+             uint32_t cp = DecodeUtf8(pCheck);
+-            const auto* g = FindFontGlyph(cp);
++            const auto* g = FindFontGlyph(cp,true);
+             if (g && g->w > 0 && g->h > 0) {
+                 minOffY = std::min(minOffY, g->offY);
+                 maxBottomY = std::max(maxBottomY, g->offY + g->h);
+@@ -1043,13 +1655,13 @@ private:
          float startY = cy - visualCenterY;
  
          // Shadow pass for crisp contrast
@@ -2050,7 +3272,22 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          const char* p = label;
          float curX = startX;
          while (*p) {
-@@ -1104,23 +1544,12 @@ private:
+             uint32_t cp = DecodeUtf8(p);
+-            const auto* g = FindFontGlyph(cp);
++            const auto* g = FindFontGlyph(cp,true);
+             if (g && g->w > 0 && g->h > 0) {
+                 float gx = curX + g->offX * scale + shadowOffset;
+                 float gy = startY + g->offY * scale + shadowOffset;
+@@ -1065,7 +1677,7 @@ private:
+         curX = startX;
+         while (*p) {
+             uint32_t cp = DecodeUtf8(p);
+-            const auto* g = FindFontGlyph(cp);
++            const auto* g = FindFontGlyph(cp,true);
+             if (g && g->w > 0 && g->h > 0) {
+                 float gx = curX + g->offX * scale;
+                 float gy = startY + g->offY * scale;
+@@ -1104,23 +1716,12 @@ private:
      void RenderGameplayOverlay() {
          float op = std::clamp(m_buttonOpacity, 0.10f, 1.0f);
  
@@ -2080,7 +3317,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
          // 2. Free Right Stick (Camera Look)
          if (m_rightStickActive) {
-@@ -1129,20 +1558,32 @@ private:
+@@ -1129,20 +1730,32 @@ private:
                         { 0.15f, 0.45f, 0.60f, 0.45f * op }, { 0.40f, 0.80f, 1.00f, 0.70f * op }, 0.10f);
          }
  
@@ -2118,9 +3355,21 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          }
  
          // 4. Gear / Menu Button
-@@ -1180,41 +1621,42 @@ private:
-         }
+@@ -1168,60 +1781,54 @@ private:
  
+         DrawRoundedRect(padX, padY, panW, panH, 16.0f, COL_BG_DARK, COL_PANEL_BORDER);
+ 
+-        // Soft Wavy Lines motif in background
+-        for (int w = 0; w < 3; ++w) {
+-            float waveBaseY = padY + panH * (0.16f + float(w) * 0.14f);
+-            Color waveCol = { 0.06f, 0.22f, 0.29f, 0.40f };
+-            float step = 16.0f;
+-            for (float x = padX + 8.0f; x < padX + panW - 8.0f; x += step) {
+-                float y1 = waveBaseY + std::sin((x + float(w) * 55.0f) * 0.022f) * 6.5f;
+-                DrawRectSolid(x, y1, step, 1.5f, waveCol);
+-            }
+-        }
+-
          // Header Title & Subtitle (Larger readable fonts)
 -        const char* titles[] = { "Gráficos", "Sistema", "Guardados", "Controles", "Online" };
 +        const char* titles[] = { "Graphics", "System", "Saves", "Controls", "Online", "Combos" };
@@ -2135,11 +3384,13 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +            "Saved progress, backups and transfers",
 +            "Touch layout and physical controllers",
 +            "Local and community multiplayer",
-+            "Choose the buttons each combo holds together"
++            "Your saved combinations and touch buttons"
          };
-         DrawText(padX + 24.0f, padY + 16.0f, titles[m_menuTab], 28.0f, COL_WHITE);
+-        DrawText(padX + 24.0f, padY + 16.0f, titles[m_menuTab], 28.0f, COL_WHITE);
 -        DrawText(padX + 24.0f, padY + 48.0f, subtitles[m_menuTab], 14.5f, COL_MUTED);
-+        DrawClippedText(padX + 24.0f,padY + 48.0f,subtitles[m_menuTab],14,panW-340,COL_MUTED);
++        DrawMenuIcon(m_menuTab,padX+24,padY+18,25,COL_CYAN);
++        DrawText(padX + 60.0f, padY + 16.0f, m_menuTab==5?"Custom combos":titles[m_menuTab], 28.0f, COL_WHITE);
++        DrawClippedText(padX + 24.0f,padY + 48.0f,subtitles[m_menuTab],15,panW-340,COL_MUTED);
  
          // Header Right: FPS Badge & Close Button
          char fpsStr[32];
@@ -2149,7 +3400,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        float fpsW = 100.0f, fpsH = 38.0f;
 +        float fpsX = padX + panW - 258.0f;
          float fpsY = padY + 18.0f;
-         DrawRoundedRect(fpsX, fpsY, fpsW, fpsH, fpsH * 0.5f, { 0.035f, 0.125f, 0.176f, 0.95f }, COL_CYAN);
+-        DrawRoundedRect(fpsX, fpsY, fpsW, fpsH, fpsH * 0.5f, { 0.035f, 0.125f, 0.176f, 0.95f }, COL_CYAN);
++        DrawRoundedRect(fpsX, fpsY, fpsW, fpsH, fpsH * 0.5f, COL_INACTIVE_CHIP, COL_CYAN);
          DrawText(fpsX + fpsW * 0.5f, fpsY + 10.0f, fpsStr, 15.0f, COL_CYAN, true);
  
          // Close Button [✕]
@@ -2159,8 +3411,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          float closeS = 38.0f;
 -        DrawRoundedRect(closeX, closeY, closeS, closeS, 8.0f, { 0.05f, 0.18f, 0.24f, 0.95f }, COL_PANEL_BORDER);
 -        DrawText(closeX + closeS * 0.5f, closeY + 8.0f, "✕", 20.0f, COL_WHITE, true);
-+        DrawRoundedRect(closeX,closeY,126,closeS,8,COL_ACTIVE_CHIP,COL_CHIP_BORDER);
-+        DrawText(closeX+63,closeY+11,"Resume",16,COL_ACTIVE_TEXT,true);
++        DrawRoundedRect(closeX,closeY,126,closeS,8,COL_CYAN,COL_CYAN);
++        DrawText(closeX+63,closeY+11,"Resume",18,COL_BG_DARK,true);
  
          // Horizontal divider line
          DrawRectSolid(padX + 20.0f, padY + 76.0f, panW - 40.0f, 1.0f, COL_PANEL_BORDER);
@@ -2175,7 +3427,19 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              float tx = padX + 20.0f + float(i) * (tabW + 10.0f);
              bool active = (m_menuTab == i);
              DrawRoundedRect(tx, tabY, tabW, tabH, 8.0f,
-@@ -1233,16 +1675,17 @@ private:
+                             active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                             active ? COL_CYAN : COL_CHIP_BORDER);
+-            DrawText(tx + tabW * 0.5f, tabY + 12.0f, titles[i], 16.5f,
+-                     active ? COL_ACTIVE_TEXT : COL_WHITE, true);
++            const float textSize=std::min(18.0f,18.0f*(tabW-44)/std::max(1.0f,MeasureText(titles[i],18)));
++            const float textW=MeasureText(titles[i],textSize),groupW=textW+24;
++            const float groupX=tx+(tabW-groupW)*.5f;
++            DrawMenuIcon(i,groupX,tabY+13,18,active?COL_CYAN:COL_MUTED);
++            DrawText(groupX+24,tabY+15,titles[i],textSize,COL_WHITE);
+         }
+ 
+         // Tab Content
+@@ -1233,16 +1840,17 @@ private:
          else if (m_menuTab == 2) RenderTabSaves(padX + 20.0f, contentY, contentW);
          else if (m_menuTab == 3) RenderTabControls(padX + 20.0f, contentY, contentW);
          else if (m_menuTab == 4) RenderTabOnline(padX + 20.0f, contentY, contentW);
@@ -2188,15 +3452,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, y + 14.0f, "Resolución interna", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, y + 36.0f, "Wii Original (1x por defecto) | Mayor resolución = mayor nitidez y detalle gráfico", 13.5f, COL_MUTED);
-+        DrawText(x + 18.0f, y + 14.0f, "Internal resolution", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, y + 36.0f, "Original resolution is fastest. Higher resolution uses more GPU power.", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "Internal resolution", 20.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 36.0f, "Original resolution is fastest. Higher resolution uses more GPU power.", 15.0f, COL_MUTED);
  
 -        const char* resLabels[] = { "Wii Original", "720p", "1080p", "1440p", "4K (2160p)", "Nativa" };
 +        const char* resLabels[] = { "Wii original", "720p", "1080p", "1440p", "4K (2160p)", "Native" };
          float chipW = (w - 36.0f - 25.0f) / 6.0f;
          float chipH = 42.0f;
          float chipY = y + 54.0f;
-@@ -1256,7 +1699,7 @@ private:
+@@ -1256,7 +1864,7 @@ private:
                       active ? COL_ACTIVE_TEXT : COL_WHITE, true);
          }
  
@@ -2205,18 +3469,18 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          float c2Y = y + c1H + 12.0f;
          float c2H = 114.0f;
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
-@@ -1264,8 +1707,8 @@ private:
+@@ -1264,8 +1872,8 @@ private:
          float colW = (w - 36.0f - 16.0f) * 0.5f;
  
          // Left side: Fullscreen & 16:9 Fix
 -        DrawText(x + 18.0f, c2Y + 14.0f, "Pantalla completa (Fix de aspecto)", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, c2Y + 36.0f, "Fix 16:9 activo: evita que la imagen se estire o deforme en tu pantalla", 12.5f, COL_MUTED);
-+        DrawText(x + 18.0f, c2Y + 14.0f, "Fullscreen", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, c2Y + 36.0f, "Keep the picture proportional when using fullscreen.", 12.5f, COL_MUTED);
++        DrawText(x + 18.0f, c2Y + 14.0f, "Fullscreen", 20.0f, COL_WHITE);
++        DrawClippedText(x+18,c2Y+36,"Keep the picture proportional in fullscreen.",15,(w-52)*.5f-8,COL_MUTED);
  
          float fsBtnY = c2Y + 54.0f;
          float fsBtnW = colW;
-@@ -1274,15 +1717,15 @@ private:
+@@ -1274,15 +1882,15 @@ private:
                          fsActive ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          fsActive ? COL_CYAN : COL_CHIP_BORDER);
          DrawText(x + 18.0f + fsBtnW * 0.5f, fsBtnY + 12.0f,
@@ -2229,15 +3493,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          float rightColX = x + 18.0f + colW + 16.0f;
 -        DrawText(rightColX, c2Y + 14.0f, "Relación de aspecto", 19.0f, COL_WHITE);
 -        DrawText(rightColX, c2Y + 36.0f, "Ajuste de presentación geométrica", 12.5f, COL_MUTED);
-+        DrawText(rightColX, c2Y + 14.0f, "Aspect ratio", 19.0f, COL_WHITE);
-+        DrawText(rightColX, c2Y + 36.0f, "Screen shape and presentation", 12.5f, COL_MUTED);
++        DrawText(rightColX, c2Y + 14.0f, "Aspect ratio", 20.0f, COL_WHITE);
++        DrawClippedText(rightColX,c2Y+36,"Screen shape and presentation",15,(w-52)*.5f-8,COL_MUTED);
  
 -        const char* aspectLabels[] = { "16:9 Panorámica", "4:3 Clásica", "Estirar Pantalla" };
 +        const char* aspectLabels[] = { "16:9 Widescreen", "4:3 Classic", "Stretch screen" };
          float aChipW = (colW - 10.0f) / 3.0f;
          for (int i = 0; i < 3; ++i) {
              float ax = rightColX + float(i) * (aChipW + 5.0f);
-@@ -1300,13 +1743,13 @@ private:
+@@ -1300,13 +1908,13 @@ private:
          DrawRoundedRect(x, c3Y, w, c3H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
  
          float fpsColW = (w - 36.0f - 16.0f) * 0.52f;
@@ -2247,23 +3511,23 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 -            DrawText(x + 18.0f, c3Y + 14.0f, "Límite de fotogramas: 30 FPS [BLOQUEADO EN ONLINE]", 18.0f, COL_CYAN);
 -            DrawText(x + 18.0f, c3Y + 36.0f, "Auto-bloqueado a 30 FPS en la Ciudad para evitar mini-turbo y mantener sincronía.", 12.0f, { 1.0f, 0.85f, 0.35f, 1.0f });
 +            DrawText(x + 18.0f, c3Y + 14.0f, "Frame limit: 30 FPS [ONLINE]", 18.0f, COL_CYAN);
-+            DrawText(x + 18.0f, c3Y + 36.0f, "City and online quests keep the 30 FPS synchronization cap.", 12.0f, { 1.0f, 0.85f, 0.35f, 1.0f });
++            DrawClippedText(x+18,c3Y+36,"Online play keeps the 30 FPS sync cap.",15,fpsColW-8,COL_CAUTION);
          } else {
 -            DrawText(x + 18.0f, c3Y + 14.0f, "Límite de fotogramas (FPS)", 19.0f, COL_WHITE);
 -            DrawText(x + 18.0f, c3Y + 36.0f, "30, 60, 90 o 120 FPS (En Aldea puedes jugar a 60+ FPS)", 12.5f, COL_MUTED);
-+            DrawText(x + 18.0f, c3Y + 14.0f, "Frame rate limit (FPS)", 19.0f, COL_WHITE);
-+            DrawText(x + 18.0f, c3Y + 36.0f, "Choose a limit for Village and solo quests. Actual FPS depends on your device.", 12.5f, COL_MUTED);
++            DrawText(x + 18.0f, c3Y + 14.0f, "Frame rate limit (FPS)", 20.0f, COL_WHITE);
++            DrawClippedText(x+18,c3Y+36,"Village / solo quests. Actual FPS varies by device.",15,fpsColW-8,COL_MUTED);
          }
  
          const char* fpsLabels[] = { "30 FPS", "60 FPS", "90 FPS", "120 FPS" };
-@@ -1326,15 +1769,15 @@ private:
+@@ -1326,15 +1934,15 @@ private:
          // Right side: Sincronización y Contador
          float syncColX = x + 18.0f + fpsColW + 16.0f;
          float syncColW = (w - 36.0f - 16.0f) * 0.48f;
 -        DrawText(syncColX, c3Y + 14.0f, "Sincronización y Estadísticas", 19.0f, COL_WHITE);
 -        DrawText(syncColX, c3Y + 36.0f, "V-Sync anti-tearing y contador HUD en pantalla", 12.5f, COL_MUTED);
-+        DrawText(syncColX, c3Y + 14.0f, "Sync and statistics", 19.0f, COL_WHITE);
-+        DrawText(syncColX, c3Y + 36.0f, "V-Sync and the on-screen frame rate counter", 12.5f, COL_MUTED);
++        DrawText(syncColX, c3Y + 14.0f, "Sync and statistics", 20.0f, COL_WHITE);
++        DrawClippedText(syncColX,c3Y+36,"V-Sync and the FPS counter.",15,syncColW-8,COL_MUTED);
  
          float sChipW = (syncColW - 10.0f) * 0.5f;
          // VSync chip
@@ -2275,7 +3539,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                   m_vsync ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // HUD FPS chip
-@@ -1342,9 +1785,10 @@ private:
+@@ -1342,9 +1950,25 @@ private:
          DrawRoundedRect(hudX, fChipY, sChipW, chipH, 8.0f,
                          m_showFpsHud ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_showFpsHud ? COL_CYAN : COL_CHIP_BORDER);
@@ -2283,11 +3547,26 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        DrawText(hudX + sChipW * 0.5f, fChipY + 12.0f, m_showFpsHud ? "FPS counter: ON" : "FPS counter: OFF", 13.0f,
                   m_showFpsHud ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
-+#ifndef MH3_PC_TOUCH_UI
++#ifdef MH3_PC_TOUCH_UI
++        const float rendererY=c3Y+c3H+12;
++        DrawRoundedRect(x,rendererY,w,108,12,COL_PANEL_CARD,COL_PANEL_BORDER);
++        DrawText(x+18,rendererY+14,"PC graphics renderer",20,COL_WHITE);
++        DrawClippedText(x+18,rendererY+36,m_rendererIndex!=m_startupRendererIndex
++            ?"Saved. Save inside Tri, then use System > Restart now."
++            :"Renderer changes apply after restarting the game.",15,w-36,COL_MUTED);
++        const float rendererW=(w-46)*.5f;
++        const char* rendererLabels[]={"Vulkan (ANGLE)","OpenGL ES"};
++        for(int i=0;i<2;++i){
++            const float rx=x+18+i*(rendererW+10);
++            const bool active=m_rendererIndex==i;
++            DrawRoundedRect(rx,rendererY+54,rendererW,42,8,active?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,active?COL_CYAN:COL_CHIP_BORDER);
++            DrawText(rx+rendererW*.5f,rendererY+66,rendererLabels[i],15,COL_WHITE,true);
++        }
++#else
          // Card 4: Reemplazo de Texturas HD (Dolphin Texture Pack)
          float c4Y = c3Y + c3H + 12.0f;
          float c4H = 108.0f;
-@@ -1353,9 +1797,9 @@ private:
+@@ -1353,9 +1977,9 @@ private:
          bool texEnabled = aurora::gfx::texture_replacement::is_enabled();
          size_t texCount = aurora::gfx::texture_replacement::get_replacement_count();
          char texSub[140];
@@ -2295,11 +3574,11 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        std::snprintf(texSub, sizeof(texSub), "Textures: %zu | Folder: MH3_Rowell_Dev/textures/", texCount);
  
 -        DrawText(x + 18.0f, c4Y + 14.0f, "Texturas HD personalizadas (Pack Dolphin)", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, c4Y + 14.0f, "Custom HD textures (Dolphin packs)", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, c4Y + 14.0f, "Custom HD textures (Dolphin packs)", 20.0f, COL_WHITE);
          DrawText(x + 18.0f, c4Y + 36.0f, texSub, 13.0f, (texCount > 0) ? COL_CYAN : COL_MUTED);
  
          float tBtnW = (w - 36.0f - 15.0f) * 0.50f;
-@@ -1366,22 +1810,23 @@ private:
+@@ -1366,22 +1990,23 @@ private:
                          texEnabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          texEnabled ? COL_CYAN : COL_CHIP_BORDER);
          DrawText(x + 18.0f + tBtnW * 0.5f, tBtnY + 12.0f,
@@ -2310,8 +3589,9 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          // Reload button
          float reloadX = x + 18.0f + tBtnW + 15.0f;
          DrawRoundedRect(reloadX, tBtnY, tBtnW, chipH, 8.0f,
-                         { 0.12f, 0.35f, 0.45f, 0.90f }, { 0.25f, 0.75f, 0.95f, 1.0f });
+-                        { 0.12f, 0.35f, 0.45f, 0.90f }, { 0.25f, 0.75f, 0.95f, 1.0f });
 -        DrawText(reloadX + tBtnW * 0.5f, tBtnY + 12.0f, "🔄 Recargar texturas", 14.5f, COL_WHITE, true);
++                        COL_ACTIVE_CHIP, COL_ACTIVE_CHIP);
 +        DrawText(reloadX + tBtnW * 0.5f, tBtnY + 12.0f, "Reload textures", 14.5f, COL_WHITE, true);
 +#endif
      }
@@ -2322,18 +3602,19 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, y + 14.0f, "Idioma del juego", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, y + 36.0f, "Texto y menús del disco europeo. Requiere reiniciar para aplicar cambios.", 14.0f, COL_MUTED);
-+        DrawText(x + 18.0f, y + 14.0f, "Game language", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, y + 36.0f, "Changes the game text only. Restart to apply. App settings remain in English.", 14.0f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "Game language", 20.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 36.0f, "Changes the game text only. Restart to apply. App settings remain in English.", 15.0f, COL_MUTED);
  
          const char* langLabels[] = { "Español", "English", "Français", "Deutsch", "Italiano" };
          float chipW = (w - 36.0f - 20.0f) / 5.0f;
-@@ -1399,28 +1844,51 @@ private:
+@@ -1399,28 +2024,57 @@ private:
  
          // Active Language status text
          float statusY = y + c1H + 12.0f;
 -        std::string statStr = std::string("Idioma seleccionado: ") + langLabels[std::clamp(m_langChoice, 0, 4)];
+-        DrawText(x + 18.0f, statusY, statStr.c_str(), 14.5f, COL_MUTED);
 +        std::string statStr = std::string("Selected game language: ") + langLabels[std::clamp(m_langChoice, 0, 4)];
-         DrawText(x + 18.0f, statusY, statStr.c_str(), 14.5f, COL_MUTED);
++        DrawText(x + 18.0f, statusY, statStr.c_str(), 15.0f, COL_MUTED);
  
          // Card 2: Restart Action Card
          float c2Y = statusY + 28.0f;
@@ -2341,23 +3622,23 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, c2Y + 16.0f, "Reiniciar el juego", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, c2Y + 42.0f, "Aplica cambios de idioma y ajustes pendientes de inmediato.", 14.0f, COL_MUTED);
-+        DrawText(x + 18.0f, c2Y + 16.0f, "Restart game", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, c2Y + 42.0f, "Apply pending game language and startup settings.", 14.0f, COL_MUTED);
++        DrawText(x + 18.0f, c2Y + 16.0f, "Restart game", 20.0f, COL_WHITE);
++        DrawText(x + 18.0f, c2Y + 42.0f, "Apply pending game language and startup settings.", 15.0f, COL_MUTED);
  
          float rBtnW = 200.0f;
          float rBtnX = x + w - rBtnW - 18.0f;
          float rBtnY = c2Y + 22.0f;
-         DrawRoundedRect(rBtnX, rBtnY, rBtnW, 44.0f, 8.0f, { 0.15f, 0.50f, 0.65f, 0.95f }, COL_CYAN);
+-        DrawRoundedRect(rBtnX, rBtnY, rBtnW, 44.0f, 8.0f, { 0.15f, 0.50f, 0.65f, 0.95f }, COL_CYAN);
 -        DrawText(rBtnX + rBtnW * 0.5f, rBtnY + 13.0f, "Reiniciar Ahora", 16.0f, COL_WHITE, true);
++        DrawRoundedRect(rBtnX, rBtnY, rBtnW, 44.0f, 8.0f, COL_ACTIVE_CHIP, COL_CYAN);
 +        DrawText(rBtnX + rBtnW * 0.5f, rBtnY + 13.0f, "Restart now", 16.0f, COL_WHITE, true);
 +
 +        const float speedY = y + 270.0f;
 +        DrawRoundedRect(x, speedY, w, 142.0f, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
-+        DrawText(x + 18.0f, speedY + 14.0f, "Game speed (single-player)", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, speedY + 14.0f, "Game speed (single-player)", 20.0f, COL_WHITE);
 +        DrawText(x + 18.0f, speedY + 38.0f,
 +                 MH3GameSpeed::Available() ? "Change speed here or tap the 1x button while playing."
-+                                          : "Available in Moga Village and solo quests. City and Arena stay at 1x.",
-+                 13.5f, COL_MUTED);
++                                          : "Available in Moga Village and solo quests. City and Arena stay at 1x.", 15.0f, COL_MUTED);
 +        const char* speedLabels[] = {"1x", "1.25x", "1.5x"};
 +        const int speedValues[] = {100, 125, 150};
 +        const float speedW = (w - 56.0f) / 3.0f;
@@ -2371,8 +3652,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +                     active ? COL_ACTIVE_TEXT : enabled ? COL_WHITE : COL_MUTED, true);
 +        }
 +        DrawText(x + 18.0f, speedY + 115.0f,
-+                 "Experimental: audio and movies keep their normal speed. Resets to 1x outside solo play.",
-+                 12.5f, COL_MUTED);
++                 "Experimental: audio and movies keep their normal speed. Resets to 1x outside solo play.", 15.0f, COL_MUTED);
++#ifdef MH3_PC_TOUCH_UI
++        const float foldersY=y+420,folderW=(w-46)*.5f;
++        DrawRoundedRect(x+18,foldersY,folderW,44,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+18+folderW*.5f,foldersY+12,"Open data folder",15,COL_WHITE,true);
++        DrawRoundedRect(x+28+folderW,foldersY,folderW,44,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+28+folderW*1.5f,foldersY+12,"Open app folder",15,COL_WHITE,true);
++        DrawClippedText(x+18,foldersY+55,"Data folder contains your saved progress, backups and controls.",14,w-36,COL_MUTED);
++#endif
      }
  
      void RenderTabSaves(float x, float y, float w) {
@@ -2381,43 +3669,48 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, y + 14.0f, "Gestor de Guardados (Dolphin / Wii NAND)", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, y + 38.0f, "Ubicación: /storage/emulated/0/MH3/nand/title/00010000/524d4850/data/nocopy", 13.5f, COL_MUTED);
-+        DrawText(x + 18.0f, y + 14.0f, "Saved progress", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, y + 38.0f, "Save inside Tri first. Backup and Export copy that saved progress.", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "Saved progress", 20.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 38.0f, "Save inside Tri first. Backup and Export copy that saved progress.", 15.0f, COL_MUTED);
  
          // Action Buttons
          float btnW = (w - 36.0f - 20.0f) / 3.0f;
-@@ -1430,32 +1898,414 @@ private:
+@@ -1429,33 +2083,447 @@ private:
+ 
          // 1. Export
          float b1X = x + 18.0f;
-         DrawRoundedRect(b1X, btnY, btnW, btnH, 8.0f, { 0.08f, 0.35f, 0.45f, 0.95f }, COL_CYAN);
+-        DrawRoundedRect(b1X, btnY, btnW, btnH, 8.0f, { 0.08f, 0.35f, 0.45f, 0.95f }, COL_CYAN);
 -        DrawText(b1X + btnW * 0.5f, btnY + 15.0f, "📁 Exportar a Descargas", 15.0f, COL_WHITE, true);
++        DrawRoundedRect(b1X, btnY, btnW, btnH, 8.0f, COL_ACTIVE_CHIP, COL_CYAN);
 +        DrawText(b1X + btnW * 0.5f, btnY + 15.0f, "Export save", 15.0f, COL_WHITE, true);
  
          // 2. Import
          float b2X = b1X + btnW + 10.0f;
-         DrawRoundedRect(b2X, btnY, btnW, btnH, 8.0f, { 0.12f, 0.45f, 0.35f, 0.95f }, { 0.30f, 0.85f, 0.60f, 1.0f });
+-        DrawRoundedRect(b2X, btnY, btnW, btnH, 8.0f, { 0.12f, 0.45f, 0.35f, 0.95f }, { 0.30f, 0.85f, 0.60f, 1.0f });
 -        DrawText(b2X + btnW * 0.5f, btnY + 15.0f, "📥 Importar de Dolphin", 15.0f, COL_WHITE, true);
++        DrawRoundedRect(b2X, btnY, btnW, btnH, 8.0f, COL_ACTIVE_CHIP, COL_ACTIVE_CHIP);
 +        DrawText(b2X + btnW * 0.5f, btnY + 15.0f, "Restore / import", 15.0f, COL_WHITE, true);
  
          // 3. Quick Backup
          float b3X = b2X + btnW + 10.0f;
-         DrawRoundedRect(b3X, btnY, btnW, btnH, 8.0f, { 0.35f, 0.30f, 0.15f, 0.95f }, { 0.90f, 0.75f, 0.30f, 1.0f });
+-        DrawRoundedRect(b3X, btnY, btnW, btnH, 8.0f, { 0.35f, 0.30f, 0.15f, 0.95f }, { 0.90f, 0.75f, 0.30f, 1.0f });
 -        DrawText(b3X + btnW * 0.5f, btnY + 15.0f, "💾 Crear Respaldo", 15.0f, COL_WHITE, true);
++        DrawRoundedRect(b3X, btnY, btnW, btnH, 8.0f, COL_ACTIVE_CHIP, COL_ACTIVE_CHIP);
 +        DrawText(b3X + btnW * 0.5f, btnY + 15.0f, "Create backup", 15.0f, COL_WHITE, true);
-+        DrawText(b1X + btnW * 0.5f, y + 126.0f, "Copy for another device.", 12.5f, COL_MUTED, true);
-+        DrawText(b2X + btnW * 0.5f, y + 126.0f, "Choose a saved copy to restore.", 12.5f, COL_MUTED, true);
-+        DrawText(b3X + btnW * 0.5f, y + 126.0f, "Keep the newest 3 recovery copies.", 12.5f, COL_MUTED, true);
++        DrawText(b1X + btnW * 0.5f, y + 126.0f, "Copy for another device.", 15.0f, COL_MUTED, true);
++        DrawText(b2X + btnW * 0.5f, y + 126.0f, "Choose a saved copy to restore.", 15.0f, COL_MUTED, true);
++        DrawText(b3X + btnW * 0.5f, y + 126.0f, "Keep the newest 3 recovery copies.", 15.0f, COL_MUTED, true);
  
          // Status Banner
 -        float bannerY = y + 138.0f;
 +        float bannerY = y + 154.0f;
          float bannerH = 68.0f;
-         DrawRoundedRect(x + 18.0f, bannerY, w - 36.0f, bannerH, 8.0f, { 0.02f, 0.08f, 0.12f, 0.90f }, COL_PANEL_BORDER);
+-        DrawRoundedRect(x + 18.0f, bannerY, w - 36.0f, bannerH, 8.0f, { 0.02f, 0.08f, 0.12f, 0.90f }, COL_PANEL_BORDER);
 -        DrawText(x + 30.0f, bannerY + 12.0f, "Estado:", 14.0f, COL_CYAN);
++        DrawRoundedRect(x + 18.0f, bannerY, w - 36.0f, bannerH, 8.0f, COL_INACTIVE_CHIP, COL_PANEL_BORDER);
 +        DrawText(x + 30.0f, bannerY + 12.0f, "Status:", 14.0f, COL_CYAN);
          DrawText(x + 30.0f, bannerY + 36.0f, m_saveStatusMsg.c_str(), 14.0f, COL_WHITE);
 +        const std::string last = "Backup created: " + m_lastBackupTime;
-+        DrawText(x + 18.0f, y + 236.0f, last.c_str(), 14.0f, COL_MUTED);
++        DrawText(x + 18.0f, y + 236.0f, last.c_str(), 15.0f, COL_MUTED);
 +    }
 +
 +    void RenderSaveConfirmation() {
@@ -2448,13 +3741,18 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +    }
 +
 +    void DrawClippedText(float x,float y,std::string text,float size,float width,Color color) {
-+        if(MeasureText(text.c_str(),size)>width) {
-+            const float limit=width-MeasureText("...",size);
-+            while(!text.empty() && MeasureText(text.c_str(),size)>limit) {
-+                size_t end=text.size()-1;while(end && (static_cast<unsigned char>(text[end])&0xc0)==0x80)--end;
-+                text.resize(end);
++        if(width<MeasureText("...",size)+4)return;
++        if(MeasureText(text.c_str(),size)>width-4) {
++            const float limit=width-4-MeasureText("...",size),scale=size/BASE_FONT_SIZE;
++            const char* begin=text.c_str();const char* cursor=begin;
++            size_t kept=0;float used=0;
++            while(*cursor) {
++                const auto* glyph=FindFontGlyph(DecodeUtf8(cursor),size>=18);
++                const float advance=glyph?glyph->advance*scale:0;
++                if(used+advance>limit)break;
++                used+=advance;kept=size_t(cursor-begin);
 +            }
-+            text+="...";
++            text.resize(kept);text+="...";
 +        }
 +        DrawText(x,y,text.c_str(),size,color);
 +    }
@@ -2469,7 +3767,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        DrawRectSolid(0,0,float(m_width),float(m_height),{0,0,0,.72f});
 +        DrawRoundedRect(x,y,w,520,16,COL_BG_DARK,COL_CYAN);
 +        DrawText(x+24,y+20,"Choose saved progress",24,COL_WHITE);
-+        DrawText(x+24,y+53,"Select a copy, then review it before restoring. Times show when copies were created.",13,COL_MUTED);
++        DrawText(x+24,y+53,"Select a copy, then review it before restoring. Times show when copies were created.", 15.0f, COL_MUTED);
 +        const float tabW=(w-60)*.5f;
 +        for(int i=0;i<2;++i) {
 +            const bool active=m_browseBackups==(i==0);
@@ -2478,7 +3776,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        }
 +        if(m_saveCopies.empty()) {
 +            DrawText(x+24,y+160,m_browseBackups?"No backups yet. Save inside Tri, then choose Create backup.":"No compatible save folders found.",16,COL_WHITE);
-+            if(!m_browseBackups)DrawText(x+24,y+190,"Put a complete exported save folder in MH3_Rowell_Dev/imports.",14,COL_MUTED);
++            if(!m_browseBackups)DrawText(x+24,y+190,"Put a complete exported save folder in MH3_Rowell_Dev/imports.", 15.0f, COL_MUTED);
 +        }
 +        for(int row=0;row<4;++row) {
 +            const int index=m_savePage*4+row;if(index>=int(m_saveCopies.size()))break;
@@ -2505,7 +3803,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        DrawRoundedRect(x+w-124,y,100,32,7,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
 +        DrawText(x+w-74,y+8,"Next",13,page+1<pages?COL_WHITE:COL_MUTED,true);
 +        char text[64];std::snprintf(text,sizeof(text),"Page %d / %d",page+1,std::max(1,pages));
-+        DrawText(x+w*.5f,y+8,text,13,COL_MUTED,true);
++        DrawText(x+w*.5f,y+8,text, 15.0f, COL_MUTED,true);
 +    }
 +    void HandleSaveBrowserTouch(float px,float py) {
 +        const float w=std::min(900.0f,float(m_width)-64),x=(m_width-w)*.5f,y=(m_height-520)*.5f;
@@ -2572,9 +3870,11 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        DrawRoundedRect(x,y,w,560,16,COL_BG_DARK,COL_CYAN);
 +        DrawText(x+24,y+18,"Controller bindings",24,COL_WHITE);
 +        DrawClippedText(x+24,y+53,state.connected?"Connected: "+state.name:"No controller connected. Pair a Bluetooth or USB controller first.",14,w-48,COL_CYAN);
-+        DrawText(x+24,y+76,"Choose an action, then press a button. Touch and keyboard bindings stay separate.",13,COL_MUTED);
++        DrawText(x+24,y+76,"Choose an action, then press a button. Touch and keyboard bindings stay separate.", 15.0f, COL_MUTED);
 +        const auto bindings=RowellPad::Current().Get(Gamepad_GetLayout(),Gamepad_GetSwapTriggers());
 +        const float labelW=w*.28f,bw=w-48-labelW;
++        DrawText(x+24,y+90,"Wii action",12,COL_MUTED);
++        DrawText(x+24+labelW,y+90,"Controller input",12,COL_MUTED);
 +        for(int row=0;row<6;++row) {
 +            const int action=m_padPage*6+row;if(action>=RowellPad::ActionCount)break;
 +            const float ry=y+106+row*48;
@@ -2595,8 +3895,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +            DrawRoundedRect(cx,cy,cw,260,16,COL_BG_DARK,COL_CYAN);
 +            if(m_padPendingPreset>=0) {
 +                DrawText(cx+24,cy+24,"Reset controller bindings?",23,COL_WHITE);
-+                DrawText(cx+24,cy+72,"This replaces your custom controller map with the selected defaults.",13,COL_MUTED);
-+                DrawText(cx+24,cy+98,"Your touch layout, keyboard bindings and game saves stay unchanged.",13,COL_MUTED);
++                DrawText(cx+24,cy+72,"This replaces your custom controller map with the selected defaults.", 15.0f, COL_MUTED);
++                DrawText(cx+24,cy+98,"Your touch layout, keyboard bindings and game saves stay unchanged.", 15.0f, COL_MUTED);
 +            } else {
 +                DrawText(cx+24,cy+24,m_padConflictSource>=0?"Input already assigned":"Press a controller button",23,COL_WHITE);
 +                DrawText(cx+24,cy+64,(std::string("Wii action: ")+RowellPad::Definition(m_padCaptureAction).label).c_str(),17,COL_CYAN);
@@ -2605,8 +3905,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +                    const auto old=RowellPad::SourceName(bindings[m_padCaptureAction]);
 +                    DrawClippedText(cx+24,cy+126,"Swap gives "+std::string(RowellPad::Definition(m_padConflictOwner).label)+" your old input: "+old,13,cw-48,COL_MUTED);
 +                } else {
-+                    DrawText(cx+24,cy+100,"Buttons, triggers and L3/R3 work. Keyboard keys are ignored.",13,COL_MUTED);
-+                    DrawText(cx+24,cy+126,"Already-held buttons are ignored until released. Clear disables this action.",13,COL_MUTED);
++                    DrawText(cx+24,cy+100,"Buttons, triggers and L3/R3 work. Keyboard keys are ignored.", 15.0f, COL_MUTED);
++                    DrawText(cx+24,cy+126,"Already-held buttons are ignored until released. Clear disables this action.", 15.0f, COL_MUTED);
 +                }
 +            }
 +            DrawRoundedRect(cx+24,cy+190,buttonW,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
@@ -2656,7 +3956,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        DrawRectSolid(0,0,float(m_width),float(m_height),{0,0,0,.72f});
 +        DrawRoundedRect(x,y,w,560,16,COL_BG_DARK,COL_CYAN);
 +        DrawText(x+24,y+18,"PC keyboard bindings",24,COL_WHITE);
-+        DrawText(x+24,y+53,"Click a key to change it. Three keys per action. Changes save automatically.",13,COL_MUTED);
++        DrawText(x+24,y+53,"Click a key to change it. Three keys per action. Changes save automatically.", 15.0f, COL_MUTED);
 +        const float labelW=w*.30f,keyW=(w-48-labelW-90-32)/3;
 +        for(int row=0;row<6;++row) {
 +            const int action=m_keyPage*6+row;if(action>=RowellKeys::ActionCount)break;
@@ -2684,7 +3984,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +            DrawRoundedRect(cx,cy,cw,240,16,COL_BG_DARK,COL_CYAN);
 +            DrawText(cx+24,cy+24,"Press a key",25,COL_WHITE);
 +            DrawText(cx+24,cy+65,RowellKeys::Definition(m_captureAction).label,18,COL_CYAN);
-+            DrawText(cx+24,cy+95,"Escape cancels. F1/F2/F3 stay reserved for settings and speed.",13,COL_MUTED);
++            DrawText(cx+24,cy+95,"Escape cancels. F2/F3 stay reserved for settings and speed.", 15.0f, COL_MUTED);
 +            DrawClippedText(cx+24,cy+125,m_keyStatus,13,cw-48,COL_CYAN);
 +            const float bw=(cw-64)*.5f;
 +            DrawRoundedRect(cx+24,cy+174,bw,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
@@ -2733,62 +4033,87 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +#endif
 +
 +    void ApplyComboMasks() {
-+        static const char* names[] = {"A", "B", "X", "Y", "L", "R", "ZL", "ZR"};
-+        static const uint16_t bits[] = {MH3_CL_A, MH3_CL_B, MH3_CL_X, MH3_CL_Y,
-+            MH3_CL_L, MH3_CL_R, MH3_CL_ZL, MH3_CL_ZR};
-+        for (auto& b : m_buttons) {
-+            if (b.id.size()!=2 || b.id[0]!='M' || b.id[1]<'1' || b.id[1]>'5') continue;
-+            b.mask = m_comboMasks[b.id[1]-'1']; b.label.clear();
-+            for (int i=0;i<8;++i) if (b.mask & bits[i]) {
-+                if (!b.label.empty()) b.label += "+";
-+                b.label += names[i];
-+            }
-+            if (b.label.empty()) b.label = "Empty";
-+            if (b.mask==(MH3_CL_R|MH3_CL_X|MH3_CL_A)) b.label="R+X+A";
++        for(auto& button:m_buttons) {
++            if(button.id.size()!=2 || button.id[0]!='M' || button.id[1]<'1' || button.id[1]>'5')continue;
++            const int slot=button.id[1]-'1';button.mask=m_comboMasks[slot];
++            button.label=button.mask?ComboLabel(slot,true):"Empty";
 +        }
 +    }
 +    bool& ComboEnabled(int i) {
 +        switch(i) { case 0:return m_macro1Enabled; case 1:return m_macro2Enabled;
 +          case 2:return m_macro3Enabled; case 3:return m_macro4Enabled; default:return m_macro5Enabled; }
 +    }
-+    void RenderTabCombos(float x, float y, float w) {
-+        DrawText(x, y, "Combo buttons", 23, COL_WHITE);
-+        DrawText(x, y+32, "Select a slot, then select its buttons. Hold a combo to press them together.", 14, COL_MUTED);
-+        float sw=(w-40)/5;
-+        for (int i=0;i<5;++i) {
-+            float bx=x+i*(sw+10); char title[24]; std::snprintf(title,sizeof(title),"Combo %d",i+1);
-+            DrawRoundedRect(bx,y+62,sw,44,8,m_comboEdit==i?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CYAN);
-+            DrawText(bx+sw/2,y+75,title,16,m_comboEdit==i?COL_ACTIVE_TEXT:COL_WHITE,true);
-+        }
-+        DrawRoundedRect(x,y+123,w,44,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
-+        DrawText(x+18,y+136,ComboEnabled(m_comboEdit)?"Enabled - tap to hide this combo":"Hidden - tap to enable this combo",16,COL_WHITE);
-+        const char* names[]={"A","B","X","Y","L","R","ZL","ZR"};
-+        const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR};
-+        float bw=(w-30)/4;
-+        for(int i=0;i<8;++i) {
-+            float bx=x+(i%4)*(bw+10), by=y+190+(i/4)*58;
-+            bool on=(m_comboMasks[m_comboEdit]&bits[i])!=0;
-+            DrawRoundedRect(bx,by,bw,46,8,on?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
-+            DrawText(bx+bw/2,by+14,names[i],18,on?COL_ACTIVE_TEXT:COL_WHITE,true);
-+        }
-+        DrawText(x,y+322,"Changes save automatically. Drag and resize combos in Controls > Edit layout.",14,COL_MUTED);
-+        DrawText(x,y+352,"Three or more fingers work together. Each finger releases independently.",14,COL_CYAN);
++
++    std::string ComboLabel(int slot,bool compact=false) const {
++        if(slot<0 || slot>=5 || !m_comboMasks[slot])return "Not configured";
++        const auto mask=m_comboMasks[slot];
++        if(mask==(MH3_CL_R|MH3_CL_X|MH3_CL_A))return compact?"R+X+A":"R + X + A";
++        const char* names[]={"A","B","X","Y","L","R","ZL","ZR","Plus","Minus","Home","Up","Down","Left","Right"};
++        const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR,
++            MH3_CL_PLUS,MH3_CL_MINUS,MH3_CL_HOME,MH3_CL_UP,MH3_CL_DOWN,MH3_CL_LEFT,MH3_CL_RIGHT};
++        std::string label;
++        for(int i=0;i<15;++i)if(mask&bits[i]){if(!label.empty())label+=compact?"+":" + ";label+=names[i];}
++        return label.empty()?"Custom combo":label;
 +    }
++    int ComboCount() const {
++        return int(std::count_if(m_comboMasks.begin(),m_comboMasks.end(),[](uint16_t mask){return mask!=0;}));
++    }
++    bool ComboHasShortcut(int slot) const {
++        if(slot<0 || slot>=5)return false;
++        // Combo defaults are unassigned for every gamepad layout. Do not poll a device.
++        if(RowellPad::Current().Get(0,false)[RowellPad::ActionCount-5+slot]!=RowellPad::Unassigned)return true;
++#ifdef MH3_PC_TOUCH_UI
++        for(auto key:RowellKeys::Current().Get(RowellKeys::ActionCount-5+slot))
++            if(key!=SDL_SCANCODE_UNKNOWN)return true;
++#endif
++        return false;
++    }
++    void OpenLibraryCombo(int slot,bool remove=false) {
++        BeginLayoutEdit(true);
++        if(slot<0){OpenEditorCombo(false);return;}
++        for(int i=0;i<int(m_buttons.size());++i)if(m_buttons[i].id=="M"+std::to_string(slot+1)){
++            m_selectedButtonIndex=i;break;
++        }
++        if(remove)RequestComboDelete(slot);else OpenEditorCombo(true);
++    }
++    void RenderTabCombos(float x,float y,float w) {
++        const int count=ComboCount();
++        DrawText(x,y+6,"Saved combinations",20,COL_WHITE);
++        const auto hint=std::to_string(count)+" of 5 slots. "+(count<5?"Add a combo, then place its button.":"Delete an unused combo to free a slot.");
++        DrawClippedText(x,y+39,hint,15,w-200,COL_MUTED);
++        DrawRoundedRect(x+w-180,y+5,180,42,8,count<5?COL_CYAN:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+w-90,y+17,"Add combo",18,count<5?COL_BG_DARK:COL_MUTED,true);
++        if(!count) {
++            DrawRoundedRect(x,y+82,w,144,12,COL_PANEL_CARD,COL_PANEL_BORDER);
++            DrawText(x+20,y+106,"No custom combos yet",21,COL_WHITE);
++            DrawClippedText(x+20,y+146,"Choose Wii buttons to hold together, then drag the new button into place.",15,w-40,COL_MUTED);
++        }
++        int row=0;
++        for(int slot=0;slot<5;++slot)if(m_comboMasks[slot]) {
++            const float ry=y+82+row++*72;
++            DrawRoundedRect(x,ry,w,62,10,COL_PANEL_CARD,COL_PANEL_BORDER);
++            DrawClippedText(x+16,ry+10,ComboLabel(slot),20,w-256,COL_WHITE);
++            const auto detail="Combo "+std::to_string(slot+1)+(ComboEnabled(slot)?" | Shown on screen":" | Hidden on screen");
++            DrawText(x+16,ry+37,detail.c_str(),13,COL_MUTED);
++            DrawRoundedRect(x+w-220,ry+13,96,36,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(x+w-172,ry+23,"Edit",15,COL_WHITE,true);
++            DrawRoundedRect(x+w-112,ry+13,96,36,8,COL_INACTIVE_CHIP,COL_DANGER);
++            DrawText(x+w-64,ry+23,"Delete",15,COL_DANGER,true);
++        }
++        DrawClippedText(x,y+462,"Edit uses the layout editor. Save & play keeps changes; Cancel discards them.",14,w,COL_MUTED);
++    }
++
 +    bool HandleComboTap(float px,float py,float x,float y,float w) {
-+        float sw=(w-40)/5;
-+        if(py>=y+62 && py<=y+106) for(int i=0;i<5;++i) {
-+            float bx=x+i*(sw+10); if(px>=bx && px<=bx+sw) {m_comboEdit=i;return true;}
++        if(px>=x+w-180 && px<=x+w && py>=y+5 && py<=y+47) {
++            if(ComboCount()<5)OpenLibraryCombo(-1);
++            return true;
 +        }
-+        if(py>=y+123 && py<=y+167 && px>=x && px<=x+w) {
-+            ComboEnabled(m_comboEdit)=!ComboEnabled(m_comboEdit); ResetInput(); SaveLayoutConfig(); return true;
-+        }
-+        const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR};
-+        float bw=(w-30)/4;
-+        for(int i=0;i<8;++i) {
-+            float bx=x+(i%4)*(bw+10),by=y+190+(i/4)*58;
-+            if(px>=bx && px<=bx+bw && py>=by && py<=by+46) {
-+                m_comboMasks[m_comboEdit]^=bits[i]; ResetInput(); ApplyComboMasks(); SaveLayoutConfig(); return true;
-+            }
++        int row=0;
++        for(int slot=0;slot<5;++slot)if(m_comboMasks[slot]) {
++            const float ry=y+82+row++*72;
++            if(py<ry+13 || py>ry+49)continue;
++            if(px>=x+w-220 && px<=x+w-124){OpenLibraryCombo(slot);return true;}
++            if(px>=x+w-112 && px<=x+w-16){OpenLibraryCombo(slot,true);return true;}
 +        }
 +        return false;
      }
@@ -2799,8 +4124,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, y + 14.0f, "Controles táctiles en pantalla", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, y + 34.0f, "Oculta los botones virtuales si juegas con mando o ajusta su transparencia.", 13.0f, COL_MUTED);
-+        DrawText(x + 18.0f, y + 14.0f, "On-screen touch controls", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, y + 34.0f, "Show touch controls, or hide them when using a gamepad.", 13.0f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "On-screen touch controls", 20.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 34.0f, "Show touch controls, or hide them when using a gamepad.", 15.0f, COL_MUTED);
 +#ifdef MH3_PC_TOUCH_UI
 +        DrawRoundedRect(x+w-228,y+12,210,32,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
 +        DrawText(x+w-123,y+21,"Keyboard bindings",14,COL_WHITE,true);
@@ -2808,7 +4133,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
          float tvChipW = (w - 36.0f - 15.0f) / 2.0f;
          float tvChipH = 38.0f;
-@@ -1466,7 +2316,7 @@ private:
+@@ -1466,7 +2534,7 @@ private:
          DrawRoundedRect(tv1X, tvChipY, tvChipW, tvChipH, 8.0f,
                          m_touchVisible ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_touchVisible ? COL_CYAN : COL_CHIP_BORDER);
@@ -2817,7 +4142,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                   m_touchVisible ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Hidden chip
-@@ -1474,12 +2324,12 @@ private:
+@@ -1474,12 +2542,12 @@ private:
          DrawRoundedRect(tv2X, tvChipY, tvChipW, tvChipH, 8.0f,
                          !m_touchVisible ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          !m_touchVisible ? COL_CYAN : COL_CHIP_BORDER);
@@ -2833,20 +4158,20 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          const float opValues[] = { 0.25f, 0.50f, 0.75f, 1.00f };
          float opChipW = (w - 36.0f - 30.0f) / 4.0f;
          float opChipH = 36.0f;
-@@ -1498,8 +2348,10 @@ private:
+@@ -1498,8 +2566,10 @@ private:
          float c2Y = y + c1H + 12.0f;
          float c2H = 116.0f;
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, c2Y + 14.0f, "Distribución de botones del Mando (Gamepad)", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, c2Y + 36.0f, "Para mandos Bluetooth/USB (Xbox, PlayStation, Nintendo o genéricos):", 13.5f, COL_MUTED);
-+        DrawText(x + 18.0f, c2Y + 14.0f, "Physical controller", 19.0f, COL_WHITE);
++        DrawText(x + 18.0f, c2Y + 14.0f, "Physical controller", 20.0f, COL_WHITE);
 +        DrawRoundedRect(x+w-228,c2Y+10,210,30,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
 +        DrawText(x+w-123,c2Y+18,"Remap buttons",14,COL_WHITE,true);
-+        DrawText(x + 18.0f, c2Y + 39.0f, "USB / Bluetooth. Presets reset remaps after confirmation. Touch controls stay separate.", 13.0f, COL_MUTED);
++        DrawText(x + 18.0f, c2Y + 39.0f, "Remap controller buttons and triggers. Touch and keyboard settings stay separate.", 15.0f, COL_MUTED);
  
          const int gpLayout = Gamepad_GetLayout();
          const bool swapTrig = Gamepad_GetSwapTriggers();
-@@ -1513,7 +2365,7 @@ private:
+@@ -1513,7 +2583,7 @@ private:
          DrawRoundedRect(l1X, gpChipY, lChipW, gpChipH, 8.0f,
                          (gpLayout == 0) ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          (gpLayout == 0) ? COL_CYAN : COL_CHIP_BORDER);
@@ -2855,7 +4180,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                   (gpLayout == 0) ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Xbox/Generic layout
-@@ -1521,7 +2373,7 @@ private:
+@@ -1521,7 +2591,7 @@ private:
          DrawRoundedRect(l2X, gpChipY, lChipW, gpChipH, 8.0f,
                          (gpLayout == 1) ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          (gpLayout == 1) ? COL_CYAN : COL_CHIP_BORDER);
@@ -2864,7 +4189,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                   (gpLayout == 1) ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Swap triggers
-@@ -1531,15 +2383,15 @@ private:
+@@ -1531,66 +2601,95 @@ private:
                          swapTrig ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          swapTrig ? COL_CYAN : COL_CHIP_BORDER);
          DrawText(trigX + trigW * 0.5f, gpChipY + 12.0f,
@@ -2872,65 +4197,71 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +                 swapTrig ? "Shoulders/triggers: SWAP" : "Shoulders/triggers: ORIGINAL", 14.5f,
                   swapTrig ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
-         // Card 3: Macros y Personalización
-         float c3Y = c2Y + c2H + 12.0f;
-         float c3H = 154.0f;
-         DrawRoundedRect(x, c3Y, w, c3H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+-        // Card 3: Macros y Personalización
+-        float c3Y = c2Y + c2H + 12.0f;
+-        float c3H = 154.0f;
+-        DrawRoundedRect(x, c3Y, w, c3H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, c3Y + 14.0f, "Botones especiales (Macros) y Editor de pantalla", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, c3Y + 36.0f, "Activa combinaciones de botones simultáneos para armas o reposiciona controles:", 13.5f, COL_MUTED);
-+        DrawText(x + 18.0f, c3Y + 14.0f, "Touch layout editor", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, c3Y + 36.0f, "Move and resize controls. Add or edit combo buttons inside the editor.", 13.5f, COL_MUTED);
- 
-         float mChipW = (w - 36.0f - 30.0f) / 4.0f;
-         float mChipH = 40.0f;
-@@ -1550,7 +2402,7 @@ private:
-         DrawRoundedRect(m1X, mChipY, mChipW, mChipH, 8.0f,
-                         m_macro1Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
-                         m_macro1Enabled ? COL_CYAN : COL_CHIP_BORDER);
+-
+-        float mChipW = (w - 36.0f - 30.0f) / 4.0f;
+-        float mChipH = 40.0f;
+-        float mChipY = c3Y + 56.0f;
+-
+-        // Macro 1 (A+X)
+-        float m1X = x + 18.0f;
+-        DrawRoundedRect(m1X, mChipY, mChipW, mChipH, 8.0f,
+-                        m_macro1Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+-                        m_macro1Enabled ? COL_CYAN : COL_CHIP_BORDER);
 -        DrawText(m1X + mChipW * 0.5f, mChipY + 11.0f, m_macro1Enabled ? "M1 (A+X): SÍ" : "M1 (A+X): NO", 13.5f,
-+        DrawText(m1X + mChipW * 0.5f, mChipY + 11.0f, m_macro1Enabled ? "Combo 1: ON" : "Combo 1: OFF", 13.5f,
-                  m_macro1Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
- 
-         // Macro 2 (B+Y)
-@@ -1558,7 +2410,7 @@ private:
-         DrawRoundedRect(m2X, mChipY, mChipW, mChipH, 8.0f,
-                         m_macro2Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
-                         m_macro2Enabled ? COL_CYAN : COL_CHIP_BORDER);
+-                 m_macro1Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
+-
+-        // Macro 2 (B+Y)
+-        float m2X = m1X + mChipW + 10.0f;
+-        DrawRoundedRect(m2X, mChipY, mChipW, mChipH, 8.0f,
+-                        m_macro2Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+-                        m_macro2Enabled ? COL_CYAN : COL_CHIP_BORDER);
 -        DrawText(m2X + mChipW * 0.5f, mChipY + 11.0f, m_macro2Enabled ? "M2 (B+Y): SÍ" : "M2 (B+Y): NO", 13.5f,
-+        DrawText(m2X + mChipW * 0.5f, mChipY + 11.0f, m_macro2Enabled ? "Combo 2: ON" : "Combo 2: OFF", 13.5f,
-                  m_macro2Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
- 
-         // Macro 3 (L+R)
-@@ -1566,7 +2418,7 @@ private:
-         DrawRoundedRect(m3X, mChipY, mChipW, mChipH, 8.0f,
-                         m_macro3Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
-                         m_macro3Enabled ? COL_CYAN : COL_CHIP_BORDER);
+-                 m_macro2Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
+-
+-        // Macro 3 (L+R)
+-        float m3X = m2X + mChipW + 10.0f;
+-        DrawRoundedRect(m3X, mChipY, mChipW, mChipH, 8.0f,
+-                        m_macro3Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+-                        m_macro3Enabled ? COL_CYAN : COL_CHIP_BORDER);
 -        DrawText(m3X + mChipW * 0.5f, mChipY + 11.0f, m_macro3Enabled ? "M3 (L+R): SÍ" : "M3 (L+R): NO", 13.5f,
-+        DrawText(m3X + mChipW * 0.5f, mChipY + 11.0f, m_macro3Enabled ? "Combo 3: ON" : "Combo 3: OFF", 13.5f,
-                  m_macro3Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
- 
-         // Macro 4 (A+B)
-@@ -1574,7 +2426,7 @@ private:
-         DrawRoundedRect(m4X, mChipY, mChipW, mChipH, 8.0f,
-                         m_macro4Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
-                         m_macro4Enabled ? COL_CYAN : COL_CHIP_BORDER);
+-                 m_macro3Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
+-
+-        // Macro 4 (A+B)
+-        float m4X = m3X + mChipW + 10.0f;
+-        DrawRoundedRect(m4X, mChipY, mChipW, mChipH, 8.0f,
+-                        m_macro4Enabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+-                        m_macro4Enabled ? COL_CYAN : COL_CHIP_BORDER);
 -        DrawText(m4X + mChipW * 0.5f, mChipY + 11.0f, m_macro4Enabled ? "M4 (A+B): SÍ" : "M4 (A+B): NO", 13.5f,
-+        DrawText(m4X + mChipW * 0.5f, mChipY + 11.0f, m_macro4Enabled ? "Combo 4: ON" : "Combo 4: OFF", 13.5f,
-                  m_macro4Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
- 
-         // Row 2: Action Buttons
-@@ -1583,14 +2435,74 @@ private:
-         float editBtnW = (w - 36.0f - 15.0f) * 0.58f;
-         float editBtnX = x + 18.0f;
-         DrawRoundedRect(editBtnX, actBtnY, editBtnW, actBtnH, 8.0f, { 0.10f, 0.50f, 0.65f, 0.95f }, COL_CYAN);
+-                 m_macro4Enabled ? COL_ACTIVE_TEXT : COL_WHITE, true);
+-
+-        // Row 2: Action Buttons
+-        float actBtnY = mChipY + mChipH + 10.0f;
+-        float actBtnH = 42.0f;
+-        float editBtnW = (w - 36.0f - 15.0f) * 0.58f;
+-        float editBtnX = x + 18.0f;
+-        DrawRoundedRect(editBtnX, actBtnY, editBtnW, actBtnH, 8.0f, { 0.10f, 0.50f, 0.65f, 0.95f }, COL_CYAN);
 -        DrawText(editBtnX + editBtnW * 0.5f, actBtnY + 12.0f, "✏ Modificar Posición y Tamaño Táctil", 15.0f, COL_WHITE, true);
-+        DrawText(editBtnX + editBtnW * 0.5f, actBtnY + 12.0f, "Edit touch layout", 15.0f, COL_WHITE, true);
- 
-         float rstBtnW = (w - 36.0f - 15.0f) * 0.42f;
-         float rstBtnX = editBtnX + editBtnW + 15.0f;
-         DrawRoundedRect(rstBtnX, actBtnY, rstBtnW, actBtnH, 8.0f, { 0.40f, 0.15f, 0.18f, 0.85f }, { 0.90f, 0.35f, 0.40f, 1.0f });
+-
+-        float rstBtnW = (w - 36.0f - 15.0f) * 0.42f;
+-        float rstBtnX = editBtnX + editBtnW + 15.0f;
+-        DrawRoundedRect(rstBtnX, actBtnY, rstBtnW, actBtnH, 8.0f, { 0.40f, 0.15f, 0.18f, 0.85f }, { 0.90f, 0.35f, 0.40f, 1.0f });
 -        DrawText(rstBtnX + rstBtnW * 0.5f, actBtnY + 12.0f, "Restablecer Diseño", 15.0f, COL_WHITE, true);
-+        DrawText(rstBtnX + rstBtnW * 0.5f, actBtnY + 12.0f, "Reset positions", 15.0f, COL_WHITE, true);
++        const float c3Y=c2Y+c2H+12;
++        DrawRoundedRect(x,c3Y,w,118,12,COL_PANEL_CARD,COL_PANEL_BORDER);
++        DrawText(x+18,c3Y+14,"Touch layout",20,COL_WHITE);
++        DrawClippedText(x+18,c3Y+40,"Move and resize Wii controls. Your custom combinations live in the Combos library.",15,w-36,COL_MUTED);
++        const float bw=(w-51)*.5f,by=c3Y+64;
++        DrawRoundedRect(x+18,by,bw,38,8,COL_ACTIVE_CHIP,COL_CYAN);
++        DrawText(x+18+bw*.5f,by+11,"Edit touch layout",16,COL_WHITE,true);
++        DrawRoundedRect(x+33+bw,by,bw,38,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++        DrawText(x+33+bw*1.5f,by+11,"Custom combos",16,COL_WHITE,true);
++
      }
  
 +    EditSnapshot CaptureLayout() {
@@ -2947,15 +4278,18 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        if(m_editorUndo.size()>=20)m_editorUndo.erase(m_editorUndo.begin());
 +        m_editorUndo.push_back(CaptureLayout());
 +    }
-+    void BeginLayoutEdit() {
++    void BeginLayoutEdit(bool fromLibrary=false) {
 +        SetMenuOpen(false);ResetInput();m_editMode=true;m_selectedButtonIndex=-1;
 +        m_editorOriginal=CaptureLayout();m_editorUndo.clear();m_editorComboSlot=-1;m_editorResetConfirm=false;
++        m_editorDeleteSlot=-1;m_editorFromLibrary=fromLibrary;
 +        m_editorStatus="Drag a control. Drag this panel by its title.";
 +    }
 +    void CancelLayoutEdit() {
 +        if(m_editorOriginal)RestoreLayout(*m_editorOriginal);
 +        else {LoadLayoutConfig();RecalculateButtonPositions();}
-+        m_editMode=false;m_editorComboSlot=-1;m_editorResetConfirm=false;m_editorUndo.clear();m_editorOriginal.reset();
++        m_editMode=false;m_editorComboSlot=-1;m_editorDeleteSlot=-1;m_editorResetConfirm=false;m_editorUndo.clear();m_editorOriginal.reset();
++        const bool returnToLibrary=m_editorFromLibrary;m_editorFromLibrary=false;
++        if(returnToLibrary){SetMenuOpen(true);m_menuTab=5;}
 +    }
 +    Vec2 EditorPanelSize() const { return {std::min(360.0f,float(m_width)-24),m_editorCollapsed?42.0f:276.0f}; }
 +    Vec2 EditorPanelPosition() const {
@@ -2986,17 +4320,28 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        const auto& id=m_buttons[m_selectedButtonIndex].id;
 +        return id.size()==2 && id[0]=='M' && id[1]>='1' && id[1]<='5'?id[1]-'1':-1;
 +    }
++
 +    void OpenEditorCombo(bool edit) {
 +        int slot=edit?SelectedCombo():-1;
-+        if(!edit)for(int i=0;i<5;++i)if(!ComboEnabled(i)){slot=i;break;}
-+        if(slot<0){m_editorStatus=edit?"Select a combo to edit it.":"All 5 combos are visible. Select one and tap Edit combo.";return;}
++        if(!edit)for(int i=0;i<5;++i)if(!m_comboMasks[i]){slot=i;break;}
++        if(slot<0 || (edit && !m_comboMasks[slot])) {
++            m_editorStatus=edit?"Select a custom combo to edit it.":"All 5 slots are in use. Delete an unused combo first.";return;
++        }
 +        m_editorComboSlot=slot;m_editorComboNew=!edit;m_editorComboMask=edit?m_comboMasks[slot]:0;
++        m_editorComboVisible=edit?ComboEnabled(slot):true;
 +        m_editDragging=false;m_editFingerId.reset();
++    }
++    void RequestComboDelete(int slot=-1) {
++        if(slot<0)slot=SelectedCombo();
++        if(slot<0 || slot>=5 || !m_comboMasks[slot]) {
++            m_editorStatus="Select a custom combo. Original Wii controls cannot be deleted.";return;
++        }
++        m_editorDeleteSlot=slot;m_editDragging=false;m_editFingerId.reset();
 +    }
      void RenderEditMode() {
          DrawRectSolid(0, 0, float(m_width), float(m_height), { 0.0f, 0.0f, 0.0f, 0.40f });
  
-@@ -1600,65 +2512,91 @@ private:
+@@ -1600,65 +2699,107 @@ private:
              if (!IsButtonActive(btn)) continue;
              bool isSel = (int(i) == m_selectedButtonIndex);
              DrawAADisc(btn.pos.x, btn.pos.y, btn.radius,
@@ -3048,10 +4393,6 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 -        // Button 3: [Restablecer]
 -        DrawRoundedRect(barX + 30.0f + bw * 2.0f, by, bw, bh, 6.0f, { 0.35f, 0.15f, 0.15f, 0.85f }, { 0.80f, 0.30f, 0.30f, 0.90f });
 -        DrawText(barX + 30.0f + bw * 2.5f, by + 9.0f, "Restablecer", 13.0f, COL_WHITE, true);
--
--        // Button 4: [Guardar y Salir]
--        DrawRoundedRect(barX + 40.0f + bw * 3.0f, by, bw, bh, 6.0f, COL_ACTIVE_CHIP, COL_CYAN);
--        DrawText(barX + 40.0f + bw * 3.5f, by + 9.0f, "Guardar", 13.0f, COL_ACTIVE_TEXT, true);
 +                   {.12f,.12f,.12f,.35f},stickSel?COL_WHITE:Color{.9f,.9f,.9f,.65f});
 +
 +        const auto size=EditorPanelSize(),panel=EditorPanelPosition();
@@ -3072,16 +4413,25 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +                DrawRoundedRect(bx,by,bw,40,7,active?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
 +                DrawText(bx+bw*.5f,by+12,label,14,active?COL_ACTIVE_TEXT:COL_WHITE,true);
 +            };
-+            chip(x+14,y+78,60,"-");chip(x+82,y+78,60,"+");
-+            chip(x+150,y+78,w-164,"Edit combo");
++            chip(x+14,y+78,44,"-");chip(x+66,y+78,44,"+");
++            const float actionW=(w-140)*.5f;
++            const bool custom=SelectedCombo()>=0 && m_comboMasks[SelectedCombo()]!=0;
++            DrawRoundedRect(x+118,y+78,actionW,40,7,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(x+118+actionW*.5f,y+90,"Edit combo",14,custom?COL_WHITE:COL_MUTED,true);
++            DrawRoundedRect(x+126+actionW,y+78,actionW,40,7,COL_INACTIVE_CHIP,custom?COL_DANGER:COL_CHIP_BORDER);
++            DrawText(x+126+actionW*1.5f,y+90,"Delete",14,custom?COL_DANGER:COL_MUTED,true);
 +            const float cw=(w-44)/3;
 +            chip(x+14,y+128,cw,"Add combo");chip(x+22+cw,y+128,cw,"Undo");chip(x+30+cw*2,y+128,cw,"Reset");
 +            DrawClippedText(x+14,y+181,m_editorStatus,12,w-28,COL_CYAN);
-+            DrawText(x+14,y+199,"Save & play keeps edits. Cancel discards them.",12,COL_MUTED);
++            DrawText(x+14,y+199,"Save & play keeps edits. Cancel discards them.", 15.0f, COL_MUTED);
 +            chip(x+14,y+222,(w-36)*.5f,"Cancel");chip(x+22+(w-36)*.5f,y+222,(w-36)*.5f,"Save & play",true);
 +        }
-+        if(m_editorComboSlot>=0 || m_editorResetConfirm)RenderEditorDialog();
++        if(m_editorComboSlot>=0 || m_editorResetConfirm || m_editorDeleteSlot>=0)RenderEditorDialog();
 +    }
+ 
+-        // Button 4: [Guardar y Salir]
+-        DrawRoundedRect(barX + 40.0f + bw * 3.0f, by, bw, bh, 6.0f, COL_ACTIVE_CHIP, COL_CYAN);
+-        DrawText(barX + 40.0f + bw * 3.5f, by + 9.0f, "Guardar", 13.0f, COL_ACTIVE_TEXT, true);
  
 -        // Button 5: [Cancelar]
 -        DrawRoundedRect(barX + 50.0f + bw * 4.0f, by, bw, bh, 6.0f, COL_INACTIVE_CHIP, COL_CHIP_BORDER);
@@ -3089,15 +4439,21 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +    void RenderEditorDialog() {
 +        const float w=std::min(600.0f,float(m_width)-48),x=(m_width-w)*.5f,y=(m_height-330)*.5f;
 +        DrawRectSolid(0,0,float(m_width),float(m_height),{0,0,0,.66f});
-+        DrawRoundedRect(x,y,w,330,14,COL_BG_DARK,COL_CYAN);
-+        if(m_editorResetConfirm) {
++        DrawRoundedRect(x,y,w,330,14,COL_BG_DARK,m_editorDeleteSlot>=0?COL_DANGER:COL_CYAN);
++        if(m_editorDeleteSlot>=0) {
++            DrawText(x+24,y+24,"Delete custom combo?",23,COL_WHITE);
++            DrawClippedText(x+24,y+76,ComboLabel(m_editorDeleteSlot),21,w-48,COL_CYAN);
++            DrawClippedText(x+24,y+118,"Original Wii buttons and their mappings stay unchanged.",15,w-48,COL_MUTED);
++            if(ComboHasShortcut(m_editorDeleteSlot))
++                DrawClippedText(x+24,y+157,"Its assigned controller or keyboard shortcut will become inactive.",14,w-48,COL_CAUTION);
++            DrawClippedText(x+24,y+204,"Undo restores it before Save & play. Cancel discards all edits.",14,w-48,COL_MUTED);
++        } else if(m_editorResetConfirm) {
 +            DrawText(x+24,y+24,"Reset control positions?",23,COL_WHITE);
-+            DrawText(x+24,y+78,"Restore default positions and sizes. Your combo choices stay.",14,COL_MUTED);
-+            DrawText(x+24,y+112,"Undo can recover this change before you save.",14,COL_MUTED);
++            DrawClippedText(x+24,y+78,"Restore default positions and sizes. Your combo choices stay.",15,w-48,COL_MUTED);
++            DrawText(x+24,y+112,"Undo can recover this change before you save.",15,COL_MUTED);
 +        } else {
-+            const auto title=std::string(m_editorComboNew?"Add combo ":"Edit combo ")+std::to_string(m_editorComboSlot+1);
-+            DrawText(x+24,y+22,title.c_str(),23,COL_WHITE);
-+            DrawText(x+24,y+60,"Choose the buttons this one touch will hold together.",14,COL_MUTED);
++            DrawText(x+24,y+22,m_editorComboNew?"Add custom combo":"Edit custom combo",23,COL_WHITE);
++            DrawClippedText(x+24,y+60,"Hold to press the selected Wii buttons together. Lift to release.",15,w-48,COL_MUTED);
 +            const char* names[]={"A","B","X","Y","L","R","ZL","ZR"};
 +            const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR};
 +            const float bw=(w-78)/4;
@@ -3105,24 +4461,28 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +                const float bx=x+24+(i%4)*(bw+10),by=y+96+(i/4)*58;
 +                const bool active=(m_editorComboMask&bits[i])!=0;
 +                DrawRoundedRect(bx,by,bw,46,8,active?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
-+                DrawText(bx+bw*.5f,by+14,names[i],17,active?COL_ACTIVE_TEXT:COL_WHITE,true);
++                DrawText(bx+bw*.5f,by+14,names[i],17,COL_WHITE,true);
 +            }
-+            DrawText(x+24,y+222,"Hold to press. Lift to release.",14,COL_MUTED);
 +            if(!m_editorComboNew) {
-+                DrawRoundedRect(x+w-160,y+214,136,32,7,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
-+                DrawText(x+w-92,y+224,"Hide combo",13,COL_WHITE,true);
-+            }
++                DrawRoundedRect(x+24,y+214,w-204,32,7,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++                DrawText(x+24+(w-204)*.5f,y+223,m_editorComboVisible?"Show touch button: ON":"Show touch button: OFF",13,COL_WHITE,true);
++                DrawRoundedRect(x+w-160,y+214,136,32,7,COL_INACTIVE_CHIP,COL_DANGER);
++                DrawText(x+w-92,y+223,"Delete combo",13,COL_DANGER,true);
++            } else DrawClippedText(x+24,y+222,"Create it, drag it into place, then Save & play.",15,w-48,COL_MUTED);
 +        }
 +        const float bw=(w-64)*.5f;
 +        DrawRoundedRect(x+24,y+266,bw,42,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
-+        DrawText(x+24+bw*.5f,y+278,"Cancel",15,COL_WHITE,true);
-+        DrawRoundedRect(x+40+bw,y+266,bw,42,8,COL_ACTIVE_CHIP,COL_CYAN);
-+        DrawText(x+40+bw*1.5f,y+278,m_editorResetConfirm?"Reset positions":m_editorComboNew?"Create combo":"Apply combo",15,COL_ACTIVE_TEXT,true);
++        DrawText(x+24+bw*.5f,y+278,m_editorDeleteSlot>=0?"No, keep it":"Cancel",15,COL_WHITE,true);
++        const bool available=m_editorDeleteSlot>=0 || m_editorResetConfirm || m_editorComboMask!=0;
++        DrawRoundedRect(x+40+bw,y+266,bw,42,8,available?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,m_editorDeleteSlot>=0?COL_DANGER:COL_CYAN);
++        const char* action=m_editorDeleteSlot>=0?"Yes, delete combo":m_editorResetConfirm?"Reset positions":m_editorComboNew?"Create combo":"Apply combo";
++        DrawText(x+40+bw*1.5f,y+278,action,15,available?COL_WHITE:COL_MUTED,true);
      }
  
      void RenderTabOnline(float x, float y, float w) {
 +#ifdef MH3_PC_TOUCH_UI
-+        DrawText(x,y,"PC network settings remain available in the original F1 menu.",16,COL_WHITE);
++        DrawText(x,y,"PC online play uses the existing community-server configuration.",18,COL_WHITE);
++        DrawClippedText(x,y+32,"This menu does not change your existing network settings.",15,w,COL_MUTED);
 +#else
 +
          // Card 1: Modo de Conexión
@@ -3130,12 +4490,12 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          DrawRoundedRect(x, y, w, c1H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, y + 14.0f, "Conexión Multijugador Online", 19.0f, COL_WHITE);
 -        DrawText(x + 18.0f, y + 36.0f, "Conexión directa a los servidores comunitarios de Monster Hunter 3 (MH3SP).", 13.5f, COL_MUTED);
-+        DrawText(x + 18.0f, y + 14.0f, "Online multiplayer", 19.0f, COL_WHITE);
-+        DrawText(x + 18.0f, y + 36.0f, "Connect to the Monster Hunter 3 community servers (MH3SP).", 13.5f, COL_MUTED);
++        DrawText(x + 18.0f, y + 14.0f, "Online multiplayer", 20.0f, COL_WHITE);
++        DrawText(x + 18.0f, y + 36.0f, "Connect to the Monster Hunter 3 community servers (MH3SP).", 15.0f, COL_MUTED);
  
          float mChipW = (w - 36.0f - 12.0f) / 2.0f;
          float mChipH = 42.0f;
-@@ -1670,7 +2608,7 @@ private:
+@@ -1670,7 +2811,7 @@ private:
          DrawRoundedRect(c0X, mChipY, mChipW, mChipH, 8.0f,
                          c0Active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          c0Active ? COL_CYAN : COL_CHIP_BORDER);
@@ -3144,7 +4504,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                   c0Active ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Chip 1: Desconectado
-@@ -1679,7 +2617,7 @@ private:
+@@ -1679,7 +2820,7 @@ private:
          DrawRoundedRect(c1X, mChipY, mChipW, mChipH, 8.0f,
                          c1Active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          c1Active ? COL_CYAN : COL_CHIP_BORDER);
@@ -3153,7 +4513,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                   c1Active ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Card 2: Detalles
-@@ -1688,62 +2626,92 @@ private:
+@@ -1688,62 +2829,92 @@ private:
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
  
          if (m_onlineMode == 3) { // Community
@@ -3168,13 +4528,13 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +            DrawText(x + 18.0f, c2Y + 74.0f, "Rotating events, event quests and rooms with other hunters.", 14.5f, COL_WHITE);
 +            DrawText(x + 18.0f, c2Y + 104.0f, "Includes the community server certificate.", 14.5f, COL_WHITE);
 +            DrawText(x + 18.0f, c2Y + 134.0f, "Uses the existing OPN, NAS and GameSpy connection paths.", 14.5f, COL_WHITE);
-+            DrawText(x + 18.0f, c2Y + 174.0f, "Enter Loc Lac from the Moga Village gate to play online.", 13.5f, COL_MUTED);
++            DrawText(x + 18.0f, c2Y + 174.0f, "Enter Loc Lac from the Moga Village gate to play online.", 15.0f, COL_MUTED);
          } else { // Offline
 -            DrawText(x + 18.0f, c2Y + 14.0f, "Modo Desconectado (Aldea de Moga)", 19.0f, COL_WHITE);
 -            DrawText(x + 18.0f, c2Y + 44.0f, "• La red está desactivada.", 14.5f, COL_WHITE);
 -            DrawText(x + 18.0f, c2Y + 74.0f, "• Juega las misiones de la historia individual en la Aldea de Moga sin conexión.", 14.5f, COL_WHITE);
 -            DrawText(x + 18.0f, c2Y + 104.0f, "• No se realizarán conexiones a la red ni consumirá batería adicional.", 14.5f, COL_WHITE);
-+            DrawText(x + 18.0f, c2Y + 14.0f, "Offline mode (Moga Village)", 19.0f, COL_WHITE);
++            DrawText(x + 18.0f, c2Y + 14.0f, "Offline mode (Moga Village)", 20.0f, COL_WHITE);
 +            DrawText(x + 18.0f, c2Y + 44.0f, "Network connections are disabled.", 14.5f, COL_WHITE);
 +            DrawText(x + 18.0f, c2Y + 74.0f, "Play the single-player story quests in Moga Village.", 14.5f, COL_WHITE);
 +            DrawText(x + 18.0f, c2Y + 104.0f, "No multiplayer network activity.", 14.5f, COL_WHITE);
@@ -3183,8 +4543,9 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          // Status Banner at bottom
          float bannerY = c2Y + c2H + 12.0f;
          float bannerH = 44.0f;
-         DrawRoundedRect(x, bannerY, w, bannerH, 8.0f, { 0.02f, 0.08f, 0.12f, 0.90f }, COL_PANEL_BORDER);
+-        DrawRoundedRect(x, bannerY, w, bannerH, 8.0f, { 0.02f, 0.08f, 0.12f, 0.90f }, COL_PANEL_BORDER);
 -        DrawText(x + 18.0f, bannerY + 12.0f, "Estado:", 14.0f, COL_CYAN);
++        DrawRoundedRect(x, bannerY, w, bannerH, 8.0f, COL_INACTIVE_CHIP, COL_PANEL_BORDER);
 +        DrawText(x + 18.0f, bannerY + 12.0f, "Status:", 14.0f, COL_CYAN);
          DrawText(x + 85.0f, bannerY + 12.0f, m_onlineStatusMsg.c_str(), 14.0f, COL_WHITE);
 +    #endif
@@ -3265,7 +4626,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                      return;
                  }
              }
-@@ -1752,6 +2720,7 @@ private:
+@@ -1752,6 +2923,7 @@ private:
          float contentY = tabY + tabH + 16.0f;
          float contentW = panW - 40.0f;
          float x = padX + 20.0f;
@@ -3273,7 +4634,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
          if (m_menuTab == 0) { // Gráficos
              // Resolution chips
-@@ -1770,12 +2739,12 @@ private:
+@@ -1770,12 +2942,12 @@ private:
                  }
              }
  
@@ -3288,7 +4649,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                  if (px >= x + 18.0f && px <= x + 18.0f + colW) {
                      ToggleFullscreen();
                      return;
-@@ -1803,7 +2772,7 @@ private:
+@@ -1803,7 +2975,7 @@ private:
                  for (int i = 0; i < 4; ++i) {
                      float fx = x + 18.0f + float(i) * (fChipW + 5.0f);
                      if (px >= fx && px <= fx + fChipW) {
@@ -3297,7 +4658,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                              // Locked to 30 FPS in Online City
                              return;
                          }
-@@ -1821,10 +2790,7 @@ private:
+@@ -1821,10 +2993,7 @@ private:
                  // VSync click
                  if (px >= syncColX && px <= syncColX + sChipW) {
                      m_vsync = !m_vsync;
@@ -3309,7 +4670,23 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                      aurora_enable_vsync(m_vsync);
                      SaveSettings();
                      return;
-@@ -1844,15 +2810,30 @@ private:
+@@ -1838,21 +3007,53 @@ private:
+                 }
+             }
+ 
+-            // Card 4: HD Textures click
++            // Card 4: PC renderer or Android HD textures.
+             float c4Y = c3Y + 114.0f + 12.0f;
++#ifdef MH3_PC_TOUCH_UI
++            const float rendererW=(contentW-46)*.5f;
++            if(py>=c4Y+54 && py<=c4Y+96){
++                for(int i=0;i<2;++i){
++                    const float rx=x+18+i*(rendererW+10);
++                    if(px>=rx && px<=rx+rendererW){m_rendererIndex=i;SaveSettings();return;}
++                }
++            }
++#else
+             float tBtnW = (contentW - 36.0f - 15.0f) * 0.50f;
              float tBtnY = c4Y + 54.0f;
              if (py >= tBtnY && py <= tBtnY + chipH) {
                  if (px >= x + 18.0f && px <= x + 18.0f + tBtnW) {
@@ -3327,7 +4704,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                      return;
                  }
              }
++#endif
          } else if (m_menuTab == 1) { // Sistema
++#ifdef MH3_PC_TOUCH_UI
++            const float foldersY=contentY+420,folderW=(contentW-46)*.5f;
++            if(py>=foldersY && py<=foldersY+44){
++                if(px>=x+18 && px<=x+18+folderW){RowellTouch_OpenDataFolder();return;}
++                if(px>=x+28+folderW && px<=x+28+folderW*2){RowellTouch_OpenAppFolder();return;}
++            }
++#endif
 +            const float speedY = contentY + 270.0f;
 +            if (py >= speedY + 62.0f && py <= speedY + 102.0f) {
 +                const float speedW = (contentW - 56.0f) / 3.0f;
@@ -3340,7 +4725,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              float chipY = contentY + 60.0f;
              float chipW = (contentW - 36.0f - 20.0f) / 5.0f;
              float chipH = 44.0f;
-@@ -1875,7 +2856,7 @@ private:
+@@ -1875,7 +3076,7 @@ private:
              if (px >= rBtnX && px <= rBtnX + rBtnW && py >= rBtnY && py <= rBtnY + 44.0f) {
                  SaveSettings();
                  SaveLanguage();
@@ -3349,7 +4734,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                  return;
              }
          } else if (m_menuTab == 2) { // Guardados
-@@ -1889,17 +2870,22 @@ private:
+@@ -1889,17 +3090,22 @@ private:
  
              if (py >= btnY && py <= btnY + btnH) {
                  if (px >= b1X && px <= b1X + btnW) {
@@ -3375,7 +4760,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              // Card 1: Touch Visibility & Opacity
              float c1H = 176.0f;
              float tvChipW = (contentW - 36.0f - 15.0f) / 2.0f;
-@@ -1915,7 +2901,7 @@ private:
+@@ -1915,7 +3121,7 @@ private:
                      return;
                  } else if (px >= tv2X && px <= tv2X + tvChipW) {
                      m_touchVisible = false;
@@ -3384,7 +4769,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                      return;
                  }
              }
-@@ -1948,15 +2934,18 @@ private:
+@@ -1948,74 +3154,30 @@ private:
              float trigX = x + contentW * 0.62f;
              float trigW = contentW * 0.38f - 18.0f;
  
@@ -3402,24 +4787,69 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
                      return;
                  } else if (px >= trigX && px <= trigX + trigW) {
 -                    Gamepad_SetSwapTriggers(!Gamepad_GetSwapTriggers());
+-                    return;
+-                }
+-            }
+-
+-            // Card 3: Macros & Edit & Reset
+-            float c3Y = c2Y + c2H + 12.0f;
+-            float mChipW = (contentW - 36.0f - 30.0f) / 4.0f;
+-            float mChipH = 40.0f;
+-            float mChipY = c3Y + 56.0f;
+-
+-            float m1X = x + 18.0f;
+-            float m2X = m1X + mChipW + 10.0f;
+-            float m3X = m2X + mChipW + 10.0f;
+-            float m4X = m3X + mChipW + 10.0f;
+-
+-            if (py >= mChipY && py <= mChipY + mChipH) {
+-                if (px >= m1X && px <= m1X + mChipW) {
+-                    m_macro1Enabled = !m_macro1Enabled;
+-                    SaveLayoutConfig();
+-                    return;
+-                } else if (px >= m2X && px <= m2X + mChipW) {
+-                    m_macro2Enabled = !m_macro2Enabled;
+-                    SaveLayoutConfig();
+-                    return;
+-                } else if (px >= m3X && px <= m3X + mChipW) {
+-                    m_macro3Enabled = !m_macro3Enabled;
+-                    SaveLayoutConfig();
+-                    return;
+-                } else if (px >= m4X && px <= m4X + mChipW) {
+-                    m_macro4Enabled = !m_macro4Enabled;
+-                    SaveLayoutConfig();
 +                    RequestPadPreset(2);
                      return;
                  }
              }
-@@ -2002,9 +2991,7 @@ private:
  
-             if (py >= actBtnY && py <= actBtnY + actBtnH) {
-                 if (px >= editBtnX && px <= editBtnX + editBtnW) {
+-            // Row 2: Edit mode & Reset buttons
+-            float actBtnY = mChipY + mChipH + 10.0f;
+-            float actBtnH = 42.0f;
+-            float editBtnW = (contentW - 36.0f - 15.0f) * 0.58f;
+-            float editBtnX = x + 18.0f;
+-            float rstBtnW = (contentW - 36.0f - 15.0f) * 0.42f;
+-            float rstBtnX = editBtnX + editBtnW + 15.0f;
+-
+-            if (py >= actBtnY && py <= actBtnY + actBtnH) {
+-                if (px >= editBtnX && px <= editBtnX + editBtnW) {
 -                    m_menuOpen = false;
 -                    m_editMode = true;
 -                    m_selectedButtonIndex = -1;
-+                    BeginLayoutEdit();
-                     return;
-                 } else if (px >= rstBtnX && px <= rstBtnX + rstBtnW) {
-                     InitDefaultButtons();
-@@ -2015,7 +3002,8 @@ private:
-                     return;
-                 }
+-                    return;
+-                } else if (px >= rstBtnX && px <= rstBtnX + rstBtnW) {
+-                    InitDefaultButtons();
+-                    m_normLeftStickPos = { 0.12f, 0.76f };
+-                    m_leftStickScale = 1.0f;
+-                    RecalculateButtonPositions();
+-                    SaveLayoutConfig();
+-                    return;
+-                }
++            const float c3Y=c2Y+c2H+12,bw=(contentW-51)*.5f,by=c3Y+64;
++            if(py>=by && py<=by+38) {
++                if(px>=x+18 && px<=x+18+bw)BeginLayoutEdit();
++                else if(px>=x+33+bw && px<=x+33+bw*2)m_menuTab=5;
++                return;
              }
 -        } else if (m_menuTab == 4) { // Online / Multijugador
 +        } else if (m_menuTab == 4) {
@@ -3427,7 +4857,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              HandleTabOnlineTouch(px, py, x, contentY, contentW);
          }
      }
-@@ -2030,92 +3018,96 @@ private:
+@@ -2030,92 +3192,111 @@ private:
              if (px >= c0X && px <= c0X + mChipW) {
                  m_onlineMode = 3;
                  LocalOnlineServer::SetMode(LocalOnlineServer::Mode::Community, "mh3sp.com");
@@ -3463,23 +4893,33 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 -            if (px >= b1X && px <= b1X + bw) {
 -                AdjustSelectedButtonScale(-0.10f);
 -                return;
++
 +    void HandleEditorDialogTouch(float px,float py) {
 +        const float w=std::min(600.0f,float(m_width)-48),x=(m_width-w)*.5f,y=(m_height-330)*.5f;
-+        if(m_editorComboSlot>=0) {
-+            const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR};
-+            const float bw=(w-78)/4;
-+            for(int i=0;i<8;++i) {
-+                const float bx=x+24+(i%4)*(bw+10),by=y+96+(i/4)*58;
-+                if(px>=bx && px<=bx+bw && py>=by && py<=by+46){m_editorComboMask^=bits[i];return;}
++        const float choiceW=(w-64)*.5f;
++        if(m_editorDeleteSlot>=0) {
++            if(py<y+266 || py>y+308)return;
++            if(px>=x+24 && px<=x+24+choiceW){m_editorDeleteSlot=-1;return;}
++            if(px<x+40+choiceW || px>x+w-24)return;
++            const int slot=m_editorDeleteSlot;
++            if(slot<5 && m_comboMasks[slot]) {
++                CheckpointLayout();m_comboMasks[slot]=0;ComboEnabled(slot)=false;
++                ApplyComboMasks();RecalculateButtonPositions();ResetInput();m_selectedButtonIndex=-1;
++                m_editorStatus="Combo removed. Undo restores it; Save & play keeps the change.";
              }
 -            // 2. [+ Tamaño]
 -            float b2X = barX + 20.0f + bw;
 -            if (px >= b2X && px <= b2X + bw) {
 -                AdjustSelectedButtonScale(+0.10f);
 -                return;
-+            if(!m_editorComboNew && px>=x+w-160 && px<=x+w-24 && py>=y+214 && py<=y+246) {
-+                CheckpointLayout();ComboEnabled(m_editorComboSlot)=false;m_editorComboSlot=-1;m_selectedButtonIndex=-1;
-+                m_editorStatus="Combo hidden. Add combo can reuse its slot.";return;
++            m_editorDeleteSlot=-1;m_editorComboSlot=-1;return;
++        }
++        if(m_editorComboSlot>=0) {
++            const uint16_t bits[]={MH3_CL_A,MH3_CL_B,MH3_CL_X,MH3_CL_Y,MH3_CL_L,MH3_CL_R,MH3_CL_ZL,MH3_CL_ZR};
++            const float bw=(w-78)/4;
++            for(int i=0;i<8;++i) {
++                const float bx=x+24+(i%4)*(bw+10),by=y+96+(i/4)*58;
++                if(px>=bx && px<=bx+bw && py>=by && py<=by+46){m_editorComboMask^=bits[i];return;}
              }
 -            // 3. [Restablecer]
 -            float b3X = barX + 30.0f + bw * 2.0f;
@@ -3489,27 +4929,36 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 -                m_leftStickScale = 1.0f;
 -                RecalculateButtonPositions();
 -                return;
++            if(!m_editorComboNew && py>=y+214 && py<=y+246) {
++                if(px>=x+24 && px<=x+w-180){m_editorComboVisible=!m_editorComboVisible;return;}
++                if(px>=x+w-160 && px<=x+w-24){RequestComboDelete(m_editorComboSlot);return;}
+             }
+-            // 4. [Guardar]
+-            float b4X = barX + 40.0f + bw * 3.0f;
+-            if (px >= b4X && px <= b4X + bw) {
+-                SaveLayoutConfig();
+-                m_editMode = false;
+-                m_selectedButtonIndex = -1;
 +        }
-+        const float bw=(w-64)*.5f;
 +        if(py<y+266 || py>y+308)return;
-+        if(px>=x+24 && px<=x+24+bw){m_editorComboSlot=-1;m_editorResetConfirm=false;return;}
-+        if(px<x+40+bw || px>x+w-24)return;
++        if(px>=x+24 && px<=x+24+choiceW){m_editorComboSlot=-1;m_editorResetConfirm=false;return;}
++        if(px<x+40+choiceW || px>x+w-24)return;
 +        if(m_editorResetConfirm) {
 +            CheckpointLayout();InitDefaultButtons();m_normLeftStickPos={.12f,.76f};m_leftStickScale=1;
 +            ApplyComboMasks();RecalculateButtonPositions();m_selectedButtonIndex=-1;m_editorResetConfirm=false;
 +        } else if(m_editorComboSlot>=0 && m_editorComboMask) {
 +            CheckpointLayout();const int slot=m_editorComboSlot;
-+            m_comboMasks[slot]=m_editorComboMask;ComboEnabled(slot)=true;ApplyComboMasks();
++            m_comboMasks[slot]=m_editorComboMask;ComboEnabled(slot)=m_editorComboVisible;ApplyComboMasks();
 +            for(int i=0;i<int(m_buttons.size());++i)if(m_buttons[i].id=="M"+std::to_string(slot+1)) {
-+                m_selectedButtonIndex=i;
-+                if(m_editorComboNew)m_buttons[i].normPos={.50f,.56f};
++                m_selectedButtonIndex=m_editorComboVisible?i:-1;
++                if(m_editorComboNew){m_buttons[i].normPos={.50f,.56f};m_buttons[i].scale=1;}
 +                break;
 +            }
-+            RecalculateButtonPositions();m_editorComboSlot=-1;m_editorStatus="Combo ready. Drag it into place, then Save & play.";
++            RecalculateButtonPositions();m_editorComboSlot=-1;m_editorStatus="Combo ready. Save & play keeps it; Cancel discards changes.";
 +        }
 +    }
 +    void HandleEditModeTouchDown(SDL_FingerID id, float px, float py) {
-+        if(m_editorComboSlot>=0 || m_editorResetConfirm){HandleEditorDialogTouch(px,py);return;}
++        if(m_editorComboSlot>=0 || m_editorResetConfirm || m_editorDeleteSlot>=0){HandleEditorDialogTouch(px,py);return;}
 +        if(m_editDragging && m_editFingerId!=id)return;
 +        const auto size=EditorPanelSize(),panel=EditorPanelPosition();
 +        const float x=panel.x,y=panel.y,w=size.x;
@@ -3518,19 +4967,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +                if(px>=x+w-46){m_editorCollapsed=!m_editorCollapsed;return;}
 +                m_editorPanelDragging=true;m_editDragging=true;m_editFingerId=id;
 +                m_editorDragOffset={px-x,py-y};return;
-             }
--            // 4. [Guardar]
--            float b4X = barX + 40.0f + bw * 3.0f;
--            if (px >= b4X && px <= b4X + bw) {
--                SaveLayoutConfig();
--                m_editMode = false;
--                m_selectedButtonIndex = -1;
++            }
 +            if(py>=y+78 && py<=y+118) {
-+                if(px<=x+142) {
++                const float actionW=(w-140)*.5f;
++                if((px>=x+14 && px<=x+58) || (px>=x+66 && px<=x+110)) {
 +                    if(m_selectedButtonIndex==-2 || m_selectedButtonIndex>=0) {
-+                        CheckpointLayout();AdjustSelectedButtonScale(px<x+78?-.10f:.10f);
++                        CheckpointLayout();AdjustSelectedButtonScale(px<x+62?-.10f:.10f);
 +                    } else m_editorStatus="Select a control before changing its size.";
-+                } else OpenEditorCombo(true);
++                } else if(px>=x+118 && px<=x+118+actionW)OpenEditorCombo(true);
++                else if(px>=x+126+actionW && px<=x+w-14)RequestComboDelete();
                  return;
              }
 -            // 5. [Cancelar]
@@ -3563,7 +5008,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +            if(py>=y+222 && py<=y+262) {
 +                if(px<x+w*.5f)CancelLayoutEdit();
 +                else if(SaveLayoutConfig()) {
-+                    m_editMode=false;m_selectedButtonIndex=-1;m_editorUndo.clear();m_editorOriginal.reset();ResetInput();
++                    m_editMode=false;m_editorFromLibrary=false;m_selectedButtonIndex=-1;m_editorUndo.clear();m_editorOriginal.reset();ResetInput();
 +                } else m_editorStatus="Could not save layout. Check available storage, then try again.";
 +            }
              return;
@@ -3591,7 +5036,32 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          }
      }
  
-@@ -2164,7 +3156,7 @@ private:
+@@ -2137,14 +3318,21 @@ private:
+     void ApplyResolutionScale(int idx) {
+         constexpr float scales[] = { 1.0f, 720.0f / 448.0f, 1080.0f / 448.0f, 1440.0f / 448.0f, 2160.0f / 448.0f, 0.0f };
+         idx = std::clamp(idx, 0, 5);
++#ifdef MH3_PC_TOUCH_UI
++        RowellTouch_SetResolutionScale(scales[idx]);
++#else
+         VISetFrameBufferScale(scales[idx]);
++#endif
+     }
+ 
+     void ApplyAspectRatio(int idx) {
+         idx = std::clamp(idx, 0, 2);
+-        if (idx == 0) aurora_set_native_target_aspect(2); // AURORA_NATIVE_TARGET_ASPECT_16_9
+-        else if (idx == 1) aurora_set_native_target_aspect(0); // AURORA_NATIVE_TARGET_FIT (4:3)
+-        else if (idx == 2) aurora_set_native_target_aspect(1); // AURORA_NATIVE_TARGET_FILL (Estirar)
++        const int nativeAspect=idx==0?2:idx==1?0:1;
++#ifdef MH3_PC_TOUCH_UI
++        RowellTouch_SetTargetAspect(nativeAspect);
++#else
++        aurora_set_native_target_aspect(nativeAspect);
++#endif
+ 
+         SetWidescreenSetting(idx != 1);
+ #if defined(__cpp_exceptions)
+@@ -2164,9 +3352,19 @@ private:
  
      void LoadSettings() {
          const char* user = std::getenv("MH3_USER_DIR");
@@ -3599,8 +5069,20 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +        std::string dir = (user && *user) ? user : "/storage/emulated/0/MH3_Rowell_Dev";
          std::string gfxPath = dir + "/MH3UI.graphics";
  
++#ifdef MH3_PC_TOUCH_UI
++        const auto settings=RowellTouch_ReadGraphicsSettings();
++        m_fullscreen=settings.fullscreen;
++        m_vsync=settings.vsync;
++        m_resolutionIndex=settings.resolution;
++        m_aspectIndex=settings.aspect;
++        m_fpsLimit=settings.fps;
++        m_showFpsHud=settings.showFps;
++        m_rendererIndex=m_startupRendererIndex=settings.renderer;
++#else
          std::ifstream in(gfxPath);
-@@ -2184,7 +3176,7 @@ private:
+         int msaa = 1, vsync = 1, resIdx = 0, fpsLimit = 60, aspect = 0, showFps = 1, fullscreen = 0;
+         if (in >> msaa >> vsync >> resIdx >> fpsLimit >> aspect >> showFps) {
+@@ -2184,11 +3382,12 @@ private:
          } else {
              m_vsync = true;
              m_resolutionIndex = 0; // 0: Original Wii by default!
@@ -3609,7 +5091,12 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              m_fpsLimit = 60;
              m_showFpsHud = true;
              m_fullscreen = false;
-@@ -2208,22 +3200,24 @@ private:
+         }
++#endif
+ 
+         ApplyResolutionScale(m_resolutionIndex);
+         if (m_fullscreen) {
+@@ -2208,35 +3407,41 @@ private:
              else if (code == "fr") m_langChoice = 2;
              else if (code == "de") m_langChoice = 3;
              else if (code == "it") m_langChoice = 4;
@@ -3639,7 +5126,17 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          std::string gfxPath = dir + "/MH3UI.graphics";
  
          std::ofstream out(gfxPath, std::ios::trunc);
-@@ -2236,7 +3230,7 @@ private:
+         if (out) {
+             out << "1 " << (m_vsync ? 1 : 0) << ' ' << m_resolutionIndex << ' '
+                 << m_fpsLimit << ' ' << m_aspectIndex << ' ' << (m_showFpsHud ? 1 : 0) << ' '
+-                << (m_fullscreen ? 1 : 0) << '\n';
++                << (m_fullscreen ? 1 : 0);
++#ifdef MH3_PC_TOUCH_UI
++            out << ' ' << m_rendererIndex;
++#endif
++            out << '\n';
+         }
+     }
  
      void SaveLanguage() {
          const char* user = std::getenv("MH3_USER_DIR");
@@ -3648,7 +5145,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          std::string langPath = dir + "/MH3UI.language";
  
          const char* codes[] = { "es", "en", "fr", "de", "it" };
-@@ -2246,31 +3240,36 @@ private:
+@@ -2246,38 +3451,45 @@ private:
          }
      }
  
@@ -3689,7 +5186,19 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          std::string cfgPath = dir + "/touch_layout.cfg";
  
          std::ifstream in(cfgPath);
-@@ -2287,12 +3286,20 @@ private:
+         if (!in) {
+-            InitDefaultButtons();
+-            m_normLeftStickPos = { 0.12f, 0.76f };
+-            m_leftStickScale = 1.0f;
++            // New profiles reserve slots only for visible defaults. Existing files
++            // keep all their saved/hidden definitions and original slot identities.
++            for(int i=0;i<5;++i)if(!ComboEnabled(i) && !ComboHasShortcut(i))m_comboMasks[i]=0;
++            InitDefaultButtons();ApplyComboMasks();
++            m_normLeftStickPos = { 0.12f, 0.76f };m_leftStickScale=1;
+             return;
+         }
+ 
+@@ -2287,12 +3499,20 @@ private:
              std::istringstream iss(line);
              std::string tag;
              if (!(iss >> tag)) continue;
@@ -3711,7 +5220,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
              else if (tag == "LEFT_STICK") {
                  iss >> m_normLeftStickPos.x >> m_normLeftStickPos.y >> m_leftStickScale;
              } else if (tag == "BTN") {
-@@ -2301,95 +3308,90 @@ private:
+@@ -2301,95 +3521,90 @@ private:
                  if (iss >> id >> nx >> ny >> sc) {
                      for (auto& btn : m_buttons) {
                          if (btn.id == id) {
@@ -3853,7 +5362,15 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          }
      }
  
-@@ -2407,7 +3409,7 @@ private:
+@@ -2399,6 +3614,7 @@ private:
+     int m_width = 0;
+     int m_height = 0;
+     float m_unit = 0.0f;
++    std::array<float,4> m_labelBox{};
+ 
+     // Fixed Left Stick
+     Vec2 m_normLeftStickPos{ 0.12f, 0.76f };
+@@ -2407,7 +3623,7 @@ private:
      Vec2 m_leftStickPos{ 0, 0 };
      float m_leftStickRadius = 0.0f;
      float m_leftStickKnobRadius = 0.0f;
@@ -3862,7 +5379,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      int16_t m_leftX = 0;
      int16_t m_leftY = 0;
  
-@@ -2418,7 +3420,7 @@ private:
+@@ -2418,7 +3634,7 @@ private:
      Vec2 m_rightLastPos{ 0, 0 };
      float m_rightStickRadius = 0.0f;
      float m_rightStickKnobRadius = 0.0f;
@@ -3871,7 +5388,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      int16_t m_rightX = 0;
      int16_t m_rightY = 0;
      std::atomic<float> m_cameraDeltaX{ 0.0f };
-@@ -2432,31 +3434,59 @@ private:
+@@ -2432,31 +3648,61 @@ private:
  
      // Settings Menu & Options State
      bool m_menuOpen = false;
@@ -3903,9 +5420,10 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
 +    int m_savePage=0,m_selectedSave=-1;
 +    std::vector<mh3_save_manager::SaveCopy> m_saveCopies;
 +#ifdef MH3_PC_TOUCH_UI
++    int m_rendererIndex=0,m_startupRendererIndex=0;
 +    bool m_keyboardEditorOpen=false;
 +    int m_keyPage=0,m_captureAction=-1,m_captureSlot=0;
-+    std::string m_keyStatus="F1/F2/F3 and Escape stay available for settings. Reset is always available with the mouse.";
++    std::string m_keyStatus="F2 opens settings, F3 changes solo speed, and Escape returns. Reset is always available with the mouse.";
 +#endif
 +    std::string m_lastBackupTime = "None yet";
      int m_onlineMode = 3;
@@ -3919,7 +5437,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      bool m_macro3Enabled = false;
      bool m_macro4Enabled = false;
 +    bool m_macro5Enabled = true;
-+    int m_comboEdit = 4;
++    bool m_editorFromLibrary=false,m_editorComboVisible=true;
++    int m_editorDeleteSlot=-1;
 +    std::array<uint16_t, 5> m_comboMasks{{MH3_CL_A|MH3_CL_X, MH3_CL_B|MH3_CL_Y,
 +        MH3_CL_L|MH3_CL_R, MH3_CL_A|MH3_CL_B, MH3_CL_R|MH3_CL_X|MH3_CL_A}};
      bool m_editMode = false;
@@ -3937,7 +5456,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
  
      // GL Resources
      GLuint m_shaderProgram = 0;
-@@ -2466,22 +3496,34 @@ private:
+@@ -2466,22 +3712,34 @@ private:
      GLuint m_vbo = 0;
      GLuint m_fontTex = 0;
  
@@ -3972,7 +5491,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
      SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
      g_touchSettingsEngine.Init();
-@@ -2492,44 +3534,83 @@ void TouchControls_Init(void) {
+@@ -2492,44 +3750,83 @@ void TouchControls_Init(void) {
      }
  }
  
@@ -4061,7 +5580,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
          break;
      case SDL_EVENT_FINGER_DOWN:
          g_touchSettingsEngine.HandleTouchDown(event->tfinger.fingerID, event->tfinger.x, event->tfinger.y);
-@@ -2538,13 +3619,22 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
+@@ -2538,13 +3835,22 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
          g_touchSettingsEngine.HandleTouchMove(event->tfinger.fingerID, event->tfinger.x, event->tfinger.y);
          break;
      case SDL_EVENT_FINGER_UP:
@@ -4085,7 +5604,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..e38efde1f9fbe48bf6003fc47fe9b789
      default:
          break;
      }
-@@ -2553,23 +3643,35 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
+@@ -2553,23 +3859,35 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
  void TouchControls_UpdateSample(uint16_t* buttons, int16_t* leftX, int16_t* leftY,
                                  int16_t* rightX, int16_t* rightY,
                                  uint8_t* triggerL, uint8_t* triggerR) {

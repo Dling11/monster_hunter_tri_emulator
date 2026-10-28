@@ -16,6 +16,8 @@ Windows uses a native **EXE**, not an Android APK or BlueStacks.
 4. Run **START_ROWELL.cmd**, or open **MH3_Rowell_Dev.exe** directly.
 5. Let preparation finish, then create a character or continue your Rowell save.
 
+Settings stay closed at startup. Press **F2** whenever you need them.
+
 If Windows reports a missing **MSVCP140** or **VCRUNTIME140** DLL, install the
 [Microsoft Visual C++ x64 runtime](https://aka.ms/vc14/vc_redist.x64.exe)
 from Microsoft. Docker and developer tools are not needed to play this package.
@@ -28,7 +30,9 @@ GitHub's **Code > Download ZIP** is the source download, not this playable ZIP.
 - **W/A/S/D:** move. **I/J/K/L:** camera.
 - **F / X / Space / E:** A / X / B / Y. **Shift:** R.
 - **Enter / Tab:** Wii + / -.
-- **F2:** app settings. **F1:** original PC settings.
+- **F2:** app settings. **Escape:** return to the game.
+- **Graphics > PC graphics renderer:** Vulkan (ANGLE) or OpenGL ES; restart to apply.
+- **System > Open data folder / Open app folder:** open the matching PC folders.
 - **Controls > Keyboard bindings:** remap gameplay inputs and combo shortcuts.
   Changes save automatically; Reset restores defaults.
 
@@ -42,3 +46,8 @@ files. They hold character saves and settings; the download supplies neither.
 The launcher uses MH3_Rowell_Dev beside its EXE and does not import another
 installation's saves automatically. To migrate progress, use the save tools
 described in the controls guide.
+
+Captured crashes are recorded in `MH3_Rowell_Dev/crash.txt`, up to 256 KiB
+with one `.previous` copy. Send both soon after a crash if requested. This
+retention applies only to app-managed crash logs, not console output captured
+by external tools; it does not change saves, settings or game data.

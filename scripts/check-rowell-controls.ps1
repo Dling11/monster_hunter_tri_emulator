@@ -16,8 +16,23 @@ $includes=@(('-I'+(Join-Path $repoRoot 'runtime\include')),('-I'+$repoRoot),
  ('-I'+(Join-Path $repoRoot 'aurora-main\include')),('-I'+(Join-Path $repoRoot 'third_party\angle\include')),
  ('-I'+(Join-Path $ToolchainRoot 'build\windows\_deps\sdl3_prebuilt-src\include')))
 $common=@('-std=c++20','-O1','-flto=thin','-fuse-ld=lld','-D_CRT_SECURE_NO_WARNINGS','-DNOMINMAX','-DWIN32_LEAN_AND_MEAN')
+$logs=Join-Path $out 'bounded-log-check.exe'
+$pacing=Join-Path $out 'frame-delta-check.exe'
+& $clang @common @includes (Join-Path $repoRoot 'tests\rowell\frame_delta_check.cpp') '-o' $pacing
+if($LASTEXITCODE -ne 0){throw 'Frame pacing checks failed to compile.'}
+& $pacing
+if($LASTEXITCODE -ne 0){throw 'Frame pacing checks failed.'}
+& $clang @common @includes (Join-Path $repoRoot 'tests\rowell\bounded_log_check.cpp') '-o' $logs
+if($LASTEXITCODE -ne 0){throw 'Bounded log checks failed to compile.'}
+& $logs (Join-Path $out ('log-user-'+[guid]::NewGuid().ToString('N')))
+if($LASTEXITCODE -ne 0){throw 'Bounded log checks failed.'}
 $sdl=Get-ChildItem -LiteralPath (Join-Path $ToolchainRoot 'build\windows\_deps\sdl3_prebuilt-src') -Filter SDL3.lib -Recurse -File | Select-Object -First 1 -ExpandProperty FullName
 Copy-Item -LiteralPath (Join-Path $ToolchainRoot 'build\windows\SDL3.dll') -Destination $out -Force
+$display=Join-Path $out 'pc-display-check.exe'
+& $clang @common @includes (Join-Path $repoRoot 'tests\rowell\pc_display_check.cpp') (Join-Path $repoRoot 'runtime\src\rowell_touch.cpp') $sdl '-lshell32' '-o' $display
+if($LASTEXITCODE -ne 0){throw 'PC display checks failed to compile.'}
+& $display (Join-Path $out ('display-user-'+[guid]::NewGuid().ToString('N')))
+if($LASTEXITCODE -ne 0){throw 'PC display checks failed.'}
 $pad=Join-Path $out 'gamepad-bindings-check.exe'
 & $clang @common @includes (Join-Path $repoRoot 'tests\rowell\gamepad_bindings_check.cpp') (Join-Path $repoRoot 'runtime\src\gamepad_bindings.cpp') $sdl '-o' $pad
 if($LASTEXITCODE -ne 0){throw 'Controller binding checks failed to compile.'}

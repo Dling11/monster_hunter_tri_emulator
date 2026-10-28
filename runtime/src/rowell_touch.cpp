@@ -1,9 +1,13 @@
 #include "rowell_touch.h"
 #include "touch_controls.h"
 #include "save_manager.h"
+#include "native_frame_packet.h"
+#include <aurora/aurora.h>
 #include "../../aurora-main/lib/window.hpp"
+#include "../../aurora-main/lib/gl/gl.hpp"
 #include <SDL3/SDL.h>
 #include <windows.h>
+#include <shellapi.h>
 #include <atomic>
 #include <cstdlib>
 #include <filesystem>
@@ -51,10 +55,48 @@ void RowellTouch_InitializeUserDir() {
 
 void RowellTouch_Attach(SDL_Window* window) {
     touchWindow=window;
-    SDL_SetWindowTitle(window,"MH Tri - Rowell | F2 Settings | F1 Original settings");
+    SDL_SetWindowTitle(window,"MH Tri - Rowell | F2 Settings");
     TouchControls_Init();
     SDL_ShowCursor();
     if (std::getenv("MH3_SHOW_TOUCH_SETTINGS")) TouchControls_SetMenuOpen(true);
+}
+
+namespace {
+std::filesystem::path ExecutableDirectory() {
+    wchar_t path[32768]{};
+    const auto count = GetModuleFileNameW(nullptr, path, 32768);
+    return count && count < 32768 ? std::filesystem::path(path).parent_path() : std::filesystem::current_path();
+}
+}
+
+RowellPcGraphics::Settings RowellTouch_ReadGraphicsSettings() {
+    return RowellPcGraphics::Read(UserDir(), ExecutableDirectory());
+}
+
+void RowellTouch_SetTargetAspect(int aspect) {
+    const auto selected = static_cast<AuroraNativeTargetAspect>(std::clamp(aspect, 0, 2));
+    // Menu events run on the producer. Aurora's ownership check must remain:
+    // resize/presentation state belongs to the render thread, including when
+    // packets are skipped. The existing ordered task queue handles startup too.
+    if (aurora::gl::on_render_thread())
+        aurora_set_native_target_aspect(selected);
+    else
+        QueueNativeGraphicsTask(NativeTaskOrder::BeforeDraws, [selected] { aurora_set_native_target_aspect(selected); });
+}
+
+extern "C" void VISetFrameBufferScale(float scale);
+void RowellTouch_SetResolutionScale(float scale) {
+    if (aurora::gl::on_render_thread())
+        VISetFrameBufferScale(scale);
+    else
+        QueueNativeGraphicsTask(NativeTaskOrder::BeforeDraws, [scale] { VISetFrameBufferScale(scale); });
+}
+
+void RowellTouch_OpenDataFolder() {
+    ShellExecuteW(nullptr, L"open", UserDir().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+}
+void RowellTouch_OpenAppFolder() {
+    ShellExecuteW(nullptr, L"open", ExecutableDirectory().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 bool RowellTouch_WaitForRestartParent(int& argc,char** argv) {

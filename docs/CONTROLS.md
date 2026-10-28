@@ -4,7 +4,9 @@
 
 The existing A/B/X/Y, L/R, ZL/ZR, D-pad, stick and A+X preset remain available.
 Combo 5 adds **R + X + A** by default. Select **Gear > Combos** to change any of
-five slots' component buttons and visibility. Changes save automatically.
+five saved combinations. The library shows their actual buttons (for example,
+**R + X + A**) with **Add combo**, **Edit** and **Delete**. Hidden combinations
+stay in the library and are never overwritten by Add.
 
 Touch contacts are tracked independently, including three-finger combinations,
 sliding and two contacts holding one button. A combo contributes all of its
@@ -18,11 +20,18 @@ visibility settings available.
 In 1.4-rowell.9, the editor uses a movable, collapsible panel.
 Drag its title to uncover controls. Select a control and use **- / +** to resize;
 **Undo** keeps the last 20 layout changes. **Add combo** opens a button picker
-using a hidden slot among the existing five. Select a combo for **Edit combo**
-or **Hide combo**. **Save & play** saves the layout; **Cancel** restores the
+using an unused slot among the existing five. The Combos library opens this same
+editor, so there is one editing flow. Select a custom combo for **Edit combo**
+or **Delete**; original Wii controls cannot be deleted. Edit includes a
+**Show touch button** option. Delete asks for Yes/No, warns about assigned
+controller/keyboard shortcuts, and supports Undo before saving.
+**Save & play** saves the layout and combo changes; **Cancel** restores the
 positions and combo settings from before this edit. Existing layouts still load.
-The menu and controls use neutral dark, gray and white colors; combo labels fit
-inside their buttons even at smaller sizes.
+The duplicate Combo 1-4 switches have been removed from Controls. Reset positions
+is available inside the editor with confirmation and Undo.
+Settings use faded blue panels, Inter Regular/Semibold and small outline icons.
+Gameplay button shapes keep their thin, neutral finish; labels fit inside their
+buttons even at smaller sizes. Fonts and icons share one 512 KiB texture.
 
 The touch buttons use the original Wii Classic **+** and **-** labels.
 Controller/weapon settings determine what each action does in the game.
@@ -109,7 +118,7 @@ selecting 60 FPS does not guarantee the device can render at 60 FPS.
 | F2 | Shared touch settings |
 | F3 | Cycle solo-play speed: 1x / 1.25x / 1.5x |
 | Escape | Close settings |
-| F1 | Original PC settings |
+| F1 | Available for a custom keyboard binding |
 
 Hold **Shift + X + F** for the R + X + A combination. WASD controls the character
 once you are in gameplay; a title screen or an open settings menu does not move
@@ -124,7 +133,7 @@ Changes save automatically in **MH3_Rowell_Dev/keyboard.cfg**, separately from
 character saves, backups and exports. Missing or invalid configuration falls
 back to defaults. **Reset** restores an action; **Reset all defaults** restores
 everything. Conflicting assignments show a message: clear the previous slot
-first. **Clear** unassigns a slot and **Escape** cancels capture. F1/F2/F3 and
+first. **Clear** unassigns a slot and **Escape** cancels capture. F2/F3 and
 Escape stay reserved for settings, speed and cancellation. The mouse can always
 operate this editor. This keyboard editor is absent from Android.
 

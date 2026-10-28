@@ -26,12 +26,12 @@ constexpr Action actions[ActionCount]={
 };
 bool Valid(SDL_Scancode key) {
  return key==SDL_SCANCODE_UNKNOWN || (key>0 && key<SDL_SCANCODE_COUNT && *SDL_GetScancodeName(key) &&
- key!=SDL_SCANCODE_ESCAPE && key!=SDL_SCANCODE_F1 && key!=SDL_SCANCODE_F2 && key!=SDL_SCANCODE_F3);
+ key!=SDL_SCANCODE_ESCAPE && key!=SDL_SCANCODE_F2 && key!=SDL_SCANCODE_F3);
 }
 std::string Conflict(const std::array<std::array<SDL_Scancode,Slots>,ActionCount>& bindings) {
  std::array<int,SDL_SCANCODE_COUNT> owner;owner.fill(-1);
  for(int action=0;action<ActionCount;++action)for(auto key:bindings[action])if(key!=SDL_SCANCODE_UNKNOWN) {
-  if(!Valid(key))return "Reserved or invalid key. F1/F2/F3 and Escape stay available for settings.";
+  if(!Valid(key))return "Reserved or invalid key. F2 opens settings, F3 changes speed, and Escape returns.";
   if(owner[key]>=0 && owner[key]!=action)return std::string("Key already used by ")+actions[owner[key]].label+". Clear that binding first.";
   owner[key]=action;
  }
@@ -75,7 +75,7 @@ std::string Store::Commit(const Bindings& proposed) {
 std::string Store::Assign(int action,int slot,SDL_Scancode key) {
  std::lock_guard lock(mutex_);
  if(action<0 || action>=ActionCount || slot<0 || slot>=Slots)return "Invalid binding.";
- if(!Valid(key))return "Reserved key: F1/F2/F3 and Escape are kept for settings. Choose another key.";
+ if(!Valid(key))return "Reserved key: F2, F3 and Escape remain available. Choose another key.";
  auto proposed=bindings_;proposed[action][slot]=key;return Commit(proposed);
 }
 std::string Store::Reset(int action) {

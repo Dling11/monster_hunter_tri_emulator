@@ -17,6 +17,10 @@ int main(int argc,char** argv)try {
  Check(loaded.Read(state.data(),int(state.size())).buttons==MH3_CL_A,"saved key was not loaded");
  Check(!loaded.Assign(2,0,SDL_SCANCODE_G).empty() && loaded.Get(2)[0]==SDL_SCANCODE_X,"conflict silently overwrote another action");
  Check(!loaded.Assign(0,0,SDL_SCANCODE_ESCAPE).empty(),"recovery key was remapped");
+ Check(!loaded.Assign(0,0,SDL_SCANCODE_F2).empty() && !loaded.Assign(0,0,SDL_SCANCODE_F3).empty(),"settings or speed shortcut was remapped");
+ Check(loaded.Assign(0,1,SDL_SCANCODE_F1).empty(),"retired legacy menu key is still reserved");
+ RowellKeys::Store f1Loaded(root/"keyboard.cfg");state.fill(false);state[SDL_SCANCODE_F1]=true;
+ Check(f1Loaded.Read(state.data(),int(state.size())).buttons==MH3_CL_A,"F1 custom binding was not retained");
  Check(loaded.Assign(27,0,SDL_SCANCODE_H).empty(),"combo binding rejected");state.fill(false);state[SDL_SCANCODE_H]=true;
  Check(loaded.Read(state.data(),int(state.size())).combos==16,"combo key did not select configured combo slot");
  Check(loaded.Reset(0).empty() && loaded.Get(0)[0]==SDL_SCANCODE_F,"single reset failed");

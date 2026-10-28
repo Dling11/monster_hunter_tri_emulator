@@ -15,6 +15,18 @@ jobs:
           persist-credentials: false
       - name: Check Android source bundle and documentation
         run: python3 .github/scripts/check_repository.py
+      - name: Check bounded native logs and emergency fault reporting
+        run: |
+          g++ -std=c++20 -O1 -Wall -Wextra -Werror -Iruntime/include tests/rowell/bounded_log_check.cpp -o "$RUNNER_TEMP/rowell-log-check"
+          "$RUNNER_TEMP/rowell-log-check" "$RUNNER_TEMP/rowell-native-logs"
+      - name: Check Android slow-host frame pacing
+        run: |
+          g++ -std=c++20 -O1 -Wall -Wextra -Werror -Iruntime/include tests/rowell/frame_delta_check.cpp -o "$RUNNER_TEMP/rowell-frame-check"
+          "$RUNNER_TEMP/rowell-frame-check"
+      - name: Check Android Java log rotation
+        run: |
+          javac --release 17 -d "$RUNNER_TEMP/rowell-log-java" android/extra/packaging/android/src/com/oceantri/mh3/RowellLogStore.java tests/rowell/RowellLogStoreCheck.java
+          java -cp "$RUNNER_TEMP/rowell-log-java" com.oceantri.mh3.RowellLogStoreCheck "$RUNNER_TEMP/rowell-java-logs"
   restore:
     runs-on: windows-latest
     steps:
@@ -24,7 +36,7 @@ jobs:
       - name: Parse PowerShell scripts
         shell: pwsh
         run: |
-          $paths=@('dev.ps1','rowell.ps1','scripts/android-source.ps1','scripts/package-phone.ps1','scripts/package-windows.ps1','scripts/test-android-bundle.ps1')
+          $paths=@('dev.ps1','rowell.ps1','scripts/android-source.ps1','scripts/package-phone.ps1','scripts/package-windows.ps1','scripts/test-android-bundle.ps1','scripts/check-audio-recovery.ps1')
           foreach($path in $paths) {
             $issues=$null
             [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $path),[ref]$null,[ref]$issues)

@@ -103,7 +103,7 @@ else {
     try {
         $env:MH3_USER_DIR=$userFolder
         $env:MH3_DISC_DIR=$preparedDisc
-        $env:MH3_SHOW_TOUCH_SETTINGS='1'
+        $env:MH3_SHOW_TOUCH_SETTINGS=$null
         $launch=@{FilePath=$exe;WorkingDirectory=$pcFolder;PassThru=$true}
         $process=Start-Process @launch
         Write-Host "Started Rowell Dev (PID $($process.Id)). F2: touch settings. Escape: return to the game."

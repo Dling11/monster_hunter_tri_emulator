@@ -14,7 +14,8 @@
 //                                    the pointer is not 4-aligned
 //   0x80097F7C ResDicAtOffset14      ResDic lookup r4 in the dictionary at
 //                                    offset +0x14 of *r3; panics when not
-//                                    4-aligned
+//                                    4-aligned; absent/out-of-range optional
+//                                    nodes return an empty resource
 //   0x80062978, 0x8005D210 StoreAlignedPtr  *r3 = r4, panics when r4 is not
 //                                    4-aligned; returns r3
 //   0x80041EA4 Vec3Copy              3 floats r4 -> r3 (through lfs/stfs);
@@ -29,6 +30,7 @@
 #include "g3d_native.h"
 #include "memory.h"
 #include "port_check.h"
+#include "resource_guard.h"
 #include "ppc_runtime.h"
 
 #include <cstdint>
@@ -96,15 +98,26 @@ uint32_t OffsetToPtr(uint32_t r, uint32_t offset) {
 }
 
 uint32_t DicAtOffset14(uint32_t r, uint32_t index) {
-    const uint32_t dic = OffsetToPtr(r, Read32(RefChecked(r) + 0x14));
+    if (!r) {
+        ResourceGuard::Missing("model reference", r, index);
+        return 0;
+    }
+    const uint32_t ref = Read32(r);
+    if (!ref) {
+        ResourceGuard::Missing("model reference", r, index);
+        return Aligned(0);
+    }
+
+    const uint32_t dic = OffsetToPtr(r, Read32(ref + 0x14));
 
     if (!dic)
         return Aligned(0);
 
-    const int32_t i = int32_t(index);
-
-    if (!(i >= 0 && i <= int32_t(Read32(dic + 4)) - 1))
-        Panic("idx is out of bounds", index);
+    const uint32_t count = Read32(dic + 4);
+    if (count > 0x7FFFFFFFu || index >= count) {
+        ResourceGuard::Missing("model node", ref, index, count);
+        return Aligned(0);
+    }
 
     const uint32_t offset = Read32(dic + (index + 1) * 16 + 0x14);
     return Aligned(offset ? dic + offset : 0);

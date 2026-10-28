@@ -48,6 +48,7 @@ extern "C" void MH3_IOSOpenAsync(CpuContext*);
 void RunSleepSelfTests(CpuContext*);
 void RunRsoOverlaySelfTests(CpuContext*);
 void RunGxPanicSelfTests(CpuContext*);
+void RunEquipmentSelfTests(CpuContext*);
 extern "C" void PPC_WriteSpr(uint32_t, uint32_t);
 extern "C" uint32_t PPC_ReadSpr(uint32_t);
 
@@ -132,6 +133,7 @@ void RunDeviceSelfTests(CpuContext* cpu) {
 
     RunVideoTimingSelfTests();
     RunControllerSelfTests(cpu);
+    RunEquipmentSelfTests(cpu);
     RunRsoOverlaySelfTests(cpu);
     {
         constexpr uint32_t start = 0x81700004, end = 0x81701008;

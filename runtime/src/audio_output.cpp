@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <mutex>
 #include <unistd.h>
 #include <vector>
 namespace {
@@ -103,7 +104,20 @@ namespace {
 SDL_AudioStream* pullStream = nullptr;
 std::thread nullSink;
 std::atomic<bool> nullSinkStop{false};
-constexpr uint32_t kChunkFrames = 384;  // 12 ms
+constexpr uint32_t kChunkFrames = 384; // 12 ms
+
+// Foreground recovery (ReopenIfStalled): frames SDL has pulled so far, the
+// fade-in still owed by a newly opened stream, and the app's lifecycle state.
+std::atomic<uint64_t> pulledFrames{0};
+std::atomic<uint32_t> fadeInFrames{0};
+constexpr uint32_t kFadeInFrames = 640; // 20 ms
+std::atomic<bool> foreground{true};
+std::atomic<bool> stallCheckRunning{false};
+std::atomic<bool> sdlPlayback{false};
+std::atomic<bool> stoppingPlayback{false};
+std::atomic<uint32_t> successfulReopens{0};
+std::mutex playbackLock;
+std::thread recoveryWorker;
 
 #ifdef MH3_DEVELOPMENT
 // MH3_CAPTURE=...,audio=FILE: the mixed output, raw s16le stereo at 32 kHz.
@@ -137,9 +151,36 @@ void SDLCALL Pull(void*, SDL_AudioStream* audio, int additional, int) {
     for (int frames = (additional + 3) / 4; frames > 0;) {
         const uint32_t n = uint32_t(std::min<int>(frames, int(kChunkFrames)));
         Render(buffer, n);
+
+        // Ramp a reopened stream up from silence: starting mid-waveform clicks.
+        if (uint32_t fade = fadeInFrames.load(std::memory_order_relaxed)) {
+            for (uint32_t i = 0; i < n && fade; ++i, --fade) {
+                const float gain = float(kFadeInFrames - fade) / float(kFadeInFrames);
+                buffer[i * 2] = int16_t(float(buffer[i * 2]) * gain);
+                buffer[i * 2 + 1] = int16_t(float(buffer[i * 2 + 1]) * gain);
+            }
+
+            fadeInFrames.store(fade, std::memory_order_relaxed);
+        }
+
         SDL_PutAudioStreamData(audio, buffer, int(n * 4));
+        pulledFrames.fetch_add(n, std::memory_order_relaxed);
         frames -= int(n);
     }
+}
+
+bool OpenPullStream() {
+    const SDL_AudioSpec spec{SDL_AUDIO_S16, 2, int(kSampleRate)};
+    pullStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, Pull, nullptr);
+
+    if (pullStream && SDL_ResumeAudioStreamDevice(pullStream))
+        return true;
+
+    if (pullStream)
+        SDL_DestroyAudioStream(pullStream);
+
+    pullStream = nullptr;
+    return false;
 }
 
 void RunNullSink() {
@@ -154,6 +195,64 @@ void RunNullSink() {
         next += period;
         std::this_thread::sleep_until(next);
     }
+}
+
+void StartNullSink() {
+    nullSinkStop.store(false);
+    nullSink = std::thread(RunNullSink);
+    std::fprintf(stderr, "MH3 audio: null sink at %u Hz\n", unsigned(kSampleRate));
+}
+
+// Android can take the playback device from a backgrounded app (another app
+// claiming the output). SDL's restart on resume then fails with
+// AAUDIO_ERROR_DISCONNECTED and never recovers: the stream stops pulling and
+// the game stays silent. If nothing was pulled shortly after returning to the
+// foreground, close the stream (releasing the dead device) and open a new one.
+void ReopenIfStalled(uint64_t pulledAtResume) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    {
+        std::lock_guard lock(playbackLock);
+        // Without a stream (an earlier reopen failed) the null sink is mixing: retry.
+        if (!stoppingPlayback.load() && foreground.load() && (!pullStream || pulledFrames.load() == pulledAtResume)) {
+            if (pullStream) {
+                SDL_DestroyAudioStream(pullStream);
+                pullStream = nullptr;
+            }
+
+            if (nullSink.joinable()) {
+                nullSinkStop.store(true);
+                nullSink.join();
+            }
+
+            fadeInFrames.store(kFadeInFrames);
+
+            if (!OpenPullStream()) {
+                std::fprintf(stderr, "MH3 audio: SDL playback lost (%s); mixing to a null sink\n", SDL_GetError());
+                StartNullSink();
+            } else
+                successfulReopens.fetch_add(1);
+        }
+    }
+    stallCheckRunning.store(false);
+}
+
+// SDL sends these from the thread that pumps Android lifecycle events, the
+// foreground one after its own (possibly failed) restart of the paused device.
+bool SDLCALL OnAppLifecycle(void*, SDL_Event* event) {
+    if (event->type == SDL_EVENT_WILL_ENTER_BACKGROUND) {
+        foreground.store(false);
+    } else if (event->type == SDL_EVENT_DID_ENTER_FOREGROUND) {
+        foreground.store(true);
+
+        std::lock_guard lock(playbackLock);
+        if (sdlPlayback.load() && !stoppingPlayback.load() && !stallCheckRunning.exchange(true)) {
+            if (recoveryWorker.joinable())
+                recoveryWorker.join();
+            recoveryWorker = std::thread(ReopenIfStalled, pulledFrames.load());
+        }
+    }
+
+    return true;
 }
 } // namespace
 
@@ -170,8 +269,11 @@ void NoteAudioThread() {
 }
 
 void StartAudioOutput() {
+    std::lock_guard lock(playbackLock);
     if (pullStream || nullSink.joinable())
         return;
+    stoppingPlayback.store(false);
+    foreground.store(true);
 
     bool null = false;
 #ifdef MH3_DEVELOPMENT
@@ -186,31 +288,34 @@ void StartAudioOutput() {
 #endif
 
         if (SDL_InitSubSystem(SDL_INIT_AUDIO)) {
-            const SDL_AudioSpec spec{SDL_AUDIO_S16, 2, int(kSampleRate)};
-            pullStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, Pull, nullptr);
-
-            if (pullStream && SDL_ResumeAudioStreamDevice(pullStream)) {
+            if (OpenPullStream()) {
+                sdlPlayback = true;
+                SDL_AddEventWatch(OnAppLifecycle, nullptr);
                 std::fprintf(stderr, "MH3 audio: SDL playback at %u Hz stereo (%s)\n", unsigned(kSampleRate), SDL_GetCurrentAudioDriver());
                 std::atexit(StopAudioOutput);
                 return;
             }
 
             std::fprintf(stderr, "MH3 audio: no SDL playback (%s); mixing to a null sink\n", SDL_GetError());
-
-            if (pullStream)
-                SDL_DestroyAudioStream(pullStream);
-
-            pullStream = nullptr;
         }
     }
 
-    nullSinkStop.store(false);
-    nullSink = std::thread(RunNullSink);
+    StartNullSink();
     std::atexit(StopAudioOutput);
-    std::fprintf(stderr, "MH3 audio: null sink at %u Hz\n", unsigned(kSampleRate));
 }
 
 void StopAudioOutput() {
+    stoppingPlayback.store(true);
+    sdlPlayback.store(false);
+    SDL_RemoveEventWatch(OnAppLifecycle, nullptr);
+    std::thread pending;
+    {
+        std::lock_guard lock(playbackLock);
+        pending = std::move(recoveryWorker);
+    }
+    if (pending.joinable())
+        pending.join();
+    std::lock_guard lock(playbackLock);
     if (pullStream) {
         SDL_DestroyAudioStream(pullStream);
         pullStream = nullptr;
@@ -220,6 +325,42 @@ void StopAudioOutput() {
         nullSinkStop.store(true);
         nullSink.join();
     }
+}
+
+// Explicit test mode only; the caller selects SDL's dummy driver in its own
+// process. Exercise the actual stream/recovery/shutdown code without speakers.
+void RunLifecycleChecks() {
+    StartAudioOutput();
+    const char* driver = SDL_GetCurrentAudioDriver();
+    if (!driver || std::string(driver) != "dummy" || !sdlPlayback.load())
+        MH3_THROW(std::runtime_error("Audio lifecycle checks require the SDL dummy driver"));
+    {
+        std::lock_guard lock(playbackLock);
+        if (!SDL_PauseAudioStreamDevice(pullStream))
+            MH3_THROW(std::runtime_error("Cannot pause the test audio stream"));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    const auto reopens = successfulReopens.load();
+    SDL_Event event{};
+    event.type = SDL_EVENT_DID_ENTER_FOREGROUND;
+    OnAppLifecycle(nullptr, &event);
+    for (int i = 0; i < 150 && stallCheckRunning.load(); ++i)
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    if (stallCheckRunning.load() || successfulReopens.load() != reopens + 1)
+        MH3_THROW(std::runtime_error("Paused audio stream did not recover"));
+    const auto pulled = pulledFrames.load();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    if (pulledFrames.load() <= pulled)
+        MH3_THROW(std::runtime_error("Recovered stream did not resume mixing"));
+    for (int i = 0; i < 10; ++i)
+        OnAppLifecycle(nullptr, &event);
+    StopAudioOutput();
+    const auto stoppedAt = successfulReopens.load();
+    std::this_thread::sleep_for(std::chrono::milliseconds(350));
+    if (successfulReopens.load() != stoppedAt || pullStream || nullSink.joinable() || recoveryWorker.joinable())
+        MH3_THROW(std::runtime_error("Audio recovery outlived shutdown"));
+    StopAudioOutput();
+    std::fprintf(stderr, "Audio lifecycle: stalled stream recovery and joined shutdown passed.\n");
 }
 
 } // namespace NativeAudio

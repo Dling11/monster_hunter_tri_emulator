@@ -2,15 +2,19 @@
 #include "fatal.h"
 #include "audio_dma.h"
 #include <array>
+#include <cstdlib>
 #include <iostream>
 #include <stdexcept>
 
 namespace NativeAudio {
 void RunNativeMixerSelfTests();
+void RunLifecycleChecks();
 }
 
 void RunAudioSelfTests(CpuContext*) {
     NativeAudio::RunNativeMixerSelfTests();
+    if (const char* test = std::getenv("MH3_AUDIO_RECOVERY_SELF_TEST"); test && test[0] == '1')
+        NativeAudio::RunLifecycleChecks();
     AudioDmaState timing;
     timing.enabled = true;
     timing.length = 384;

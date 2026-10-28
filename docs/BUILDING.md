@@ -35,7 +35,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\rowell.ps1 -Mode Run -RomP
 
 Output: `playtest/PC/MH3_Rowell_Dev.exe` with its DLLs. The launcher reads the
 existing image through prepared metadata, avoiding another RVZ copy. F2 opens
-shared settings; F1 opens the original PC settings.
+the shared settings menu. The duplicate F1 panel is retired. PC renderer selection
+is under Graphics and applies after restarting.
 
 To create the downloadable Windows package:
 
@@ -75,8 +76,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-android-bundl
 ```
 
 The source workflow checks bundle contents and clean/repeat restoration without
-a game image. Tests remain source code; their local output stays ignored.
+a game image. It also runs native and Java log-retention checks, including
+legacy oversized logs, rotation, fault reporting and save-file isolation.
+The Windows controls check includes the native log checks too.
+Tests remain source code; their local output stays ignored.
 See [Android bundle details](../android/README.md).
+
+After a Windows build, `scripts/check-audio-recovery.ps1` checks a forced audio
+stall and shutdown with SDL's dummy output and isolated user data. It does not
+use the phone or your normal saves. The built app's `--self-test` also includes
+the equipment-resource boundary checks.
 
 ## Publish a build
 

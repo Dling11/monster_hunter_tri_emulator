@@ -369,28 +369,18 @@ void InitializeGraphics(int argc, char** argv, bool loadNativeAssets = true) {
         int mh3UiVsync = 1;
         int mh3UiRenderResolution = 0;
 #if defined(_WIN32)
-        wchar_t mh3UiModulePath[32768]{};
-        const DWORD mh3UiPathLength = GetModuleFileNameW(nullptr, mh3UiModulePath, 32768);
-        if (mh3UiPathLength > 0 && mh3UiPathLength < 32768) {
-            const std::filesystem::path mh3UiExePath(std::wstring(mh3UiModulePath, mh3UiPathLength));
-            std::ifstream mh3UiGraphicsFile(mh3UiExePath.parent_path() / L"MH3UI.graphics");
-            if (mh3UiGraphicsFile >> mh3UiMsaaSamples >> mh3UiVsync) {
-                mh3UiGraphicsFile >> mh3UiRenderResolution;
-                int mh3UiSavedFpsLimit = 60;
-                mh3UiGraphicsFile >> mh3UiSavedFpsLimit;
-                mh3UiGraphicsFile >> mh3UiRenderer;
-                int mh3UiSavedFullscreen = 0; // MH3_FULLSCREEN_START
-                if (mh3UiGraphicsFile >> mh3UiSavedFullscreen)
-                    config.startFullscreen = mh3UiSavedFullscreen != 0;
-            }
-        }
+        const auto settings = RowellTouch_ReadGraphicsSettings();
+        mh3UiVsync = settings.vsync ? 1 : 0;
+        mh3UiRenderResolution = settings.resolution;
+        mh3UiRenderer = settings.renderer;
+        config.startFullscreen = settings.fullscreen;
 #endif
         mh3UiVsyncAtStartup = mh3UiVsync != 0;
         if (mh3UiMsaaSamples == 1 || mh3UiMsaaSamples == 4)
             config.msaa = static_cast<decltype(config.msaa)>(mh3UiMsaaSamples);
 
         static constexpr const char* mh3UiRenderScaleValues[] = {
-            "1.2053571", "1.6071429", "2.0089286", "2.4107143", "3.2142857", "4.8214286"
+            "1", "1.6071429", "2.4107143", "3.2142857", "4.8214286", "0"
         };
         const int mh3UiScaleIndex = std::clamp(mh3UiRenderResolution, 0, 5);
 #if defined(_WIN32)

@@ -165,7 +165,10 @@ void Skinning(uint32_t out, uint32_t flags, uint32_t mdl, uint32_t code, const s
             // 5 (anything else is an assert in the original).
             const uint32_t dst = Read16(code + 1);
             const uint32_t node = G3dNative::ResDicAtOffset14(mdl, Read16(code + 3));
-            G3dNative::MtxConcat(out + 0x30 * dst, node + 0xA0, work + 0x30 * dst);
+            if (node)
+                G3dNative::MtxConcat(out + 0x30 * dst, node + 0xA0, work + 0x30 * dst);
+            else
+                G3dNative::MtxCopy(out + 0x30 * dst, work + 0x30 * dst);
             code += 5;
         }
     }
@@ -315,6 +318,8 @@ void CalcWorld(CpuContext* ctx) {
 
         const uint32_t nodeIndex = a, parent = b;
         const uint32_t node = G3dNative::ResDicAtOffset14(mdl, nodeIndex);
+        if (!node)
+            continue; // No node pose exists; do not overwrite the root matrix with stale result data.
         MemoryInline::FlatWrite32(frame[kNode], node);
         const uint32_t id = node ? Read32(node + 0x10) : 0;
         MemoryInline::FlatWrite32(ids + 4 * count++, id);

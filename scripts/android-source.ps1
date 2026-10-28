@@ -72,7 +72,10 @@ if($Mode -eq 'Export') {
     Assert-Baseline
     $additional=@('docker/.dockerignore','docker/AndroidTools.Dockerfile','rowell-android.ps1',
         'runtime/include/touch_contacts.h','runtime/include/gamepad_bindings.h','runtime/src/gamepad_bindings.cpp','runtime/include/game_speed.h','scripts/rowell_android_build.py','scripts/rowell_android_package.py',
-        'packaging/android/src/com/oceantri/mh3/RowellRestartActivity.java')
+        'packaging/android/src/com/oceantri/mh3/RowellRestartActivity.java',
+        'runtime/include/rowell_ui_atlas.h','runtime/include/bounded_log.h','runtime/include/resource_guard.h','runtime/include/rowell_frame_delta.h','runtime/src/equipment_tests.cpp',
+        'packaging/android/src/com/oceantri/mh3/RowellLogStore.java',
+        'packaging/android/assets/licenses/Inter-OFL.txt')
     $untracked=@(& git -C $Destination ls-files --others --exclude-standard)
     if($LASTEXITCODE -ne 0) { throw 'Could not inspect additional Android source files.' }
     $unsupported=@($untracked | Where-Object { -not $_.StartsWith('generated/') -and $_ -notin $additional })

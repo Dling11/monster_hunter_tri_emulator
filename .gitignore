@@ -91,3 +91,8 @@ Thumbs.db
 /toolchain/**/bin/
 /toolchain/**/obj/
 *.pdb
+
+# Font notice bundled as an APK asset (distinct from private game Assets/).
+!/android/extra/packaging/android/assets/
+!/android/extra/packaging/android/assets/licenses/
+!/android/extra/packaging/android/assets/licenses/Inter-OFL.txt

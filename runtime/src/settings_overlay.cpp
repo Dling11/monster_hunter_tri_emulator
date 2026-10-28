@@ -1633,58 +1633,18 @@ void AttachWindow(SDL_Window* window) noexcept {
         g_hostWindow = static_cast<HWND>(SDL_GetPointerProperty(p, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
     }
 }
-void InitializeRuntimeSettings() noexcept {
-    g_showFps = RuntimeConfigFile::ShowFps(true);
-    LoadTheme(); LoadGraphicsSettings(); EnsureWindows();
-    if (g_hudWindow) {
-        if (g_showFps) {
-            ShowWindow(g_hudWindow, SW_SHOWNOACTIVATE); PositionHud();
-            SetWindowPos(g_hudWindow, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
-            InvalidateRect(g_hudWindow, nullptr, TRUE);
-        } else ShowWindow(g_hudWindow, SW_HIDE);
-    }
-}
-void HandleEvents(const AuroraEvent* events) noexcept {
-    if (!events) return;
-    for (const AuroraEvent* e = events; e->type != AURORA_NONE; ++e) {
-        if (e->type != AURORA_SDL_EVENT || e->sdl.type != SDL_EVENT_KEY_DOWN || e->sdl.key.repeat) continue;
-        const SDL_Keycode k = e->sdl.key.key;
-        if(TouchControls_IsModalOpen())continue;
-        if (k == SDLK_F1 || (k == SDLK_ESCAPE && g_panelVisible)) {
-            if (k == SDLK_F1) TouchControls_SetMenuOpen(false);
-            EnsureWindows(); SetVisible(!g_panelVisible);
-        }
-    }
-}
-void Pump() noexcept {
-    EnsureWindows();
-    DispatchWindowMessages(g_panelWindow);
-    DispatchWindowMessages(g_hudWindow);
-    const bool touchMenuOpen = TouchControls_IsMenuOpen();
-    if (touchMenuOpen && g_panelVisible) SetVisible(false);
-    if (g_showFps && g_hudWindow) {
-        if (g_panelVisible || touchMenuOpen) { if (IsWindowVisible(g_hudWindow)) ShowWindow(g_hudWindow, SW_HIDE); }
-        else { if (!IsWindowVisible(g_hudWindow)) ShowWindow(g_hudWindow, SW_SHOWNOACTIVATE); PositionHud(); }
-    } else if (g_hudWindow && IsWindowVisible(g_hudWindow)) ShowWindow(g_hudWindow, SW_HIDE);
-    // FPS real: fotogramas logicos del juego por segundo (los cuenta el frame pacer).
-    const auto now = std::chrono::steady_clock::now();
-    static uint64_t lastCount = MH3FrameRateControl::LogicalFrameCount();
-    static auto lastStamp = now;
-    const double elapsed = std::chrono::duration<double>(now - lastStamp).count();
-    if (elapsed >= 0.5) {
-        const uint64_t count = MH3FrameRateControl::LogicalFrameCount();
-        g_fps = double(count - lastCount) / elapsed;
-        lastCount = count; lastStamp = now;
-        if (g_showFps && g_hudWindow && !g_panelVisible && !touchMenuOpen) { PositionHud(); InvalidateRect(g_hudWindow, nullptr, TRUE); UpdateWindow(g_hudWindow); }
-        else if (g_panelVisible && g_panelWindow) InvalidateRect(g_panelWindow, nullptr, FALSE);
-    }
-    if (g_panelVisible) PositionPanel();
-}
-bool IsOpen() noexcept { return g_panelVisible; }
-void Draw() noexcept { if (g_panelWindow && g_panelVisible) InvalidateRect(g_panelWindow, nullptr, FALSE); }
+// The shared Rowell F2 menu is the only settings panel. Startup graphics
+// are read by graphics_host.cpp through RowellTouch_ReadGraphicsSettings.
+// Keep these integration entry points for the host event loop; they no longer
+// create a second window, consume F1, or overwrite the shared profile.
+void InitializeRuntimeSettings() noexcept {}
+void HandleEvents(const AuroraEvent*) noexcept {}
+void Pump() noexcept {}
+bool IsOpen() noexcept { return false; }
+void Draw() noexcept {}
 bool StartupScreenVisible() noexcept { return false; }
 void NotifyStrapInputAccepted() noexcept {}
-void AdvancePresentedFrame() noexcept { EnsureWindows(); }
+void AdvancePresentedFrame() noexcept {}
 void ReleaseControllers() noexcept {
     if (g_panelWindow) ShowWindow(g_panelWindow, SW_HIDE);
     if (g_hudWindow) ShowWindow(g_hudWindow, SW_HIDE);

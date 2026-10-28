@@ -22,6 +22,7 @@
 // boundary the translated functions had.
 #include "abi_bridge.h"
 #include "fatal.h"
+#include "resource_guard.h"
 #include "g3d_native.h"
 #include "guest_call.h"
 #include "memory.h"
@@ -665,7 +666,8 @@ struct ResultPort {
     }
 };
 
-// 0x8008DA1C: the node dictionary's entry `index` (0x800627B4, whose checks it keeps).
+// 0x8008DA1C: optional animation entry; absent/out-of-range nodes have no result.
+// Malformed alignment remains a fatal error.
 uint32_t NodeData(uint32_t data, uint32_t index) {
     const uint32_t offset = MemoryInline::FlatRead32(data + 0x10);
     const uint32_t dic = offset ? data + offset : 0;
@@ -676,10 +678,11 @@ uint32_t NodeData(uint32_t data, uint32_t index) {
     if (!dic)
         return 0;
 
-    const int32_t i = int32_t(index);
-
-    if (!(i >= 0 && i <= int32_t(MemoryInline::FlatRead32(dic + 4)) - 1))
-        Panic("idx is out of bounds", index);
+    const uint32_t count = MemoryInline::FlatRead32(dic + 4);
+    if (count > 0x7FFFFFFFu || index >= count) {
+        ResourceGuard::Missing("animation node", data, index, count);
+        return 0;
+    }
 
     const uint32_t entry = MemoryInline::FlatRead32(dic + (index + 1) * 16 + 0x14);
     return entry ? dic + entry : 0;
@@ -691,15 +694,27 @@ void GetAnmResult(CpuContext* ctx) {
     const uint32_t anm = GuestFlat::CachedAlias(ctx->gpr[3]), result = GuestFlat::CachedAlias(ctx->gpr[4]), index = ctx->gpr[5];
     const double frame = ctx->fpr[1].d;
 
+    if (!result) {
+        ResourceGuard::Missing("animation output", anm, index);
+        return;
+    }
+
     if (!std::isfinite(frame))
         Panic("NW4R:Floating Point Value Error frame", 0);
 
-    const uint32_t data = MemoryInline::FlatRead32(anm);
+    const uint32_t data = anm ? MemoryInline::FlatRead32(anm) : 0;
 
-    if (!data)
-        Panic("NW4R:Failed assertion IsValid()", anm);
+    if (!data) {
+        ResourceGuard::Missing("animation reference", anm, index);
+        MemoryInline::FlatWrite32(result, 0);
+        return;
+    }
 
     const uint32_t node = GuestFlat::CachedAlias(NodeData(data, index));
+    if (!node) {
+        MemoryInline::FlatWrite32(result, 0);
+        return;
+    }
 
     const uint32_t flags = MemoryInline::FlatRead32(node + 4);
     MemoryInline::FlatWrite32(result, flags & 0x1FFF);

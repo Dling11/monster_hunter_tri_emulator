@@ -56,7 +56,8 @@ jni_count=verify_jni()
 run(tools/'d8','--output',work,'--lib',jar,'--min-api','29',*sorted(classes.rglob('*.class')))
 run(tools/'aapt2','compile','--dir',pkg/'res','-o',work/'resources.zip')
 base=work/'base.apk'
-run(tools/'aapt2','link','-o',base,'-I',jar,'--manifest',pkg/'AndroidManifest.xml',work/'resources.zip','--auto-add-overlay')
+if not (pkg/'assets/licenses/Inter-OFL.txt').is_file():raise RuntimeError('The bundled Inter font license is missing.')
+run(tools/'aapt2','link','-o',base,'-I',jar,'--manifest',pkg/'AndroidManifest.xml',work/'resources.zip','--auto-add-overlay','-A',pkg/'assets')
 libdir=work/'native';libdir.mkdir(exist_ok=True)
 required=['libmain.so','libpng16.so','libSDL3.so']
 libs=[]

@@ -1,6 +1,6 @@
 #requires -Version 5.1
 [CmdletBinding()]
-param([string]$ApkPath,[string]$MetadataPath,[string]$OutputDirectory,[switch]$PhoneGameplayVerified)
+param([string]$ApkPath,[string]$MetadataPath,[string]$OutputDirectory,[switch]$PhoneGameplayVerified,[string]$PhoneVerificationScope)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 if(-not $ApkPath) {
@@ -69,7 +69,7 @@ Version and APK SHA256: VERSION.json
 Checksums for archive contents: SHA256SUMS.txt
 Source: https://github.com/Dling11/monster_hunter_tri_emulator
 
-Phone gameplay and performance still need testing on real devices.
+See VERSION.json for the recorded phone-test scope. Performance and device support vary.
 '@
 [IO.File]::WriteAllText((Join-Path $staging 'README.txt'),$readme.Replace('@APP_NAME@',$metadata.appName),$utf8)
 $release=[ordered]@{
@@ -80,7 +80,11 @@ $release=[ordered]@{
     sdlVersion=$metadata.sdlVersion;verifiedJniMethods=$metadata.verifiedJniMethods
     sourceRepository=$sourceRepository
     phoneGameplayVerified=[bool]$PhoneGameplayVerified
+    phoneVerificationScope=$PhoneVerificationScope
 }
+$sourceCommit=(& git -C $projectRoot rev-parse HEAD 2>$null)
+if($LASTEXITCODE -ne 0){throw 'Cannot identify the source commit for the package.'}
+$release.sourceCommit=$sourceCommit
 [IO.File]::WriteAllText((Join-Path $staging 'VERSION.json'),($release | ConvertTo-Json -Depth 5)+"`n",$utf8)
 $files=@(Get-ChildItem -LiteralPath $staging -File -Recurse | Sort-Object FullName)
 $sums=foreach($file in $files) {

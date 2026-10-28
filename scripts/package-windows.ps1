@@ -1,6 +1,6 @@
 #requires -Version 5.1
 [CmdletBinding()]
-param([string]$BuildDirectory,[string]$OutputDirectory,[string]$VersionName='1.4-rowell.9')
+param([string]$BuildDirectory,[string]$OutputDirectory,[string]$VersionName='1.4-rowell.12')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 if(-not $BuildDirectory){$BuildDirectory=Join-Path $projectRoot 'build/windows'}
@@ -41,7 +41,7 @@ setlocal
 cd /d "%~dp0"
 set "MH3_USER_DIR=%~dp0MH3_Rowell_Dev"
 set "MH3_DISC_DIR="
-set "MH3_SHOW_TOUCH_SETTINGS=1"
+set "MH3_SHOW_TOUCH_SETTINGS="
 start "" "%~dp0MH3_Rowell_Dev.exe"
 '@
 [IO.File]::WriteAllText((Join-Path $staging 'START_ROWELL.cmd'),$launcher.Replace("`r`n","`n").Replace("`n","`r`n")+"`r`n",[Text.Encoding]::ASCII)
@@ -55,7 +55,8 @@ Keep MH3_Rowell_Dev.exe and all DLLs together.
 Provide your own European/PAL Monster Hunter Tri RVZ/ISO/WIA (RMHP08).
 Put one image beside the EXE or select it at first launch. Allow preparation time.
 
-WASD: move. IJKL: camera. F2: settings. F1: original PC settings.
+WASD: move. IJKL: camera. F2: settings. Escape: return to the game.
+Graphics > PC graphics renderer: choose a backend, then save in Tri and restart.
 Controls > Keyboard bindings: remap inputs, save automatically, reset defaults.
 Read INSTALL.md for requirements, updates and save locations.
 
