@@ -7,12 +7,15 @@ general-purpose Wii emulator. Supply your own European/PAL **RMHP08** game image
 
 ## Downloads
 
-**MH Tri - Rowell · 1.4-rowell.12 pre-release**
+**Downloads temporarily paused while the next update is prepared.**
 
 | Platform | Version | Download |
 | --- | --- | --- |
-| Android phone | 1.4-rowell.12 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.12/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.12/MH3-Rowell-Dev-Android.zip) |
-| Windows PC | 1.4-rowell.12 | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.12/MH3-Rowell-Windows-x64.zip)** |
+| Android phone | 1.4-rowell.12 | Temporarily unavailable |
+| Windows PC | 1.4-rowell.12 | Temporarily unavailable |
+
+Existing installations continue to work. Source code, build instructions and
+credits remain available; Android and Windows release downloads will return later.
 
 Version 1.4-rowell.12 adds faded-blue settings, a unified combo editor, capped logs
 and selected upstream stability fixes for equipment resources, particle lighting,
@@ -30,11 +33,10 @@ If you download the ZIP, extract it first.
 **Windows:** extract the whole ZIP, then run **START_ROWELL.cmd**.
 
 [Android installation](docs/ANDROID_INSTALL.md) ·
-[Windows installation](docs/WINDOWS_INSTALL.md) ·
-[Release, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.12)
+[Windows installation](docs/WINDOWS_INSTALL.md)
 
 Supply your own PAL game image. GitHub's **Code > Download ZIP** downloads source
-code; use the links above to install the app.
+code; it does not include an Android APK or Windows application.
 
 ## Features
 
@@ -54,7 +56,8 @@ code; use the links above to install the app.
 
 ## Get started
 
-Choose your platform in [Downloads](#downloads) above.
+Binary downloads are currently paused. The following instructions remain available
+for existing downloads and source builds.
 
 | Platform | Requirements | Install |
 | --- | --- | --- |
