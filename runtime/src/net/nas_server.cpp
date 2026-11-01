@@ -1,0 +1,482 @@
+// NAS local de la Ciudad offline (nas_server.h): responde lo que el juego pregunta
+// antes de llegar al servidor de Capcom, como hacia online-local-nas.py:
+//   POST /ac  acctcreate, login y svcloc (el NAS de Nintendo, DWC)
+//   POST /pr  filtro de palabras: ninguna es mala
+//   UDP 27900 chequeo de disponibilidad de GameSpy: disponible
+#include "nas_server.h"
+
+#include <algorithm>
+#include <atomic>
+#include <cctype>
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <random>
+#include <string>
+#include <thread>
+#include <utility>
+#include <vector>
+
+#if defined(_WIN32)
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  ifndef NOMINMAX
+#    define NOMINMAX
+#  endif
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+   using nas_socket = SOCKET;
+   static constexpr nas_socket NAS_INVALID_SOCKET = INVALID_SOCKET;
+   static void nas_close_socket(nas_socket s) { if (s != NAS_INVALID_SOCKET) closesocket(s); }
+   static inline void FormatNow(char* buf, size_t sz) {
+       const time_t t = time(nullptr);
+       tm local{};
+       localtime_s(&local, &t);
+       std::strftime(buf, sz, "%Y%m%d%H%M%S", &local);
+   }
+#else
+#  include <arpa/inet.h>
+#  include <netinet/in.h>
+#  include <sys/socket.h>
+#  include <sys/time.h>
+#  include <unistd.h>
+   using nas_socket = int;
+   static constexpr nas_socket NAS_INVALID_SOCKET = -1;
+   static void nas_close_socket(nas_socket s) { if (s >= 0) close(s); }
+   static inline void FormatNow(char* buf, size_t sz) {
+       const time_t t = time(nullptr);
+       tm local{};
+       localtime_r(&t, &local);
+       std::strftime(buf, sz, "%Y%m%d%H%M%S", &local);
+   }
+#endif
+
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
+
+namespace {
+using Fields = std::vector<std::pair<std::string, std::string>>;
+
+constexpr char kAlphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const std::string kAlnum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const std::string kUpper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+std::atomic<bool> g_nasRunning{false};
+nas_socket g_tcpListener = NAS_INVALID_SOCKET;
+nas_socket g_udpListener = NAS_INVALID_SOCKET;
+
+uint32_t RandomInt(uint32_t low, uint32_t high) {
+    static thread_local std::mt19937 rng{std::random_device{}()};
+    return std::uniform_int_distribution<uint32_t>(low, high)(rng);
+}
+
+std::string RandomText(const std::string& alphabet, size_t length) {
+    std::string out;
+    for (size_t i = 0; i < length; ++i)
+        out += alphabet[RandomInt(0, uint32_t(alphabet.size() - 1))];
+    return out;
+}
+
+std::string B64Encode(const std::string& in) {
+    std::string out;
+    size_t i = 0;
+
+    for (; i + 2 < in.size(); i += 3) {
+        const uint32_t v = (uint32_t(uint8_t(in[i])) << 16) | (uint32_t(uint8_t(in[i + 1])) << 8) | uint8_t(in[i + 2]);
+        out += kAlphabet[v >> 18];
+        out += kAlphabet[(v >> 12) & 63];
+        out += kAlphabet[(v >> 6) & 63];
+        out += kAlphabet[v & 63];
+    }
+
+    if (i + 1 == in.size()) {
+        const uint32_t v = uint32_t(uint8_t(in[i])) << 16;
+        out += kAlphabet[v >> 18];
+        out += kAlphabet[(v >> 12) & 63];
+        out += "==";
+    } else if (i + 2 == in.size()) {
+        const uint32_t v = (uint32_t(uint8_t(in[i])) << 16) | (uint32_t(uint8_t(in[i + 1])) << 8);
+        out += kAlphabet[v >> 18];
+        out += kAlphabet[(v >> 12) & 63];
+        out += kAlphabet[(v >> 6) & 63];
+        out += '=';
+    }
+
+    return out;
+}
+
+int B64Value(char c) {
+    const char* p = c ? std::strchr(kAlphabet, c) : nullptr;
+    return p ? int(p - kAlphabet) : -1;
+}
+
+bool B64Decode(const std::string& in, std::string& out) {
+    out.clear();
+    uint32_t acc = 0;
+    int bits = 0;
+    size_t data = 0, pad = 0;
+
+    for (const char c : in) {
+        if (c == '=') {
+            ++pad;
+            continue;
+        }
+
+        const int v = B64Value(c);
+        if (v < 0)
+            continue;
+
+        ++data;
+        acc = (acc << 6) | uint32_t(v);
+        bits += 6;
+
+        if (bits >= 8) {
+            bits -= 8;
+            out += char((acc >> bits) & 0xFF);
+        }
+    }
+
+    const size_t rem = data % 4;
+    return rem != 1 && (rem == 0 || pad >= 4 - rem);
+}
+
+int Hex(char c) {
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F')
+        return c - 'A' + 10;
+    return -1;
+}
+
+std::string UrlDecode(const std::string& in) {
+    std::string out;
+    for (size_t i = 0; i < in.size(); ++i) {
+        if (in[i] == '+') {
+            out += ' ';
+        } else if (in[i] == '%' && i + 2 < in.size() && Hex(in[i + 1]) >= 0 && Hex(in[i + 2]) >= 0) {
+            out += char(Hex(in[i + 1]) * 16 + Hex(in[i + 2]));
+            i += 2;
+        } else {
+            out += in[i];
+        }
+    }
+    return out;
+}
+
+void Set(Fields& fields, const std::string& key, const std::string& value) {
+    for (auto& field : fields)
+        if (field.first == key) {
+            field.second = value;
+            return;
+        }
+    fields.emplace_back(key, value);
+}
+
+std::string Get(const Fields& fields, const std::string& key) {
+    for (const auto& field : fields)
+        if (field.first == key)
+            return field.second;
+    return {};
+}
+
+Fields Decode(const std::string& query) {
+    Fields fields;
+    size_t start = 0;
+
+    while (start <= query.size()) {
+        size_t end = query.find('&', start);
+        if (end == std::string::npos)
+            end = query.size();
+
+        const std::string pair = query.substr(start, end - start);
+        start = end + 1;
+
+        if (pair.empty())
+            continue;
+
+        const size_t eq = pair.find('=');
+        const std::string key = UrlDecode(pair.substr(0, eq));
+        const std::string value = eq == std::string::npos ? std::string() : UrlDecode(pair.substr(eq + 1));
+        std::string text = value;
+
+        for (char& c : text) {
+            if (c == '*')
+                c = '=';
+            else if (c == '.' || c == '>')
+                c = '+';
+            else if (c == '-' || c == '?')
+                c = '/';
+        }
+
+        std::string decoded;
+        Set(fields, key, B64Decode(text, decoded) ? decoded : value);
+    }
+
+    return fields;
+}
+
+std::string Encode(const Fields& fields) {
+    std::string out;
+    for (size_t i = 0; i < fields.size(); ++i) {
+        std::string value = B64Encode(fields[i].second);
+        for (char& c : value)
+            if (c == '=')
+                c = '*';
+
+        if (i)
+            out += '&';
+        out += fields[i].first + "=" + value;
+    }
+    return out + "\r\n";
+}
+
+std::string Now() {
+    char text[32];
+    FormatNow(text, sizeof(text));
+    return text;
+}
+
+std::string Token() {
+    return "NDS" + RandomText(kAlnum, 96);
+}
+
+bool BuildReply(const std::string& path, const Fields& fields, Fields& reply) {
+    if (path == "/ac") {
+        std::string action = Get(fields, "action");
+        std::transform(action.begin(), action.end(), action.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+        std::fprintf(stderr, "MH3 NAS /ac action=%s\n", action.c_str());
+        Set(reply, "retry", "0");
+
+        if (action == "acctcreate") {
+            Set(reply, "returncd", "002");
+            Set(reply, "userid", std::to_string(RandomInt(100000000, 999999999)));
+        } else if (action == "login") {
+            Set(reply, "returncd", "001");
+            Set(reply, "locator", "gamespy.com");
+            Set(reply, "challenge", RandomText(kUpper, 8));
+            Set(reply, "token", Token());
+        } else if (action == "svcloc") {
+            Set(reply, "returncd", "007");
+            Set(reply, "statusdata", "Y");
+            Set(reply, "svchost", "n/a");
+            Set(reply, "servicetoken", Token());
+        } else {
+            Set(reply, "returncd", "109");
+        }
+
+        Set(reply, "datetime", Now());
+        return true;
+    }
+
+    if (path == "/pr") {
+        const std::string words = Get(fields, "words");
+        const size_t count = 1 + size_t(std::count(words.begin(), words.end(), '\t'));
+        const std::string zeros(count, '0');
+        Set(reply, "prwords", zeros);
+        Set(reply, "returncd", "000");
+        Set(reply, "datetime", Now());
+
+        for (const char region : std::string("ACEJKP"))
+            Set(reply, std::string("prwords") + region, zeros);
+
+        return true;
+    }
+
+    return false;
+}
+
+void Send(nas_socket s, const std::string& status, const std::string& headers, const std::string& body) {
+    const std::string out = "HTTP/1.0 " + status + "\r\n" + headers + "Content-Length: " + std::to_string(body.size()) + "\r\nConnection: close\r\n\r\n" + body;
+    size_t sent = 0;
+
+    while (sent < out.size()) {
+#if defined(_WIN32)
+        const int n = ::send(s, out.data() + sent, int(out.size() - sent), 0);
+#else
+        const int n = ::send(s, out.data() + sent, out.size() - sent, MSG_NOSIGNAL);
+#endif
+        if (n <= 0)
+            break;
+        sent += size_t(n);
+    }
+}
+
+void Serve(nas_socket s) {
+#if defined(_WIN32)
+    DWORD timeout = 5000;
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&timeout), sizeof(timeout));
+#else
+    struct timeval timeout{};
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+#endif
+    std::string data;
+    char buffer[4096];
+    size_t headerEnd = std::string::npos;
+
+    while (headerEnd == std::string::npos) {
+        const int n = ::recv(s, buffer, sizeof(buffer), 0);
+        if (n <= 0 || data.size() > 65536) {
+            nas_close_socket(s);
+            return;
+        }
+        data.append(buffer, size_t(n));
+        headerEnd = data.find("\r\n\r\n");
+    }
+
+    const std::string head = data.substr(0, headerEnd);
+    std::string body = data.substr(headerEnd + 4);
+    const size_t lineEnd = head.find("\r\n");
+    const std::string line = head.substr(0, lineEnd == std::string::npos ? head.size() : lineEnd);
+    const size_t a = line.find(' ');
+    const size_t b = a == std::string::npos ? a : line.find(' ', a + 1);
+
+    if (a == std::string::npos || b == std::string::npos) {
+        nas_close_socket(s);
+        return;
+    }
+
+    const std::string method = line.substr(0, a), path = line.substr(a + 1, b - a - 1);
+    std::string lower = head;
+    std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return char(std::tolower(c)); });
+    const size_t pos = lower.find("content-length:");
+    size_t length = pos == std::string::npos ? 0 : size_t(std::strtoul(head.c_str() + pos + 15, nullptr, 10));
+    length = std::min<size_t>(length, 1u << 20);
+
+    while (body.size() < length) {
+        const int n = ::recv(s, buffer, sizeof(buffer), 0);
+        if (n <= 0)
+            break;
+        body.append(buffer, size_t(n));
+    }
+
+    if (method == "GET") {
+        Send(s, "200 OK", "Content-Type: text/html\r\nX-Organization: Nintendo\r\n", "ok");
+    } else if (method == "POST") {
+        Fields reply;
+        if (BuildReply(path, Decode(body.substr(0, length)), reply))
+            Send(s, "200 OK", "Content-Type: text/plain\r\nNODE: wifiappe1\r\n", Encode(reply));
+        else
+            Send(s, "404 Not Found", "", "");
+    } else {
+        Send(s, "501 Not Implemented", "", "");
+    }
+
+    nas_close_socket(s);
+}
+
+void AcceptLoop(nas_socket listener) {
+    while (g_nasRunning.load()) {
+        const nas_socket client = ::accept(listener, nullptr, nullptr);
+        if (client == NAS_INVALID_SOCKET) {
+            if (!g_nasRunning.load())
+                break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            continue;
+        }
+        std::thread(Serve, client).detach();
+    }
+}
+
+void AvailableLoop(nas_socket udp) {
+    char buffer[512];
+
+    while (g_nasRunning.load()) {
+        sockaddr_in from{};
+#if defined(_WIN32)
+        int fromLength = sizeof(from);
+#else
+        socklen_t fromLength = sizeof(from);
+#endif
+        const int n = ::recvfrom(udp, buffer, sizeof(buffer), 0, reinterpret_cast<sockaddr*>(&from), &fromLength);
+        if (n < 0) {
+            if (!g_nasRunning.load())
+                break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            continue;
+        }
+
+        // 0x09, cuatro ceros y el nombre del juego: el backend esta disponible.
+        if (n >= 1 && buffer[0] == 0x09) {
+            static const char reply[] = {char(0xFE), char(0xFD), 0x09, 0, 0, 0, 0};
+            ::sendto(udp, reply, sizeof(reply), 0, reinterpret_cast<const sockaddr*>(&from), fromLength);
+        }
+    }
+}
+
+nas_socket Bind(int type, uint16_t port) {
+    const nas_socket s = ::socket(AF_INET, type, 0);
+    if (s == NAS_INVALID_SOCKET)
+        return s;
+
+    int yes = 1;
+#if defined(_WIN32)
+    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&yes), sizeof(yes));
+#else
+    setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+#endif
+
+    sockaddr_in address{};
+    address.sin_family = AF_INET;
+    address.sin_port = htons(port);
+    address.sin_addr.s_addr = htonl(INADDR_ANY); // Bind to 0.0.0.0 for LAN/ZeroTier access
+
+    if (::bind(s, reinterpret_cast<const sockaddr*>(&address), sizeof(address)) != 0 || (type == SOCK_STREAM && ::listen(s, 16) != 0)) {
+        nas_close_socket(s);
+        return NAS_INVALID_SOCKET;
+    }
+
+    return s;
+}
+} // namespace
+
+namespace NasServer {
+bool Start(uint16_t httpPort) {
+    if (g_nasRunning.load())
+        return true;
+
+    g_nasRunning.store(true);
+    g_tcpListener = Bind(SOCK_STREAM, httpPort);
+    if (g_tcpListener == NAS_INVALID_SOCKET) {
+        g_nasRunning.store(false);
+        return false;
+    }
+
+    std::thread(AcceptLoop, g_tcpListener).detach();
+    g_udpListener = Bind(SOCK_DGRAM, 27900);
+
+    if (g_udpListener != NAS_INVALID_SOCKET)
+        std::thread(AvailableLoop, g_udpListener).detach();
+    else
+        std::fprintf(stderr, "MH3 NAS: no pude abrir UDP 27900 (otro programa lo usa)\n");
+
+    std::fprintf(stderr, "MH3 NAS: escuchando en 0.0.0.0:%u (HTTP) y 0.0.0.0:27900 (UDP)\n", unsigned(httpPort));
+    return true;
+}
+
+void Stop() {
+    if (!g_nasRunning.exchange(false))
+        return;
+
+    if (g_tcpListener != NAS_INVALID_SOCKET) {
+        nas_close_socket(g_tcpListener);
+        g_tcpListener = NAS_INVALID_SOCKET;
+    }
+    if (g_udpListener != NAS_INVALID_SOCKET) {
+        nas_close_socket(g_udpListener);
+        g_udpListener = NAS_INVALID_SOCKET;
+    }
+    std::fprintf(stderr, "MH3 NAS detenido.\n");
+}
+
+bool IsRunning() {
+    return g_nasRunning.load();
+}
+} // namespace NasServer
