@@ -11,8 +11,11 @@ general-purpose Wii emulator. Supply your own European/PAL **RMHP08** game image
 
 | Platform | Version | Download |
 | --- | --- | --- |
-| Android phone | 1.4-rowell.13 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3-Rowell-Dev-Android.zip) |
+| Android 64-bit | 1.4-rowell.13 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3-Rowell-Dev-Android.zip) |
 | Windows PC | 1.4-rowell.13 | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3-Rowell-Windows-x64.zip)** |
+| Android 32-bit · Experimental | MH3 - Low Spec | **Downloads temporarily unavailable** · [Source code](https://github.com/Dling11/monster_hunter_tri_emulator/tree/low-spec) |
+
+Low Spec is a separate ARMv7 app with its own `MH3_Low_Spec` data folder. It requires Android 10+, OpenGL ES 3.0 and 32-bit app support. Its 30 FPS/lower-resolution defaults are experimental; physical-phone performance is unverified. The character-selection preview head-rendering issue remains under investigation.
 
 Version 1.4-rowell.13 creates imports, exports and saves folders automatically.
 It includes faded-blue settings, a unified combo editor, capped logs
