@@ -13,7 +13,7 @@
     "scripts",
     "toolchain"
   ],
-  "patchSha256": "e4460176a2c6b9d17af94b803343c23747f483306b2e80aa4505945b682e36a0",
+  "patchSha256": "a55b5b463c58675825bd3ab5d6a2135edd826543da2c0505900f7aa7106605ad",
   "trackedFiles": [
     {
       "path": ".gitignore",
@@ -25,7 +25,7 @@
     },
     {
       "path": "packaging/android/AndroidManifest.xml",
-      "sha256Lf": "41cafc3ee452955157f34eeb68b85b25076a903b3fc738f2325eb06c20d00db5"
+      "sha256Lf": "6f6248e6b8bde317372145acbc69f9c8d13e7345b4cca7a25b58ed155dd15314"
     },
     {
       "path": "packaging/android/res/values/strings.xml",
@@ -120,6 +120,10 @@
       "sha256Lf": "6750e1c9e5730bee65d72828c5d78f8bb3003b606f286f110af31e0eb0a1e70c"
     },
     {
+      "path": "runtime/src/net/net_host_posix.cpp",
+      "sha256Lf": "0606e52a3308f9282b88dac31bf1a081c355ccb70006b86f6684e61053d1a005"
+    },
+    {
       "path": "runtime/src/nw4r_accessors.cpp",
       "sha256Lf": "41c941ad724421b94c7e9be3db95c4fcf65d1d6804b8b3225da17553436161e1"
     },
@@ -160,6 +164,10 @@
     {
       "path": "rowell-android.ps1",
       "sha256": "bf2863f0f14e310862592ad45e5e594c85e87d847b685e5a9aabf22eb3754edb"
+    },
+    {
+      "path": "runtime/include/background_value.h",
+      "sha256": "bf474151ef8b4d7a72facfb02dfbcb79716d80b15a6aa6948433e8bc04a4fa85"
     },
     {
       "path": "runtime/include/bounded_log.h",

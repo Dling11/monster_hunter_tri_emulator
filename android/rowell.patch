@@ -28,44 +28,6 @@ index 1f2a88895e0793de983b1309a20e8a290aa4e783..faa306799ec1ad46b34e42b74e9fcbf1
  
    std::error_code ec;
  
-diff --git a/packaging/android/AndroidManifest.xml b/packaging/android/AndroidManifest.xml
-index 940453d42908a79e9e348b531648235292a11442..e911b8d31f1a04be04e6dabee522ee7c08c55704 100644
---- a/packaging/android/AndroidManifest.xml
-+++ b/packaging/android/AndroidManifest.xml
-@@ -1,8 +1,8 @@
- <?xml version="1.0" encoding="utf-8"?>
- <manifest xmlns:android="http://schemas.android.com/apk/res/android"
--    package="com.oceantri.mh3"
--    android:versionCode="4"
--    android:versionName="1.4">
-+    package="com.rowell.mh3dev"
-+    android:versionCode="10013"
-+    android:versionName="1.4-rowell.13">
- 
-     <uses-sdk
-         android:minSdkVersion="29"
-@@ -30,7 +30,8 @@
-         <activity
-             android:name="com.oceantri.mh3.OceanTriActivity"
-             android:label="@string/app_name"
--            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation"
-+            android:launchMode="singleTask"
-+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density"
-             android:screenOrientation="sensorLandscape"
-             android:exported="true">
-             <intent-filter>
-@@ -38,5 +39,11 @@
-                 <category android:name="android.intent.category.LAUNCHER" />
-             </intent-filter>
-         </activity>
-+        <activity
-+            android:name="com.oceantri.mh3.RowellRestartActivity"
-+            android:process=":restart"
-+            android:exported="false"
-+            android:excludeFromRecents="true"
-+            android:theme="@android:style/Theme.NoDisplay" />
-     </application>
- </manifest>
 diff --git a/packaging/android/res/values/strings.xml b/packaging/android/res/values/strings.xml
 index 6fd8e01debf27504aba142b74dc5d21ec8f9fee4..5aaa05c58948cbb60ea8b601c48e4d4d0b5ed5e9 100644
 --- a/packaging/android/res/values/strings.xml
@@ -5685,3 +5647,134 @@ index a1d4b3b3a0dcd024a9b030774bd70870f919be3b..13e82c65ff3d1fa2ddd015308f025215
  
  
  def prepare(args):
+diff --git a/packaging/android/AndroidManifest.xml b/packaging/android/AndroidManifest.xml
+index 940453d42908a79e9e348b531648235292a11442..06b72c7f054ffeb4f34fbf0a627a4d53a2bb3b5a 100644
+--- a/packaging/android/AndroidManifest.xml
++++ b/packaging/android/AndroidManifest.xml
+@@ -1,42 +1,22 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-    package="com.oceantri.mh3"
+-    android:versionCode="4"
+-    android:versionName="1.4">
+-
+-    <uses-sdk
+-        android:minSdkVersion="29"
+-        android:targetSdkVersion="35" />
+-
+-    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+-    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+-    <uses-feature android:name="android.hardware.gamepad" android:required="false" />
+-
+-    <uses-permission android:name="android.permission.INTERNET" />
+-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+-
+-    <application
+-        android:label="@string/app_name"
+-        android:icon="@mipmap/ic_launcher"
+-        android:allowBackup="true"
+-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+-        android:hardwareAccelerated="true"
+-        android:requestLegacyExternalStorage="true"
+-        android:extractNativeLibs="true">
+-
+-        <activity
+-            android:name="com.oceantri.mh3.OceanTriActivity"
+-            android:label="@string/app_name"
+-            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation"
+-            android:screenOrientation="sensorLandscape"
+-            android:exported="true">
+-            <intent-filter>
+-                <action android:name="android.intent.action.MAIN" />
+-                <category android:name="android.intent.category.LAUNCHER" />
+-            </intent-filter>
+-        </activity>
+-    </application>
+-</manifest>
++﻿<?xml version="1.0" encoding="utf-8"?>
++<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rowell.mh3dev" android:versionCode="10013" android:versionName="1.4-rowell.13-netfix1">
++  <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35" />
++  <uses-feature android:glEsVersion="0x00030000" android:required="true" />
++  <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
++  <uses-feature android:name="android.hardware.gamepad" android:required="false" />
++  <uses-permission android:name="android.permission.INTERNET" />
++  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
++  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
++  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
++  <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
++  <application android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:allowBackup="true" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:hardwareAccelerated="true" android:requestLegacyExternalStorage="true" android:extractNativeLibs="true">
++    <activity android:name="com.oceantri.mh3.OceanTriActivity" android:label="@string/app_name" android:launchMode="singleTask" android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density" android:screenOrientation="sensorLandscape" android:exported="true">
++      <intent-filter>
++        <action android:name="android.intent.action.MAIN" />
++        <category android:name="android.intent.category.LAUNCHER" />
++      </intent-filter>
++    </activity>
++    <activity android:name="com.oceantri.mh3.RowellRestartActivity" android:process=":restart" android:exported="false" android:excludeFromRecents="true" android:theme="@android:style/Theme.NoDisplay" />
++    <profileable android:shell="true" />
++  </application>
++</manifest>
+\ No newline at end of file
+diff --git a/runtime/src/net/net_host_posix.cpp b/runtime/src/net/net_host_posix.cpp
+index 24790d9624226592cb2a584f346607cc723046ec..19cef48c4f540959205fd26eb2b0162d966caf2d 100644
+--- a/runtime/src/net/net_host_posix.cpp
++++ b/runtime/src/net/net_host_posix.cpp
+@@ -7,6 +7,10 @@
+ 
+ #include "guest_threads.h"
+ 
++#if defined(__ANDROID__)
++#include "background_value.h"
++#endif
++
+ #include <algorithm>
+ #include <arpa/inet.h>
+ #include <cerrno>
+@@ -566,7 +570,7 @@ Interface DefaultInterface() {
+     return result;
+ }
+ #else
+-Interface DefaultInterface() {
++static Interface ReadDefaultInterface(bool enumerate) {
+     Interface result{};
+     inet_pton(AF_INET, "10.0.1.30", &result.ip);
+     inet_pton(AF_INET, "255.255.255.0", &result.netmask);
+@@ -601,6 +605,16 @@ Interface DefaultInterface() {
+     if (!found)
+         return result;
+ 
++#if defined(__ANDROID__)
++    // Android can stall for over a second in getifaddrs/netlink. Seed a usable
++    // route immediately, then let the worker fill in the real interface mask.
++    result.ip = local.sin_addr.s_addr;
++    result.broadcast = (result.ip & result.netmask) | ~result.netmask;
++    result.gateway = (result.ip & result.netmask) | htonl(1);
++#endif
++    if (!enumerate)
++        return result;
++
+     ifaddrs* interfaces = nullptr;
+ 
+     if (getifaddrs(&interfaces) != 0)
+@@ -626,6 +640,19 @@ Interface DefaultInterface() {
+     freeifaddrs(interfaces);
+     return result;
+ }
++
++Interface DefaultInterface() {
++#if defined(__ANDROID__)
++    // Wii asks for interface options during gameplay. Never enumerate Android
++    // interfaces on that thread; refresh the snapshot without holding its lock.
++    static BackgroundValue<Interface> cached(ReadDefaultInterface(false),
++                                            [] { return ReadDefaultInterface(true); },
++                                            std::chrono::seconds(5));
++    return cached.Get();
++#else
++    return ReadDefaultInterface(true);
++#endif
++}
+ #endif
+ 
+ bool ParseIpv4(const std::string& text, uint32_t* ip) {

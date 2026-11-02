@@ -23,6 +23,10 @@ jobs:
         run: |
           g++ -std=c++20 -O1 -Wall -Wextra -Werror -Iruntime/include tests/rowell/frame_delta_check.cpp -o "$RUNNER_TEMP/rowell-frame-check"
           "$RUNNER_TEMP/rowell-frame-check"
+      - name: Check background interface snapshots with blocked refreshes
+        run: |
+          g++ -std=c++20 -O1 -Wall -Wextra -Werror -pthread -Iandroid/extra/runtime/include tests/rowell/BackgroundValueCheck.cpp -o "$RUNNER_TEMP/rowell-interface-check"
+          "$RUNNER_TEMP/rowell-interface-check"
       - name: Check Android Java log rotation
         run: |
           javac --release 17 -d "$RUNNER_TEMP/rowell-log-java" android/extra/packaging/android/src/com/oceantri/mh3/RowellLogStore.java tests/rowell/RowellLogStoreCheck.java

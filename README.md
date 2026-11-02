@@ -7,11 +7,11 @@ general-purpose Wii emulator. Supply your own European/PAL **RMHP08** game image
 
 ## Downloads
 
-**MH Tri - Rowell · 1.4-rowell.13 pre-release**
+**Android online-stutter hotfix · 1.4-rowell.13-netfix1**
 
 | Platform | Version | Download |
 | --- | --- | --- |
-| Android 64-bit | 1.4-rowell.13 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3-Rowell-Dev-Android.zip) |
+| Android 64-bit | 1.4-rowell.13-netfix1 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13-netfix1/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13-netfix1/MH3-Rowell-Dev-Android.zip) |
 | Windows PC | 1.4-rowell.13 | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3-Rowell-Windows-x64.zip)** |
 | Android 32-bit · Experimental | MH3 - Low Spec | **Downloads temporarily unavailable** · [Source code](https://github.com/Dling11/monster_hunter_tri_emulator/tree/low-spec) |
 
@@ -23,10 +23,11 @@ and selected upstream stability fixes for equipment resources, particle lighting
 audio recovery and Android frame pacing. Windows uses one settings menu on **F2**.
 Controller remapping and the offline-quest speed options are retained.
 
-Windows startup and local regression checks passed. The .12 Android baseline loaded
-the Village and Gear menu normally on a POCO F5.
-The .13 rebuild has not yet had a new phone gameplay test. Exact Rathian/Barroth
-equipment cases, physical DS4 testing and wider device testing remain pending.
+The Android hotfix moves network-interface refreshes off the game thread, fixing
+repeated online pauses observed on a POCO F5. In a 32-second online-city capture,
+four roughly 1.5-second stalls became zero frame gaps over 80 ms. The owner also
+confirmed smoother play. Wider device and extended quest testing remain pending.
+Windows stays on 1.4-rowell.13; this release does not replace its package.
 
 **Updating Android:** save inside Tri, then install the APK over your existing Rowell app.
 **Keep the app installed and keep its MH3_Rowell_Dev folder** to retain progress and game data.
@@ -36,7 +37,7 @@ If you download the ZIP, extract it first.
 
 [Android installation](docs/ANDROID_INSTALL.md) ·
 [Windows installation](docs/WINDOWS_INSTALL.md) ·
-[Release, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.13)
+[Android hotfix, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.13-netfix1)
 
 Supply your own PAL game image. GitHub's **Code > Download ZIP** downloads source
 code; use the links above to install the app.
@@ -67,7 +68,8 @@ Choose your platform in [Downloads](#downloads) above.
 | Windows | Windows 10/11 x64, compatible graphics driver | Extract the Windows package; keep its EXE and DLLs together. |
 
 Open **MH Tri - Rowell**, grant the requested storage access on Android and
-choose your PAL RVZ/ISO/WIA image. Extract compressed game archives first.
+choose your PAL RVZ/ISO/WIA image. If the download ends in ZIP, RAR or 7z,
+extract it first, then select the RVZ/ISO/WIA file inside, not the archive or APK.
 No game image, extracted game assets or character saves are supplied.
 
 App data stays in **MH3_Rowell_Dev**, separately from the original Android

@@ -1,4 +1,19 @@
-# MH Tri - Rowell 1.4-rowell.13 pre-release
+# MH Tri - Rowell 1.4-rowell.13-netfix1 — Android online-stutter fix
+
+- Fixed repeated online freezes caused by Android network-interface enumeration
+  blocking the game's main thread. Interface details now refresh in a background
+  worker; gameplay reads a cached snapshot.
+- Kept the last usable snapshot if a refresh fails. The initial route is detected
+  without waiting for the full interface scan.
+- Confirmed on a POCO F5 running Android 15: two native stack samples showed
+  roughly 1.5-second waits before the fix. A 32-second online-city recording after
+  the fix had no frame gaps over 80 ms, and the player confirmed improvement.
+- Package, signing key, controls, character-save format and MH3_Rowell_Dev folder
+  remain compatible. Save inside Tri, then install over the existing Rowell app.
+- Android ARM64 only. Windows remains on 1.4-rowell.13. Performance on other
+  devices and extended quests has not been established by this test.
+
+## 1.4-rowell.13 pre-release
 
 - Android creates imports, exports and saves folders after storage access is
   granted, before selecting or preparing the game image.
