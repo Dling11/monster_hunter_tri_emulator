@@ -559,7 +559,21 @@ std::optional<Attempt> IpTopIoctl(uint32_t command, uint32_t in, uint32_t inSize
             return Done(-NetHost::kSoEBadF);
 
         const uint32_t size = std::min<uint32_t>(Memory::Read32(in + 0xC), 20);
-        return Done(NetHost::SetOption(socket->handle, Memory::Read32(in + 4), Memory::Read32(in + 8), Memory::GetPointer(in + 0x10, size), size));
+        const uint32_t level = Memory::Read32(in + 4), name = Memory::Read32(in + 8);
+#ifdef __ANDROID__
+        // Linux accounts TCP packet metadata against SO_SNDBUF. The Wii's
+        // 4 KiB payload budget can therefore hold only a few tiny TLS records.
+        // Keep room for a complete reply; leave UDP and other options alone.
+        if (socket->stream && level == 0xFFFF && name == 0x1001 && size == 4) {
+            const uint32_t requested = Memory::Read32(in + 0x10);
+            if (requested > 0 && requested < 32768) {
+                constexpr uint8_t minimum[4]{0, 0, 0x80, 0};
+                const int32_t result = NetHost::SetOption(socket->handle, level, name, minimum, sizeof(minimum));
+                return Done(result);
+            }
+        }
+#endif
+        return Done(NetHost::SetOption(socket->handle, level, name, Memory::GetPointer(in + 0x10, size), size));
     }
 
     case kSoGetSockName:
@@ -928,21 +942,29 @@ std::optional<Attempt> SslIoctlv(uint32_t command, const std::vector<Vector>& in
         const Vector data = command == kSslRead ? (in.size() > 1 ? in[1] : Vector{}) : (out.size() > 1 ? out[1] : Vector{});
         return Attempt([=]() -> std::optional<int32_t> {
             TlsSession* current = sessions[id] ? &*sessions[id] : nullptr;
-            const Socket* socket = current ? Find(current->socket) : nullptr;
+            Socket* socket = current ? Find(current->socket) : nullptr;
 
             if (!socket) {
                 Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kSyscall)));
                 return 0;
             }
 
-            // A handshake waits for the socket's connection first.
-            if (socket->connecting && NetHost::ConnectResult(socket->handle) == -NetHost::kSoEInProgress) {
-                if (socket->nonBlocking) {
-                    Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kWantRead)));
+            // Only a genuinely pending TCP connect waits here. Once complete,
+            // TLS handles its own read/write readiness and retry results.
+            if (socket->connecting) {
+                const int32_t connection = NetHost::ConnectResult(socket->handle);
+                if (connection == -NetHost::kSoEInProgress) {
+                    if (socket->nonBlocking) {
+                        Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kWantRead)));
+                        return 0;
+                    }
+                    return std::nullopt;
+                }
+                socket->connecting = false;
+                if (connection < 0) {
+                    Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kSyscall)));
                     return 0;
                 }
-
-                return std::nullopt;
             }
 
             int32_t result;

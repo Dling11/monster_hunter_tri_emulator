@@ -5648,7 +5648,7 @@ index a1d4b3b3a0dcd024a9b030774bd70870f919be3b..13e82c65ff3d1fa2ddd015308f025215
  
  def prepare(args):
 diff --git a/packaging/android/AndroidManifest.xml b/packaging/android/AndroidManifest.xml
-index 940453d42908a79e9e348b531648235292a11442..06b72c7f054ffeb4f34fbf0a627a4d53a2bb3b5a 100644
+index 940453d42908a79e9e348b531648235292a11442..7ab5d5bc7a728b249c3526ca19b9863bda8e9dc6 100644
 --- a/packaging/android/AndroidManifest.xml
 +++ b/packaging/android/AndroidManifest.xml
 @@ -1,42 +1,22 @@
@@ -5695,7 +5695,7 @@ index 940453d42908a79e9e348b531648235292a11442..06b72c7f054ffeb4f34fbf0a627a4d53
 -    </application>
 -</manifest>
 +﻿<?xml version="1.0" encoding="utf-8"?>
-+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rowell.mh3dev" android:versionCode="10013" android:versionName="1.4-rowell.13-netfix1">
++<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rowell.mh3dev" android:versionCode="10013" android:versionName="1.4-rowell.13-netfix2">
 +  <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35" />
 +  <uses-feature android:glEsVersion="0x00030000" android:required="true" />
 +  <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -5778,3 +5778,67 @@ index 24790d9624226592cb2a584f346607cc723046ec..19cef48c4f540959205fd26eb2b0162d
  #endif
  
  bool ParseIpv4(const std::string& text, uint32_t* ip) {
+diff --git a/runtime/src/net/ios_net.cpp b/runtime/src/net/ios_net.cpp
+index c6e9d531d9c126d7fd4136f3d023e5725f9f3c69..76a66f301a995df8ef9ff0a4dffaf10d77c8cf9b 100644
+--- a/runtime/src/net/ios_net.cpp
++++ b/runtime/src/net/ios_net.cpp
+@@ -568,7 +568,21 @@ std::optional<Attempt> IpTopIoctl(uint32_t command, uint32_t in, uint32_t inSize
+             return Done(-NetHost::kSoEBadF);
+ 
+         const uint32_t size = std::min<uint32_t>(Memory::Read32(in + 0xC), 20);
+-        return Done(NetHost::SetOption(socket->handle, Memory::Read32(in + 4), Memory::Read32(in + 8), Memory::GetPointer(in + 0x10, size), size));
++        const uint32_t level = Memory::Read32(in + 4), name = Memory::Read32(in + 8);
++#ifdef __ANDROID__
++        // Linux accounts TCP packet metadata against SO_SNDBUF. The Wii's
++        // 4 KiB payload budget can therefore hold only a few tiny TLS records.
++        // Keep room for a complete reply; leave UDP and other options alone.
++        if (socket->stream && level == 0xFFFF && name == 0x1001 && size == 4) {
++            const uint32_t requested = Memory::Read32(in + 0x10);
++            if (requested > 0 && requested < 32768) {
++                constexpr uint8_t minimum[4]{0, 0, 0x80, 0};
++                const int32_t result = NetHost::SetOption(socket->handle, level, name, minimum, sizeof(minimum));
++                return Done(result);
++            }
++        }
++#endif
++        return Done(NetHost::SetOption(socket->handle, level, name, Memory::GetPointer(in + 0x10, size), size));
+     }
+ 
+     case kSoGetSockName:
+@@ -937,21 +951,29 @@ std::optional<Attempt> SslIoctlv(uint32_t command, const std::vector<Vector>& in
+         const Vector data = command == kSslRead ? (in.size() > 1 ? in[1] : Vector{}) : (out.size() > 1 ? out[1] : Vector{});
+         return Attempt([=]() -> std::optional<int32_t> {
+             TlsSession* current = sessions[id] ? &*sessions[id] : nullptr;
+-            const Socket* socket = current ? Find(current->socket) : nullptr;
++            Socket* socket = current ? Find(current->socket) : nullptr;
+ 
+             if (!socket) {
+                 Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kSyscall)));
+                 return 0;
+             }
+ 
+-            // A handshake waits for the socket's connection first.
+-            if (socket->connecting && NetHost::ConnectResult(socket->handle) == -NetHost::kSoEInProgress) {
+-                if (socket->nonBlocking) {
+-                    Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kWantRead)));
++            // Only a genuinely pending TCP connect waits here. Once complete,
++            // TLS handles its own read/write readiness and retry results.
++            if (socket->connecting) {
++                const int32_t connection = NetHost::ConnectResult(socket->handle);
++                if (connection == -NetHost::kSoEInProgress) {
++                    if (socket->nonBlocking) {
++                        Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kWantRead)));
++                        return 0;
++                    }
++                    return std::nullopt;
++                }
++                socket->connecting = false;
++                if (connection < 0) {
++                    Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kSyscall)));
+                     return 0;
+                 }
+-
+-                return std::nullopt;
+             }
+ 
+             int32_t result;

@@ -1,4 +1,19 @@
-# MH Tri - Rowell 1.4-rowell.13-netfix1 — Android online-stutter fix
+# MH Tri - Rowell 1.4-rowell.13-netfix2 - Android City connection fix
+
+- Fixed an incomplete login reply causing City error 11612 on a Samsung Galaxy
+  A31 running Android 12. Android TCP send buffers now have a 32 KiB minimum;
+  Linux packet overhead could exhaust the game's original 4 KiB setting.
+- Clear the pending-connect state after TCP completion. Keep genuine connection
+  failures and TLS retry results intact. UDP buffer settings are unchanged.
+- Retain the earlier POCO online-stutter fix and existing app features.
+- Same package, signing key, save format, controls and MH3_Rowell_Dev folder.
+  Save inside Tri and install over the existing app; a reset is not required.
+- The functional fix entered Loc Lac on the A31 and passed 15 targeted native
+  checks. The regular APK was rebuilt without private diagnostic logging.
+  A full online quest and an in-place phone test of this clean APK are pending.
+- Android ARM64 only. Windows remains 1.4-rowell.13; Low Spec remains held.
+
+## MH Tri - Rowell 1.4-rowell.13-netfix1 — Android online-stutter fix
 
 - Fixed repeated online freezes caused by Android network-interface enumeration
   blocking the game's main thread. Interface details now refresh in a background

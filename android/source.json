@@ -13,7 +13,7 @@
     "scripts",
     "toolchain"
   ],
-  "patchSha256": "a55b5b463c58675825bd3ab5d6a2135edd826543da2c0505900f7aa7106605ad",
+  "patchSha256": "e06bd4f13d924ce6ea0eaba5136fb78692833d455f9e83f1062b6ae4c5ca2af2",
   "trackedFiles": [
     {
       "path": ".gitignore",
@@ -25,7 +25,7 @@
     },
     {
       "path": "packaging/android/AndroidManifest.xml",
-      "sha256Lf": "6f6248e6b8bde317372145acbc69f9c8d13e7345b4cca7a25b58ed155dd15314"
+      "sha256Lf": "127f66fb3d5aa6f4801e827acbaa8ce6a4b773ada34b9e3183bc025115363e80"
     },
     {
       "path": "packaging/android/res/values/strings.xml",
@@ -114,6 +114,10 @@
     {
       "path": "runtime/src/model_assets.cpp",
       "sha256Lf": "a15f048b8899f68fe7dbe2704ec30b4d5f82d41ea34129692f33a9bc5c8c4f37"
+    },
+    {
+      "path": "runtime/src/net/ios_net.cpp",
+      "sha256Lf": "8c4edf95a5fe94d7c7380c581daaa148b52ee93069589c3ed370ef8e72f862cf"
     },
     {
       "path": "runtime/src/net/local_server.cpp",

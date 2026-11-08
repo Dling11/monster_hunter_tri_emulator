@@ -7,11 +7,11 @@ general-purpose Wii emulator. Supply your own European/PAL **RMHP08** game image
 
 ## Downloads
 
-**Android online-stutter hotfix · 1.4-rowell.13-netfix1**
+**Android City connection hotfix · 1.4-rowell.13-netfix2**
 
 | Platform | Version | Download |
 | --- | --- | --- |
-| Android 64-bit | 1.4-rowell.13-netfix1 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13-netfix1/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13-netfix1/MH3-Rowell-Dev-Android.zip) |
+| Android 64-bit | 1.4-rowell.13-netfix2 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13-netfix2/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13-netfix2/MH3-Rowell-Dev-Android.zip) |
 | Windows PC | 1.4-rowell.13 | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3-Rowell-Windows-x64.zip)** |
 | Android 32-bit · Experimental | MH3 - Low Spec | **Downloads temporarily unavailable** · [Source code](https://github.com/Dling11/monster_hunter_tri_emulator/tree/low-spec) |
 
@@ -27,6 +27,11 @@ The Android hotfix moves network-interface refreshes off the game thread, fixing
 repeated online pauses observed on a POCO F5. In a 32-second online-city capture,
 four roughly 1.5-second stalls became zero frame gaps over 80 ms. The owner also
 confirmed smoother play. Wider device and extended quest testing remain pending.
+This update also fixes City error 11612 observed on a Samsung Galaxy A31.
+Android TCP sockets now retain enough send-buffer space to finish login replies,
+and completed connections are no longer treated as still connecting. The player
+confirmed entering Loc Lac. Full multiplayer quests and wider devices remain
+unverified for this fix.
 Windows stays on 1.4-rowell.13; this release does not replace its package.
 
 **Updating Android:** save inside Tri, then install the APK over your existing Rowell app.
@@ -37,7 +42,7 @@ If you download the ZIP, extract it first.
 
 [Android installation](docs/ANDROID_INSTALL.md) ·
 [Windows installation](docs/WINDOWS_INSTALL.md) ·
-[Android hotfix, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.13-netfix1)
+[Android hotfix, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.13-netfix2)
 
 Supply your own PAL game image. GitHub's **Code > Download ZIP** downloads source
 code; use the links above to install the app.
