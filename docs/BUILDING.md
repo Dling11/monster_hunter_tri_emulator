@@ -1,6 +1,6 @@
 # Building the experimental Lite app
 
-Use an ARM32-capable Android 10 or later device with OpenGL ES 3.0. Installation on the specific Realme/Infinix variants and sustained gameplay performance still need physical testing.
+Use an ARM32-capable Android 10 or later device with OpenGL ES 3.0. The matching APK was installed on a Realme C11 RMX3231 and reached character creation. Infinix installation and sustained gameplay performance still need physical testing.
 
 The APK uses package `com.rowell.mh3lite` and folder `MH3_Low_Spec`. It does not update the normal Rowell app or automatically transfer its progress. Keep the Lite signing key for future updates.
 
