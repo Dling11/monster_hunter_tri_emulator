@@ -75,6 +75,14 @@ if($Mode -eq 'Export') {
         'packaging/android/src/com/oceantri/mh3/RowellRestartActivity.java',
         'runtime/include/rowell_ui_atlas.h','runtime/include/bounded_log.h','runtime/include/background_value.h','runtime/include/resource_guard.h','runtime/include/rowell_frame_delta.h','runtime/src/equipment_tests.cpp',
         'packaging/android/src/com/oceantri/mh3/RowellLogStore.java',
+        'packaging/android/src/com/oceantri/mh3/RowellGameImage.java',
+        'runtime/include/rowell_features.h',
+        'runtime/include/rowell_text_input.h',
+        'runtime/include/hunter_telemetry.h',
+        'runtime/include/android_keyboard.h',
+        'runtime/src/hunter_telemetry.cpp',
+        'runtime/src/android_keyboard.cpp',
+        'packaging/android/src/org/libsdl/app/RowellImeText.java',
         'packaging/android/assets/licenses/Inter-OFL.txt')
     $untracked=@(& git -C $Destination ls-files --others --exclude-standard)
     if($LASTEXITCODE -ne 0) { throw 'Could not inspect additional Android source files.' }

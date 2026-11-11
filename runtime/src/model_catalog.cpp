@@ -119,8 +119,7 @@ struct Catalog {
 
 Catalog catalog;
 
-// Advanced by every live block erase or full (re)publication; not by an
-// in-place producer update (WritableNativeLiveMaterialBlock).
+// Advanced by live block erasure, publication and validated in-place updates.
 uint64_t live_version = 1;
 Catalog& C() {
     return catalog;
@@ -1517,6 +1516,11 @@ void PublishNativeLiveMaterialBlock(const NativeLiveMaterialBlock& block) {
             return;
         }
     MH3_THROW(std::runtime_error("Native material publication refers to a retired resident allocation"));
+}
+
+void BumpNativeLiveMaterialRevision() {
+    std::lock_guard guard(catalogLock);
+    ++live_version;
 }
 
 void ReadNativeModelCoordinateMap(uint32_t pipeline, uint8_t mapping[8], uint8_t* known) {

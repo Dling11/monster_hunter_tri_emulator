@@ -22,11 +22,11 @@ bool NativeResourceReadByDraw(uint32_t address, uint32_t bytes);
  * material-field update, a live block change (ReadNativeLiveMaterialRevision)
  * or provenance moving outside owners. */
 uint64_t ReadNativeModelStructureRevision();
-/* Advances whenever a live material block node is erased or fully
- * (re)published. While it is unchanged every live block keeps its node; an
- * in-place producer update (WritableNativeLiveMaterialBlock) changes only the
- * node's fields and fields.generation. */
+/* Advances when a live material block is erased, published or changed by a
+ * validated in-place producer. Renderer snapshots must see field changes
+ * even when the underlying live block keeps the same node. */
 uint64_t ReadNativeLiveMaterialRevision();
+void BumpNativeLiveMaterialRevision();
 /* A vertex producer installs this before retaining any sources/revisions.
  * Generic overwrites notify it even when no disc interval is tracked. */
 using NativeModelVertexRetireHook = void (*)(uint32_t address, uint32_t bytes);

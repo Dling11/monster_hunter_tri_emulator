@@ -1,3 +1,30 @@
+# MH Tri - Rowell 1.4-rowell.14 - gameplay stability pre-release
+
+- Hammer spin finishers retain their attack-input window at higher frame rates;
+  the combo list is installed once instead of clearing buffered input repeatedly.
+- Lance guard advance can chain into shield bash while forward remains held.
+- Animation-event history is keyed by the full actor address. Actors no longer
+  collide in a 64-slot history table and replay or lose projectile/item events.
+- In-place material changes invalidate the live renderer snapshot, including
+  Agnaktor's glowing and cooling lava armour.
+- Releasing a monster grab restores camera roll, field of view and the player's
+  selected camera-distance row without restoring a stale bound-camera pose.
+- Android requests a 1024-frame playback buffer for AAudio/Bluetooth scheduling
+  jitter. Existing serialized audio recovery and the Windows buffer are retained.
+- Synthetic motion-window regressions cover colliding actor addresses, shared
+  same-step consumers, 30/60/90/120 FPS, varying steps and command-window bounds.
+
+Adapted from Kiridor123's source at `a2a131df`; see
+[integration details](UPSTREAM_GAMEPLAY.md). Fractional motion/hit-stop timing,
+existing UI, saves, solo-speed limits, both networking fixes and app identity are
+preserved. Both builds and automated checks passed; physical gameplay testing of
+this release remains pending.
+
+The earlier queued archive-selection checks are included: ZIP/RAR/7z selections
+explain extraction, incomplete headers/transfers are rejected, and failed copies
+retain the existing game image. Optional offline cutscene skipping and bounded
+session-only telemetry remain experimental and disabled by default.
+
 # MH Tri - Rowell 1.4-rowell.13-netfix2 - Android City connection fix
 
 - Fixed an incomplete login reply causing City error 11612 on a Samsung Galaxy

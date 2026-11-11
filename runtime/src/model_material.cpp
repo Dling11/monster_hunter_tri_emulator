@@ -57,6 +57,9 @@ void Update(uint32_t reference, mh3_model_material_block kind, Producer producer
     // arguments before writing either.
     if (auto* live = WritableNativeLiveMaterialBlock(Data(reference), kind)) {
         Checked(producer(&live->fields, mh3_res_mut_span{GuestRange(live->address, live->bytes), live->bytes}, NextNativeMaterialRevision()));
+        // In-place lava/colour changes must invalidate the renderer's cached
+        // live-material snapshot, just like the publication path below.
+        BumpNativeLiveMaterialRevision();
         return;
     }
 

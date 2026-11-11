@@ -7,17 +7,23 @@ general-purpose Wii emulator. Supply your own European/PAL **RMHP08** game image
 
 ## Downloads
 
-**Android City connection hotfix · 1.4-rowell.13-netfix2**
+**Gameplay stability update · 1.4-rowell.14 · Pre-release**
 
 | Platform | Version | Download |
 | --- | --- | --- |
-| Android 64-bit | 1.4-rowell.13-netfix2 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13-netfix2/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13-netfix2/MH3-Rowell-Dev-Android.zip) |
-| Windows PC | 1.4-rowell.13 | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.13/MH3-Rowell-Windows-x64.zip)** |
+| Android 64-bit | 1.4-rowell.14 | **[Download APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.14/MH3_Rowell_Dev-arm64.apk)** · [ZIP package](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.14/MH3-Rowell-Dev-Android.zip) |
+| Windows PC | 1.4-rowell.14 | **[Download Windows ZIP](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/rowell-1.4.14/MH3-Rowell-Windows-x64.zip)** |
 | Android 32-bit · Experimental | 0.1-low-spec.2 | **[Download Low Spec APK](https://github.com/Dling11/monster_hunter_tri_emulator/releases/download/low-spec-0.1.2/MH3-Low-Spec-0.1-armeabi-v7a.apk)** · [Source code](https://github.com/Dling11/monster_hunter_tri_emulator/tree/low-spec) |
 
 Low Spec is a separate ARMv7 app with its own `MH3_Low_Spec` data folder. It requires Android 10+, OpenGL ES 3.0 and 32-bit app support. Its 30 FPS/lower-resolution defaults are experimental; physical-phone performance is unverified. The character-selection preview head-rendering issue remains under investigation.
 
-Version 1.4-rowell.13 creates imports, exports and saves folders automatically.
+Version 1.4-rowell.14 adapts hammer/lance input, throwable-event, Agnaktor-material,
+grab-camera and Android audio-buffer fixes from upstream. Both builds and the
+automated regression, runtime, controls, save and packaging checks passed.
+Physical gameplay testing of this release remains pending. See the
+[integration notes](docs/UPSTREAM_GAMEPLAY.md) for the exact scope and credits.
+
+The app creates imports, exports and saves folders automatically.
 It includes faded-blue settings, a unified combo editor, capped logs
 and selected upstream stability fixes for equipment resources, particle lighting,
 audio recovery and Android frame pacing. Windows uses one settings menu on **F2**.
@@ -32,7 +38,8 @@ Android TCP sockets now retain enough send-buffer space to finish login replies,
 and completed connections are no longer treated as still connecting. The player
 confirmed entering Loc Lac. Full multiplayer quests and wider devices remain
 unverified for this fix.
-Windows stays on 1.4-rowell.13; this release does not replace its package.
+Both normal Android and Windows downloads now use 1.4-rowell.14 and retain these
+earlier fixes. The separate Low Spec build is unchanged.
 
 **Updating Android:** save inside Tri, then install the APK over your existing Rowell app.
 **Keep the app installed and keep its MH3_Rowell_Dev folder** to retain progress and game data.
@@ -42,7 +49,7 @@ If you download the ZIP, extract it first.
 
 [Android installation](docs/ANDROID_INSTALL.md) ·
 [Windows installation](docs/WINDOWS_INSTALL.md) ·
-[Android hotfix, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.13-netfix2)
+[Release notes, checksums and source](https://github.com/Dling11/monster_hunter_tri_emulator/releases/tag/rowell-1.4.14)
 
 Supply your own PAL game image. GitHub's **Code > Download ZIP** downloads source
 code; use the links above to install the app.

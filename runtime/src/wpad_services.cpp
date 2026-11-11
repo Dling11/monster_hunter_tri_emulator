@@ -2,6 +2,9 @@
 #include "fatal.h"
 #include "controller_host.h"
 #include "village_boot.h"
+#ifdef __ANDROID__
+#include "android_keyboard.h"
+#endif
 #include "ios_host.h"
 #include <array>
 #include <chrono>
@@ -138,6 +141,9 @@ extern "C" void MH3_WPADSetDataFormat(CpuContext* cpu) {
 REGISTER_NATIVE_FUNCTION(0x804EF2A0, MH3_WPADSetDataFormat);
 
 extern "C" void MH3_WPADRead(CpuContext* cpu) {
+#ifdef __ANDROID__
+    AndroidKeyboard_ProcessPending(cpu);
+#endif
     const auto channel = cpu->gpr[3];
     const auto sample = ReadGameController();
     const auto status = ControllerStatus(channel, sample);

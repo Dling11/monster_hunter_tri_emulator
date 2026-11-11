@@ -86,8 +86,9 @@ enum : uint32_t {
     kTarget = 0x0C,       // VEC3
     kOldEye = 0x18,       // VEC3, the reset blend's
     kOldTarget = 0x24,    // VEC3
-    kFovB = 0x30,         // f32
-    kFovA = 0x34,         // f32
+    kTwist = 0x30,        // f32: roll passed as CameraSet's second float
+    kFovB = kTwist,
+    kFovA = 0x34,         // f32: vertical field of view
     kReset = 0x42,        // u8: 1 start a reset blend, 2 blending
     kResetLeft = 0x44,    // s16 steps (here ticks) of the blend left
     kResetRate = 0x48,    // f32: 1 / 20
@@ -558,12 +559,14 @@ static void FieldCameraUpdatePort(CpuContext* ctx) {
                     Memory::WriteFloat32(eye + 4 * k, F(target + 4 * k) + away[k] / length * distance + (k == 1 ? distance / 3.0f : 0.0f));
             }
 
-            game.Call<CameraSet>({0, eye, target}, {F(cam + kFovA), F(cam + kFovB)});
+            WF(cam + kTwist, 0.0f);
+            game.Call<CameraSet>({0, eye, target}, {F(cam + kFovA), 0.0f});
             return;
         }
     }
 #endif
-    game.Call<CameraSet>({0, cam + kEye, cam + kTarget}, {F(cam + kFovA), F(cam + kFovB)});
+    WF(cam + kTwist, 0.0f);
+    game.Call<CameraSet>({0, cam + kEye, cam + kTarget}, {F(cam + kFovA), 0.0f});
 }
 
 // 0x802B8ED0 BindCamera (camera, PLW), each step after the field camera
@@ -638,6 +641,8 @@ static void BindCameraPort(CpuContext* ctx) {
     static bool placed = false; // the last tick placed the eye and target
     static BindPlace last;
 
+    const bool wasPlaced = placed;
+
     for (uint32_t i = 0; i < ticks; ++i) {
         placed = BindTick(ctx, cam, plw);
 
@@ -647,16 +652,20 @@ static void BindCameraPort(CpuContext* ctx) {
 
     if (ticks == 0 || fraction > 0) {
         uint8_t state[kBindStateEnd - kBindSteps];
-        BindPlace now;
 
         for (uint32_t i = 0; i < sizeof(state); ++i)
             state[i] = Memory::Read8(cam + kBindSteps + i);
 
-        now.Read(cam);
         const bool next = BindTick(ctx, cam, plw);
 
         for (uint32_t i = 0; i < sizeof(state); ++i)
             Memory::Write8(cam + kBindSteps + i, state[i]);
+
+        if (ticks == 0) {
+            placed = next;
+            if (placed)
+                last.Read(cam);
+        }
 
         if (placed && next) {
             GuestCall game{ctx};
@@ -670,11 +679,30 @@ static void BindCameraPort(CpuContext* ctx) {
             const uint32_t yaw = game.Call<AngleBetween>({cam + kTarget, cam + kEye});
             W32(cam + kYawTarget, yaw);
             W32(cam + kYaw, yaw);
-        } else if (placed) {
-            last.Write(cam);
         } else {
-            now.Write(cam);
+            // Keep the original release's restored camera state, rather than
+            // writing the stale pre-release zoom and roll back over it.
+            placed = false;
         }
+    }
+
+    if (wasPlaced && !placed) {
+        float defaultFov = Memory::Contains(0x8079C9A8u, 4) ? F(0x8079C9A8u) : 55.0f;
+        if (!std::isfinite(defaultFov) || defaultFov <= 0.0f || defaultFov > 120.0f)
+            defaultFov = 55.0f;
+        WF(cam + kFovA, defaultFov);
+        WF(cam + kTwist, 0.0f);
+        W32(cam + kTiltTarget, 0);
+        W32(cam + kTilt, 0);
+
+        GuestCall game{ctx};
+        const uint8_t playerId = Memory::Read8(plw + kPlwPlayer);
+        uint32_t distance = game.Call<OptionConfig>({playerId, 11}) & 0xFF;
+        if (distance > 4)
+            distance = 2;
+        Memory::Write8(cam + kDistance, uint8_t(distance));
+        const uint32_t rows = Memory::Read8(plw + kPlwState) == 3 ? kRowsSwimming : kRows;
+        W32(cam + kRow, rows + distance * 28);
     }
 }
 

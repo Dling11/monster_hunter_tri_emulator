@@ -41,6 +41,9 @@
 #include "guest_call.h"
 #include "memory.h"
 #include "port_check.h"
+#include "village_boot.h"
+#include "rowell_features.h"
+#include "../native/mh3_classic_map.h"
 
 #include <chrono>
 #include <cstdint>
@@ -63,6 +66,7 @@ namespace {
 
 // The driver's state block.
 constexpr uint32_t kDemo = 0x806D4FA0;
+RowellFeatures::SkipPress demoSkip;
 
 enum : uint32_t {
     kState = kDemo + 0x0,    // u8: 0 start, 1 waiting for a trigger, 2 loading, 3 preparing, 4 playing
@@ -122,6 +126,8 @@ enum : uint32_t {
     FieldResume = 0x8028D61C,   // (30)
     CameraStart = 0x802BC884,   // (demo, 0): the demo's camera script
     CameraPlaying = 0x802BE450, // () -> 0 once the camera script is done
+    CameraFollow = 0x802BC700,
+    CameraMgr = 0x802BED34,
     CameraLength = 0x802BC8DC,  // () -> s16 steps
     DemoLight = 0x802C239C,     // (demo): demo 0x21's light, from the clock
     SetFlag = 0x8004D274,       // (flag): the story flag the demo sets
@@ -340,6 +346,7 @@ uint32_t EventDemoUpdate(GuestCall& game, uint32_t entry) {
     const uint8_t phase = Memory::Read8(entry + kPhase);
 
     if (phase == 0) {
+        demoSkip.Reset();
         game.Call<CameraStart>({Id(), 0});
 
         if (Memory::Read8(kOnlineMode) == 1) {
@@ -359,6 +366,23 @@ uint32_t EventDemoUpdate(GuestCall& game, uint32_t entry) {
     }
 
     if (phase == 1) {
+        const bool allowed = RowellFeatures::cutsceneSkip.load() &&
+            RowellFeatures::IsOfflineMode(Memory::Read8(kOnlineMode), Memory::Read8(kPlayMode));
+        bool skip = false;
+        if (allowed) {
+            const auto buttons = ReadGameController().buttons;
+            skip = demoSkip.Poll((uint64_t(entry) << 8) | Id(),
+                (buttons & (MH3_CL_A | MH3_CL_PLUS)) != 0, Clock() >= 5);
+        } else demoSkip.Reset();
+        if (skip && game.Call<Arena>() == 0) {
+            const uint32_t camera = game.Call<CameraMgr>();
+            if (camera && Memory::Contains(camera, 645)) {
+                Memory::Write32(kClock, 0x7FFF);
+                Memory::Write8(camera + 644, 2);
+                game.Call<CameraFollow>({1});
+            } else skip = false;
+        } else skip = false;
+        if (!skip) {
         Memory::Write32(kClock, uint32_t(Clock() + int32_t(GameStep::Ticks())));
         game.Call<DemoLight>({Id()});
         game.Call<0x803C4914>({Id()});
@@ -366,6 +390,7 @@ uint32_t EventDemoUpdate(GuestCall& game, uint32_t entry) {
 
         if (game.Call<CameraPlaying>() != 0)
             return 0;
+        }
 
         Memory::Write8(entry + kPhase, uint8_t(phase + 1));
 

@@ -38,6 +38,9 @@
 #include "native_effect_draw.h"
 #include "memory.h"
 #include "port_check.h"
+#include "village_boot.h"
+#include "rowell_features.h"
+#include "../native/mh3_classic_map.h"
 #include <algorithm>
 #include <cstdio>
 #include <initializer_list>
@@ -87,6 +90,7 @@ struct MovieClock {
 };
 
 MovieClock movieClock;
+RowellFeatures::SkipPress movieSkip;
 
 void TraceMovie(uint32_t shown, double fps, double seconds) {
     static const TraceFlag trace("movie");
@@ -106,6 +110,7 @@ uint32_t FramesToDecode() {
     const bool sound = SoundEngine::Stream::Played(kSoundSlot, stream, played);
 
     if (!Memory::Read8(kMovie + kFrameDrawn)) {
+        movieSkip.Reset();
         movieClock = {};
         movieClock.stream = sound ? stream : 0;
         movieClock.origin = sound && played >= 0.5 ? played : 0.0;
@@ -204,6 +209,14 @@ REGISTER_NATIVE_FUNCTION_AS(0x804352A4, MH3_MovieFrames, "MovieFrames");
 
 extern "C" void MH3_CheckMovieFinish(CpuContext* ctx) {
     PortCheck::Call(ctx, "CheckMovieFinish", func_80434604, CheckMovieFinishPort);
+    const uint32_t frames = MovieFrames();
+    const bool allowed = frames && RowellFeatures::cutsceneSkip.load() &&
+        RowellFeatures::IsOfflineMode(Memory::Read8(0x8065AA84), Memory::Read8(0x8065AA85));
+    if (allowed) {
+        const auto buttons = ReadGameController().buttons;
+        if (movieSkip.Poll(frames, (buttons & (MH3_CL_A | MH3_CL_PLUS)) != 0,
+                           true, Memory::Read32(kMovie + kPendingFlag) == 0)) ctx->gpr[3] = 1;
+    } else movieSkip.Reset();
 #ifdef MH3_DEVELOPMENT
     // As Movie_cut, only with no frame pending (a read or decode in flight
     // would land in the closed movie's buffers).

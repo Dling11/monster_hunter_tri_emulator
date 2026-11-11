@@ -24,6 +24,8 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
+#include <stdexcept>
 #include <unordered_map>
 #ifdef MH3_DEVELOPMENT
 #include <cstdio>
@@ -109,8 +111,8 @@ struct Counters {
 
 std::unordered_map<uint32_t, Counters> counters;
 
-// The frame check's last mode-0 window ahead per character (a few slots by the
-// MHchar's address; a slot another character took just starts afresh): the
+// The frame check's last mode-0 window ahead per character, keyed by the full
+// MHchar address so simultaneous actors cannot overwrite each other's window: the
 // step (its game time), the frame the window started at, the frames it
 // covered, the frame updates (MHcharRootMotionPort) since, and whether that
 // port updates the character at all.
@@ -122,10 +124,10 @@ struct AheadWindow {
     bool updated = false;
 };
 
-std::array<AheadWindow, 64> aheadWindows;
+std::unordered_map<uint32_t, AheadWindow> aheadWindows;
 
 AheadWindow& WindowOf(uint32_t self) {
-    return aheadWindows[(self * 2654435761u) >> 26];
+    return aheadWindows[self];
 }
 
 // One frame update of `self`, an advance or a step without one (a pause);
@@ -597,6 +599,13 @@ uint32_t FrameCheck(uint32_t self, uint32_t mode, bool ahead, double frame, doub
         return to < frame;
     case 3:
     case 7:
+        // The game's open-ended command windows use a negative sentinel.
+        // A zero-width window must also survive advancing past its frame,
+        // otherwise high-FPS hammer finishers miss the input opportunity.
+        if (frame < -500.0)
+            return reached >= frame;
+        if (frame == end)
+            return (from < frame && reached >= frame) || (reached >= frame && reached <= end);
         return reached >= frame && reached <= end;
     case 4:
         return reached > frame && reached <= end;
@@ -625,3 +634,102 @@ extern "C" void MH3_MHcharFrameCheck(CpuContext* ctx) {
     ctx->gpr[3] = FrameCheck(ctx->gpr[3], ctx->gpr[4] & 0xFFFF, (ctx->gpr[5] & 0xFFFF) == 0, ctx->fpr[1].d, ctx->fpr[2].d);
 }
 REGISTER_NATIVE_FUNCTION_AS(0x800E1740, MH3_MHcharFrameCheck, "MHcharFrameCheck");
+
+// Isolated synthetic RAM checks, called only by the explicit runtime self-test.
+// Exercise the production window tracker rather than a duplicate of its logic.
+void RunMotionWindowSelfTests() {
+    constexpr uint32_t base = 0x817B0000, bytes = 0x10000;
+    struct Restore {
+        std::array<uint8_t, bytes> ram;
+        std::array<uint32_t, 4> constants;
+        GameStep::State step = GameStep::Save();
+        bool variable = GameStep::Variable();
+        std::unordered_map<uint32_t, AheadWindow> windows = std::move(aheadWindows);
+        Restore() {
+            std::memcpy(ram.data(), Memory::GetPointer(base, bytes), bytes);
+            constants = {Memory::Read32(kZero), Memory::Read32(kOne),
+                         Memory::Read32(kAnimationBaseRate), Memory::Read32(0x8065B4D0)};
+            std::memset(Memory::GetPointer(base, bytes), 0, bytes);
+            Memory::WriteFloat32(kZero, 0.0f);
+            Memory::WriteFloat32(kOne, 1.0f);
+            GameStep::SetVariable(true);
+        }
+        ~Restore() {
+            std::memcpy(Memory::GetPointer(base, bytes), ram.data(), bytes);
+            for (unsigned i = 0; const auto address : {kZero, kOne, kAnimationBaseRate, 0x8065B4D0u})
+                Memory::Write32(address, constants[i++]);
+            GameStep::Restore(step);
+            GameStep::SetVariable(variable);
+            aheadWindows = std::move(windows);
+        }
+    } restore;
+    auto check = [](bool value, const char* reason) {
+        if (!value)
+            MH3_THROW(std::runtime_error(reason));
+    };
+    auto actor = [](uint32_t self, float frame, float rate = 1.0f) {
+        Memory::WriteFloat32(self + kFrame, frame);
+        Memory::WriteFloat32(self + kPrevFrame, frame - rate);
+        Memory::WriteFloat32(self + kRate, rate);
+        Memory::WriteFloat32(self + kEndFrame, 1000.0f);
+        Memory::WriteFloat32(self + kLoopFrame, -1.0f);
+    };
+
+    // These distinct actors collided in the former 64-slot table. Interleave
+    // their checks, then shorten the step: actor A must not replay its event.
+    const auto oldSlot = [](uint32_t self) { return (self * 2654435761u) >> 26; };
+    uint32_t other = base + 0x200;
+    while (other < base + bytes - 0x200 && oldSlot(other) != oldSlot(base))
+        other += 0x200;
+    check(other < base + bytes - 0x200, "Motion test could not find colliding actors");
+    actor(base, 10.0f);
+    actor(other, 10.0f);
+    GameStep::Begin(0.5);
+    check(FrameCheck(base, 0, true, 10.4, 0) == 1, "First actor lost its throw event");
+    check(FrameCheck(other, 0, true, 10.4, 0) == 1, "Second actor lost its throw event");
+    actor(base, 10.25f);
+    GameStep::Begin(0.25);
+    check(FrameCheck(base, 0, true, 10.4, 0) == 0, "Actor collision replayed a projectile event");
+
+    // At fixed and varying frame rates, a one-shot event must fire exactly
+    // once. Repeated checks within one step must share the same window.
+    for (const double scale : {1.0, 0.5, 1.0 / 3.0, 0.25}) {
+        aheadWindows.clear();
+        float frame = 0.0f;
+        unsigned hits = 0;
+        for (unsigned i = 0; i < 160; ++i) {
+            actor(base, frame);
+            GameStep::Begin(scale);
+            const auto hit = FrameCheck(base, 0, true, 15.0, 0);
+            check(FrameCheck(base, 0, true, 15.0, 0) == hit, "Same-step consumers disagreed");
+            hits += hit;
+            frame += float(scale);
+        }
+        check(hits == 1, "Fixed-FPS motion duplicated or missed an event");
+    }
+    aheadWindows.clear();
+    float frame = 0.0f;
+    unsigned hits = 0;
+    constexpr double jitter[] = {0.25, 0.5, 1.25, 0.4, 0.75};
+    for (unsigned i = 0; i < 80; ++i) {
+        const double scale = jitter[i % 5];
+        actor(base, frame);
+        GameStep::Begin(scale);
+        hits += FrameCheck(base, 0, true, 15.0, 0);
+        frame += float(scale);
+    }
+    check(hits == 1, "Varying-FPS motion duplicated or missed an event");
+
+    aheadWindows.clear();
+    actor(base, 5.75f);
+    GameStep::Begin(0.5);
+    for (const uint32_t mode : {3u, 7u}) {
+        check(FrameCheck(base, mode, true, 6.0, 6.0) == 1, "Hammer command missed a crossed frame");
+        check(FrameCheck(base, mode, true, -9999.0, 0.0) == 1, "Open-ended command window was rejected");
+        check(FrameCheck(base, mode, true, 6.0, 7.0) == 1, "Ordinary command window changed");
+        check(FrameCheck(base, mode, true, 7.0, 8.0) == 0, "Future command window opened early");
+        check(FrameCheck(base, mode, true, 0.0, 5.0) == 0, "Expired command window stayed open");
+    }
+    actor(base, 7.0f);
+    check(FrameCheck(base, 3, true, 6.0, 6.0) == 0, "Single-frame command remained active indefinitely");
+}

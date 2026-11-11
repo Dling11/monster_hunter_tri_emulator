@@ -28,6 +28,44 @@ index 1f2a88895e0793de983b1309a20e8a290aa4e783..faa306799ec1ad46b34e42b74e9fcbf1
  
    std::error_code ec;
  
+diff --git a/packaging/android/AndroidManifest.xml b/packaging/android/AndroidManifest.xml
+index 940453d42908a79e9e348b531648235292a11442..22c5e0588755ccc5140ee64e87c9cc35a1912e4f 100644
+--- a/packaging/android/AndroidManifest.xml
++++ b/packaging/android/AndroidManifest.xml
+@@ -1,8 +1,8 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+-    package="com.oceantri.mh3"
+-    android:versionCode="4"
+-    android:versionName="1.4">
++    package="com.rowell.mh3dev"
++    android:versionCode="10014"
++    android:versionName="1.4-rowell.14">
+ 
+     <uses-sdk
+         android:minSdkVersion="29"
+@@ -30,7 +30,8 @@
+         <activity
+             android:name="com.oceantri.mh3.OceanTriActivity"
+             android:label="@string/app_name"
+-            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation"
++            android:launchMode="singleTask"
++            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density"
+             android:screenOrientation="sensorLandscape"
+             android:exported="true">
+             <intent-filter>
+@@ -38,5 +39,11 @@
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+         </activity>
++        <activity
++            android:name="com.oceantri.mh3.RowellRestartActivity"
++            android:process=":restart"
++            android:exported="false"
++            android:excludeFromRecents="true"
++            android:theme="@android:style/Theme.NoDisplay" />
+     </application>
+ </manifest>
 diff --git a/packaging/android/res/values/strings.xml b/packaging/android/res/values/strings.xml
 index 6fd8e01debf27504aba142b74dc5d21ec8f9fee4..5aaa05c58948cbb60ea8b601c48e4d4d0b5ed5e9 100644
 --- a/packaging/android/res/values/strings.xml
@@ -39,14 +77,16 @@ index 6fd8e01debf27504aba142b74dc5d21ec8f9fee4..5aaa05c58948cbb60ea8b601c48e4d4d
 +    <string name="app_name">MH Tri - Rowell</string>
  </resources>
 diff --git a/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java b/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
-index 6dc682b37725de7be76dde5551e5ee3ddc620bda..a6544e7255f4efe1b339f29b43f9065834d77af1 100644
+index 6dc682b37725de7be76dde5551e5ee3ddc620bda..4061aff1c9d34ba41515cf90f500c6830f7d0c28 100644
 --- a/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
 +++ b/packaging/android/src/com/oceantri/mh3/OceanTriActivity.java
-@@ -22,7 +22,6 @@ import org.libsdl.app.SDLActivity;
+@@ -21,8 +21,7 @@ import org.libsdl.app.SDLActivity;
+ 
  import java.io.File;
  import java.io.FileInputStream;
- import java.io.FileOutputStream;
+-import java.io.FileOutputStream;
 -import java.io.FileWriter;
++import java.io.IOException;
  import java.io.InputStream;
  import java.io.PrintWriter;
  import java.io.StringWriter;
@@ -122,9 +162,11 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..a6544e7255f4efe1b339f29b43f90658
      @Override
      protected void main() {
          log("OceanTriActivity.main() thread waiting for ROM ready...");
-@@ -219,17 +230,25 @@ public class OceanTriActivity extends SDLActivity {
+@@ -218,23 +229,30 @@ public class OceanTriActivity extends SDLActivity {
+         if (mRomReady) {
              return;
          }
++        mRomCheckStarted = true;
  
 -        // 1. Check if ROM already exists in the official game directory (/storage/emulated/0/MH3/)
 -        File mh3Dir = new File("/storage/emulated/0/MH3");
@@ -151,7 +193,12 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..a6544e7255f4efe1b339f29b43f90658
              return;
          }
  
-@@ -256,22 +275,22 @@ public class OceanTriActivity extends SDLActivity {
+-        mRomCheckStarted = true;
+-
+         // 2. Search for ROM in other common directories (e.g. Download)
+         final String foundOtherRom = findGameRom();
+         if (foundOtherRom != null) {
+@@ -256,27 +274,25 @@ public class OceanTriActivity extends SDLActivity {
          final File file = new File(detectedPath);
          AlertDialog.Builder builder = new AlertDialog.Builder(this);
          builder.setTitle("Monster Hunter Tri");
@@ -179,8 +226,14 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..a6544e7255f4efe1b339f29b43f90658
 +        builder.setNegativeButton("Use this image directly", new DialogInterface.OnClickListener() {
              @Override
              public void onClick(DialogInterface dialog, int which) {
-                 sRomPath = detectedPath;
-@@ -286,15 +305,15 @@ public class OceanTriActivity extends SDLActivity {
+-                sRomPath = detectedPath;
+-                mRomReady = true;
+-                log("Using ROM directly without copying: " + sRomPath);
++                useGameImageIfValid(file);
+             }
+         });
+         builder.setCancelable(false);
+@@ -286,15 +302,16 @@ public class OceanTriActivity extends SDLActivity {
      private void showRomSelectPrompt() {
          AlertDialog.Builder builder = new AlertDialog.Builder(this);
          builder.setTitle("Monster Hunter Tri");
@@ -188,6 +241,7 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..a6544e7255f4efe1b339f29b43f90658
 -            "La aplicación se encargará de copiarla automáticamente a /storage/emulated/0/MH3/ para jugar.");
 -        builder.setPositiveButton("Seleccionar ROM", new DialogInterface.OnClickListener() {
 +        builder.setMessage("Select your European Monster Hunter Tri game image (.iso, .rvz or .wia).\n\n" +
++            "ZIP, RAR or 7z? Extract it first, then choose the game file inside.\n\n" +
 +            "This development app uses MH3_Rowell_Dev. Your existing app and saves stay separate.");
 +        builder.setPositiveButton("Choose game image", new DialogInterface.OnClickListener() {
              @Override
@@ -200,58 +254,289 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..a6544e7255f4efe1b339f29b43f90658
              @Override
              public void onClick(DialogInterface dialog, int which) {
                  finish();
-@@ -361,7 +380,7 @@ public class OceanTriActivity extends SDLActivity {
+@@ -353,7 +370,7 @@ public class OceanTriActivity extends SDLActivity {
+                     String name = cursor.getString(nameIdx);
+                     if (name != null && !name.isEmpty()) displayName = name;
+                 }
+-                if (sizeIdx != -1) {
++                if (sizeIdx != -1 && !cursor.isNull(sizeIdx)) {
+                     fileSize = cursor.getLong(sizeIdx);
+                 }
+             }
+@@ -361,175 +378,132 @@ public class OceanTriActivity extends SDLActivity {
              log("Querying URI info: " + e.getMessage());
          }
  
 -        final File targetDir = new File("/storage/emulated/0/MH3");
-+        final File targetDir = new File("/storage/emulated/0/MH3_Rowell_Dev");
-         if (!targetDir.exists()) targetDir.mkdirs();
-         final File targetFile = new File(targetDir, displayName);
+-        if (!targetDir.exists()) targetDir.mkdirs();
+-        final File targetFile = new File(targetDir, displayName);
++        try {
++            File target = RowellGameImage.destination(new File("/storage/emulated/0/MH3_Rowell_Dev"), displayName);
++            copyGameImageWithProgress(displayName, target, fileSize, new GameImageSource() {
++                @Override
++                public InputStream open() throws IOException {
++                    return getContentResolver().openInputStream(uri);
++                }
++            });
++        } catch (IOException error) {
++            showGameImageProblem("Choose a game image", error.getMessage());
++        }
++    }
  
-@@ -373,8 +392,8 @@ public class OceanTriActivity extends SDLActivity {
+-        if (targetFile.exists() && fileSize > 0 && targetFile.length() == fileSize) {
+-            log("Target file already exists with same size: " + targetFile.getAbsolutePath());
+-            sRomPath = targetFile.getAbsolutePath();
+-            mRomReady = true;
++    private void copyFileWithProgress(final File sourceFile, final File targetFile) {
++        if (sourceFile.getAbsolutePath().equals(targetFile.getAbsolutePath())) {
++            useGameImageIfValid(sourceFile);
+             return;
          }
++        copyGameImageWithProgress(sourceFile.getName(), targetFile, sourceFile.length(), new GameImageSource() {
++            @Override
++            public InputStream open() throws IOException {
++                return new FileInputStream(sourceFile);
++            }
++        });
++    }
  
++    private interface GameImageSource {
++        InputStream open() throws IOException;
++    }
++
++    private void copyGameImageWithProgress(final String name, final File targetFile,
++                                           final long expected, final GameImageSource source) {
          final ProgressDialog progressDialog = new ProgressDialog(this);
 -        progressDialog.setTitle("Copiando ROM");
 -        progressDialog.setMessage("Copiando " + displayName + " a /storage/emulated/0/MH3/...\nPor favor espera, no cierres la app.");
 +        progressDialog.setTitle("Copying game image");
-+        progressDialog.setMessage("Copying " + displayName + " a /storage/emulated/0/MH3_Rowell_Dev/...\nPlease wait and keep the app open.");
++        progressDialog.setMessage("Checking and copying " + name + ".\nPlease keep the app open.");
          progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
          progressDialog.setCancelable(false);
          progressDialog.setCanceledOnTouchOutside(false);
-@@ -433,15 +452,15 @@ public class OceanTriActivity extends SDLActivity {
+-        if (fileSize > 0) {
+-            progressDialog.setMax(100);
+-        }
++        progressDialog.setMax(100);
++        progressDialog.setIndeterminate(expected <= 0);
+         progressDialog.show();
+ 
+-        final long totalBytesExpected = fileSize;
+         new Thread(new Runnable() {
+             @Override
+             public void run() {
+-                InputStream in = null;
+-                FileOutputStream out = null;
+                 try {
+-                    in = getContentResolver().openInputStream(uri);
+-                    out = new FileOutputStream(targetFile);
+-                    byte[] buffer = new byte[4 * 1024 * 1024]; // 4MB buffer for fast copy
+-                    int read;
+-                    long copied = 0;
+-                    long lastUpdate = 0;
+-
+-                    while ((read = in.read(buffer)) != -1) {
+-                        out.write(buffer, 0, read);
+-                        copied += read;
+-                        long now = System.currentTimeMillis();
+-                        if (now - lastUpdate > 250) {
+-                            lastUpdate = now;
+-                            if (totalBytesExpected > 0) {
+-                                final int percent = (int) (copied * 100 / totalBytesExpected);
+-                                runOnUiThread(new Runnable() {
+-                                    @Override
+-                                    public void run() {
+-                                        progressDialog.setProgress(percent);
+-                                    }
+-                                });
++                    long copied = RowellGameImage.copy(source.open(), name, targetFile, expected,
++                        new RowellGameImage.Progress() {
++                            private long lastUpdate;
++                            @Override
++                            public void update(long bytes) {
++                                long now = System.currentTimeMillis();
++                                if (expected > 0 && now - lastUpdate >= 250) {
++                                    lastUpdate = now;
++                                    final int percent = (int) Math.min(99, bytes * 100 / expected);
++                                    runOnUiThread(new Runnable() {
++                                        @Override
++                                        public void run() {
++                                            progressDialog.setProgress(percent);
++                                        }
++                                    });
++                                }
+                             }
+-                        }
+-                    }
+-                    out.flush();
+-
+-                    log("ROM copy finished successfully: " + targetFile.getAbsolutePath() + " (" + copied + " bytes)");
++                        });
++                    log("Validated game image copied: " + targetFile.getAbsolutePath() + " (" + copied + " bytes)");
+                     runOnUiThread(new Runnable() {
+                         @Override
+                         public void run() {
                              progressDialog.dismiss();
-                             if (targetFile.exists()) targetFile.delete();
-                             AlertDialog.Builder b = new AlertDialog.Builder(OceanTriActivity.this);
++                            if (isFinishing()) return;
+                             sRomPath = targetFile.getAbsolutePath();
+                             mRomReady = true;
+                         }
+                     });
+                 } catch (final Exception e) {
+-                    log("Error copying ROM from URI: " + e.getMessage());
++                    log("Game image selection failed: " + e.getMessage());
+                     runOnUiThread(new Runnable() {
+                         @Override
+                         public void run() {
+                             progressDialog.dismiss();
+-                            if (targetFile.exists()) targetFile.delete();
+-                            AlertDialog.Builder b = new AlertDialog.Builder(OceanTriActivity.this);
 -                            b.setTitle("Error al copiar ROM");
 -                            b.setMessage("Ocurrió un error al copiar el archivo:\n" + e.getMessage());
 -                            b.setPositiveButton("Reintentar", new DialogInterface.OnClickListener() {
-+                            b.setTitle("Could not copy the game image");
-+                            b.setMessage("Could not copy the file:\n" + e.getMessage());
-+                            b.setPositiveButton("Retry", new DialogInterface.OnClickListener() {
-                                 @Override
-                                 public void onClick(DialogInterface dialog, int which) {
-                                     showRomSelectPrompt();
-                                 }
-                             });
+-                                @Override
+-                                public void onClick(DialogInterface dialog, int which) {
+-                                    showRomSelectPrompt();
+-                                }
+-                            });
 -                            b.setNegativeButton("Salir", new DialogInterface.OnClickListener() {
-+                            b.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
-                                 @Override
-                                 public void onClick(DialogInterface dialog, int which) {
-                                     finish();
-@@ -467,8 +486,8 @@ public class OceanTriActivity extends SDLActivity {
+-                                @Override
+-                                public void onClick(DialogInterface dialog, int which) {
+-                                    finish();
+-                                }
+-                            });
+-                            b.show();
++                            showGameImageProblem(e instanceof RowellGameImage.RejectedImage
++                                ? "Choose a game image" : "Could not copy the game image", e.getMessage());
+                         }
+                     });
+-                } finally {
+-                    try { if (in != null) in.close(); } catch (Exception ignored) {}
+-                    try { if (out != null) out.close(); } catch (Exception ignored) {}
+                 }
+             }
+         }, "RomCopyThread").start();
+     }
  
-         final long totalBytesExpected = sourceFile.length();
-         final ProgressDialog progressDialog = new ProgressDialog(this);
+-    private void copyFileWithProgress(final File sourceFile, final File targetFile) {
+-        if (sourceFile.getAbsolutePath().equals(targetFile.getAbsolutePath())) {
+-            sRomPath = targetFile.getAbsolutePath();
+-            mRomReady = true;
++    private void showGameImageProblem(String title, String message) {
++        if (isFinishing() || isDestroyed()) return;
++        AlertDialog.Builder builder = new AlertDialog.Builder(this);
++        builder.setTitle(title);
++        builder.setMessage(message);
++        builder.setPositiveButton("Choose another file", new DialogInterface.OnClickListener() {
++            @Override
++            public void onClick(DialogInterface dialog, int which) {
++                launchRomPicker();
++            }
++        });
++        builder.setNegativeButton("Exit", new DialogInterface.OnClickListener() {
++            @Override
++            public void onClick(DialogInterface dialog, int which) {
++                finish();
++            }
++        });
++        builder.setCancelable(false);
++        builder.show();
++    }
++
++    private void useGameImageIfValid(File file) {
++        String error = RowellGameImage.problem(file);
++        if (error != null) {
++            showGameImageProblem("Choose a game image", error);
+             return;
+         }
++        sRomPath = file.getAbsolutePath();
++        mRomReady = true;
++    }
+ 
+-        final long totalBytesExpected = sourceFile.length();
+-        final ProgressDialog progressDialog = new ProgressDialog(this);
 -        progressDialog.setTitle("Copiando ROM");
 -        progressDialog.setMessage("Copiando " + sourceFile.getName() + " a /storage/emulated/0/MH3/...\nPor favor espera, no cierres la app.");
-+        progressDialog.setTitle("Copying game image");
-+        progressDialog.setMessage("Copying " + sourceFile.getName() + " a /storage/emulated/0/MH3_Rowell_Dev/...\nPlease wait and keep the app open.");
-         progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-         progressDialog.setCancelable(false);
-         progressDialog.setCanceledOnTouchOutside(false);
-@@ -599,17 +618,31 @@ public class OceanTriActivity extends SDLActivity {
+-        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+-        progressDialog.setCancelable(false);
+-        progressDialog.setCanceledOnTouchOutside(false);
+-        progressDialog.setMax(100);
+-        progressDialog.show();
+-
+-        new Thread(new Runnable() {
+-            @Override
+-            public void run() {
+-                FileInputStream in = null;
+-                FileOutputStream out = null;
+-                try {
+-                    in = new FileInputStream(sourceFile);
+-                    out = new FileOutputStream(targetFile);
+-                    byte[] buffer = new byte[4 * 1024 * 1024];
+-                    int read;
+-                    long copied = 0;
+-                    long lastUpdate = 0;
+-
+-                    while ((read = in.read(buffer)) != -1) {
+-                        out.write(buffer, 0, read);
+-                        copied += read;
+-                        long now = System.currentTimeMillis();
+-                        if (now - lastUpdate > 250) {
+-                            lastUpdate = now;
+-                            final int percent = (int) (copied * 100 / totalBytesExpected);
+-                            runOnUiThread(new Runnable() {
+-                                @Override
+-                                public void run() {
+-                                    progressDialog.setProgress(percent);
+-                                }
+-                            });
+-                        }
+-                    }
+-                    out.flush();
+-
+-                    log("ROM copy finished: " + targetFile.getAbsolutePath());
+-                    runOnUiThread(new Runnable() {
+-                        @Override
+-                        public void run() {
+-                            progressDialog.dismiss();
+-                            sRomPath = targetFile.getAbsolutePath();
+-                            mRomReady = true;
+-                        }
+-                    });
+-                } catch (final Exception e) {
+-                    log("Error copying ROM from file: " + e.getMessage());
+-                    runOnUiThread(new Runnable() {
+-                        @Override
+-                        public void run() {
+-                            progressDialog.dismiss();
+-                            if (targetFile.exists()) targetFile.delete();
+-                            showRomSelectPrompt();
+-                        }
+-                    });
+-                } finally {
+-                    try { if (in != null) in.close(); } catch (Exception ignored) {}
+-                    try { if (out != null) out.close(); } catch (Exception ignored) {}
+-                }
+-            }
+-        }, "RomFileCopyThread").start();
++    private boolean isUsableRom(File file) {
++        if (!file.isFile() || !isRomFile(file.getName())) return false;
++        String error = RowellGameImage.problem(file);
++        if (error == null) return true;
++        log("Skipped invalid game image: " + file.getAbsolutePath() + " (" + error + ")");
++        return false;
+     }
+ 
+     private File findRomInDir(File dir) {
+@@ -538,7 +512,7 @@ public class OceanTriActivity extends SDLActivity {
+             File[] files = dir.listFiles();
+             if (files != null) {
+                 for (File f : files) {
+-                    if (f.isFile() && isRomFile(f.getName())) {
++                    if (isUsableRom(f)) {
+                         return f;
+                     }
+                 }
+@@ -599,17 +573,31 @@ public class OceanTriActivity extends SDLActivity {
          System.exit(0);
      }
  
@@ -285,8 +570,134 @@ index 6dc682b37725de7be76dde5551e5ee3ddc620bda..a6544e7255f4efe1b339f29b43f90658
          searchDirs.add(new File("/sdcard/OceanTri"));
          searchDirs.add(new File("/sdcard/Wii"));
          searchDirs.add(new File("/sdcard"));
+@@ -622,13 +610,13 @@ public class OceanTriActivity extends SDLActivity {
+                 File[] files = dir.listFiles();
+                 if (files == null) continue;
+                 for (File f : files) {
+-                    if (f.isFile() && isRomFile(f.getName())) {
++                    if (isUsableRom(f)) {
+                         return f.getAbsolutePath();
+                     } else if (f.isDirectory()) {
+                         File[] subFiles = f.listFiles();
+                         if (subFiles != null) {
+                             for (File sf : subFiles) {
+-                                if (sf.isFile() && isRomFile(sf.getName())) {
++                                if (isUsableRom(sf)) {
+                                     return sf.getAbsolutePath();
+                                 }
+                             }
+@@ -643,7 +631,6 @@ public class OceanTriActivity extends SDLActivity {
+     }
+ 
+     private boolean isRomFile(String name) {
+-        String lower = name.toLowerCase(Locale.ROOT);
+-        return lower.endsWith(".rvz") || lower.endsWith(".iso") || lower.endsWith(".wia");
++        return RowellGameImage.hasImageExtension(name);
+     }
+ }
+diff --git a/packaging/android/src/org/libsdl/app/SDLInputConnection.java b/packaging/android/src/org/libsdl/app/SDLInputConnection.java
+index fdc2994c151ab1cb5cac664fac9d3f89aee83dbc..2684f37ad5cf26bd2671e706dd24e2c3b1482264 100644
+--- a/packaging/android/src/org/libsdl/app/SDLInputConnection.java
++++ b/packaging/android/src/org/libsdl/app/SDLInputConnection.java
+@@ -65,15 +65,12 @@ class SDLInputConnection extends BaseInputConnection
+ 
+     @Override
+     public boolean deleteSurroundingText(int beforeLength, int afterLength) {
+-        // Workaround to capture backspace key. Ref: http://stackoverflow.com/questions>/14560344/android-backspace-in-webview-baseinputconnection
+-        // and https://bugzilla.libsdl.org/show_bug.cgi?id=2265
+-        if (beforeLength > 0 && afterLength == 0) {
+-            // backspace(s)
+-            while (beforeLength-- > 0) {
+-                nativeGenerateScancodeForUnichar('\b');
+-            }
++        // Keep the editable/composition buffer and mCommittedText synchronized.
++        // Emitting backspaces without editing this buffer breaks later suggestions.
++        if (beforeLength > 0 && afterLength == 0 && getEditable().length() == 0) {
++            for (int i=0;i<Math.min(beforeLength,256);++i) nativeGenerateScancodeForUnichar('\b');
+             return true;
+-       }
++        }
+ 
+         if (!super.deleteSurroundingText(beforeLength, afterLength)) {
+             return false;
+@@ -82,51 +79,41 @@ class SDLInputConnection extends BaseInputConnection
+         return true;
+     }
+ 
++    @Override
++    public boolean deleteSurroundingTextInCodePoints(int beforeLength, int afterLength) {
++        if (beforeLength > 0 && afterLength == 0 && getEditable().length() == 0) {
++            for (int i=0;i<Math.min(beforeLength,256);++i) nativeGenerateScancodeForUnichar('\b');
++            return true;
++        }
++        if (!super.deleteSurroundingTextInCodePoints(beforeLength, afterLength)) return false;
++        updateText();
++        return true;
++    }
++
+     protected void updateText() {
+         final Editable content = getEditable();
+         if (content == null) {
+             return;
+         }
+ 
+-        String text = content.toString();
+-        int compareLength = Math.min(text.length(), mCommittedText.length());
+-        int matchLength, offset;
+-
+-        /* Backspace over characters that are no longer in the string */
+-        for (matchLength = 0; matchLength < compareLength; ) {
+-            int codePoint = mCommittedText.codePointAt(matchLength);
+-            if (codePoint != text.codePointAt(matchLength)) {
+-                break;
+-            }
+-            matchLength += Character.charCount(codePoint);
+-        }
+-        /* FIXME: This doesn't handle graphemes, like '🌬️' */
+-        for (offset = matchLength; offset < mCommittedText.length(); ) {
+-            int codePoint = mCommittedText.codePointAt(offset);
+-            nativeGenerateScancodeForUnichar('\b');
+-            offset += Character.charCount(codePoint);
+-        }
+-
+-        if (matchLength < text.length()) {
+-            String pendingText = text.subSequence(matchLength, text.length()).toString();
++        String text = RowellImeText.sanitize(content);
++        RowellImeText.Delta delta = RowellImeText.between(mCommittedText, text);
++        for (int i=0;i<delta.backspaces;++i) nativeGenerateScancodeForUnichar('\b');
++        if (!delta.insert.isEmpty()) {
+             if (!SDLActivity.dispatchingKeyEvent()) {
+-                for (offset = 0; offset < pendingText.length(); ) {
+-                    int codePoint = pendingText.codePointAt(offset);
+-                    if (codePoint == '\n') {
+-                        if (SDLActivity.onNativeSoftReturnKey()) {
+-                            return;
+-                        }
+-                    }
+-                    /* Higher code points don't generate simulated scancodes */
+-                    if (codePoint > 0 && codePoint < 128) {
+-                        nativeGenerateScancodeForUnichar((char)codePoint);
++                for (int offset=0;offset<delta.insert.length();) {
++                    int codePoint=delta.insert.codePointAt(offset);
++                    if(codePoint=='\n' && SDLActivity.onNativeSoftReturnKey()) {
++                        mCommittedText=text;
++                        return;
+                     }
+-                    offset += Character.charCount(codePoint);
++                    if(codePoint>0 && codePoint<128) nativeGenerateScancodeForUnichar((char)codePoint);
++                    offset+=Character.charCount(codePoint);
+                 }
+             }
+-            SDLInputConnection.nativeCommitText(pendingText, 0);
++            nativeCommitText(delta.insert,0);
+         }
+-        mCommittedText = text;
++        mCommittedText=text;
+     }
+ 
+     public static native void nativeCommitText(String text, int newCursorPosition);
 diff --git a/runtime/CMakeLists.txt b/runtime/CMakeLists.txt
-index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..444eeddf3f816c1d15f49a615e4e138525c966b7 100644
+index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..d3d4aaf4d78c798a7a69f2267aa2e0685a777061 100644
 --- a/runtime/CMakeLists.txt
 +++ b/runtime/CMakeLists.txt
 @@ -208,6 +208,14 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
@@ -313,7 +724,7 @@ index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..444eeddf3f816c1d15f49a615e4e1385
  string(JSON native_dispatch_bundle_type ERROR_VARIABLE native_dispatch_bundle_error TYPE "${native_dispatch_metadata}" sourceBundlePath)
  
  if(NOT native_dispatch_bundle_error AND native_dispatch_bundle_type STREQUAL "STRING")
-@@ -285,8 +293,8 @@ else()
+@@ -285,10 +293,10 @@ else()
  endif()
  target_sources(MH3 PRIVATE
    src/main.cpp src/memory.cpp ${MH3_GUEST_MEMORY_SOURCE} src/os_boot.cpp src/os_sleep.cpp src/os_alarm.cpp src/os_devices.cpp src/abi_bridge.cpp
@@ -322,8 +733,11 @@ index ff4d5408ccdc13f5365ce5a2b8eb1e978d6edb16..444eeddf3f816c1d15f49a615e4e1385
 +  src/ppc_helpers.cpp src/fpu_helpers.cpp src/executable_guard.cpp src/rso_services.cpp src/wpad_services.cpp src/controller_host.cpp src/gamepad_bindings.cpp native/mh3_classic_map.c src/controller_tests.cpp src/village_boot.cpp src/audio_interface.cpp
 +  src/audio_tests.cpp src/equipment_tests.cpp src/audio_dma.cpp
    src/audio/native_audio_api.cpp src/audio/native_audio_frame.cpp src/audio/native_audio_mixer.cpp src/audio/native_audio_tests.cpp src/audio/sdk_mix.cpp src/audio/sdk_synseq.cpp src/audio/sound_engine.cpp src/audio/sound_stream.cpp
-   src/device_tests.cpp src/efb_host.cpp src/ios.cpp src/usb_hid_services.cpp src/disc_image.cpp src/video_interface.cpp src/gx_registers.cpp src/gx_stream.cpp src/gx_services.cpp src/vi_services.cpp src/glare_filter.cpp src/frame_pacer.cpp src/fps_timers.cpp src/game_frame.cpp src/frame_draw.cpp src/hud_draw.cpp src/mhchar_motion.cpp src/game_step.cpp src/effect_step.cpp src/guest_worker.cpp src/guest_threads.cpp src/net/online_patches.cpp src/net/online_close.cpp src/net/net_ctrl.cpp src/net/ios_net.cpp ${MH3_NET_HOST_SOURCE} src/effect_calc.cpp src/effect_objects.cpp src/effect_draw_order.cpp src/particle_manager_calc.cpp src/map_sound.cpp src/player_timers.cpp src/port_check.cpp src/pulse.cpp src/rumble_timers.cpp src/pad_input.cpp src/camera_input.cpp src/field_camera.cpp src/player_aim.cpp src/step_counter.cpp src/swing_effect.cpp src/stamina.cpp src/player_turn.cpp src/field_jump.cpp src/quest_placement.cpp src/monster_heaps.cpp src/save_data.cpp src/game_tasks.cpp src/field_frame.cpp src/draw_buckets.cpp src/player_health.cpp src/cheats.cpp src/cheat_data.cpp src/cheat_items.cpp src/cheat_monsters.cpp src/cheat_quest.cpp src/cheat_hunter.cpp src/cheat_movement.cpp src/tick_sites.cpp src/camera_script.cpp src/movie_draw.cpp src/reset_fade.cpp src/loading_screen.cpp src/load_progress.cpp src/quest_clock.cpp src/ambient_hover.cpp src/fish_effects.cpp src/group_shuttle.cpp src/hit_timers.cpp src/enemy_glide.cpp src/creature_fade.cpp src/ambient_flutter.cpp src/yure_chain.cpp src/audio_reverb.cpp src/anm_chr_keys.cpp src/anm_chr_blend.cpp src/anm_obj_chr_res.cpp src/effect_texture.cpp src/effect_billboard.cpp src/effect_particle.cpp src/msl_math.cpp src/texture_scroll.cpp src/ceadeus_intro.cpp src/demo_pose.cpp src/event_demo.cpp src/alatreon_actions.cpp src/screen_fade.cpp src/enemy_timers.cpp src/shell_motion.cpp src/enemy_turn.cpp src/npc_turn.cpp src/field_actor.cpp src/object_ages.cpp src/village_player_actions.cpp src/field_player_actions.cpp src/g3d_res.cpp src/g3d_calc_world.cpp src/scene_world.cpp src/mtx.cpp src/ef_anim_curve.cpp src/nw4r_accessors.cpp src/g3d_anm_result.cpp src/nw4r_math.cpp src/scn_mdl_tasks.cpp src/gather_spots.cpp src/mhchar_move.cpp src/field_lists.cpp src/res_anm_keys.cpp src/drawshape.cpp src/particle_mtx.cpp src/particle_initialize.cpp src/hunter_parts.cpp src/player_skill.cpp src/sound_shells.cpp src/enemy_hit_shapes.cpp src/enemy_conditions.cpp src/small_monsters.cpp src/ef_mtx_scale.cpp src/ef_resource.cpp src/msl_string.cpp src/debug_font.cpp src/prim_buffers.cpp src/monster_intros.cpp src/monster_roars.cpp src/monster_attacks.cpp src/monster_control.cpp src/enemy_actions.cpp src/monster_waits.cpp src/g3d_destroy.cpp
+-  src/device_tests.cpp src/efb_host.cpp src/ios.cpp src/usb_hid_services.cpp src/disc_image.cpp src/video_interface.cpp src/gx_registers.cpp src/gx_stream.cpp src/gx_services.cpp src/vi_services.cpp src/glare_filter.cpp src/frame_pacer.cpp src/fps_timers.cpp src/game_frame.cpp src/frame_draw.cpp src/hud_draw.cpp src/mhchar_motion.cpp src/game_step.cpp src/effect_step.cpp src/guest_worker.cpp src/guest_threads.cpp src/net/online_patches.cpp src/net/online_close.cpp src/net/net_ctrl.cpp src/net/ios_net.cpp ${MH3_NET_HOST_SOURCE} src/effect_calc.cpp src/effect_objects.cpp src/effect_draw_order.cpp src/particle_manager_calc.cpp src/map_sound.cpp src/player_timers.cpp src/port_check.cpp src/pulse.cpp src/rumble_timers.cpp src/pad_input.cpp src/camera_input.cpp src/field_camera.cpp src/player_aim.cpp src/step_counter.cpp src/swing_effect.cpp src/stamina.cpp src/player_turn.cpp src/field_jump.cpp src/quest_placement.cpp src/monster_heaps.cpp src/save_data.cpp src/game_tasks.cpp src/field_frame.cpp src/draw_buckets.cpp src/player_health.cpp src/cheats.cpp src/cheat_data.cpp src/cheat_items.cpp src/cheat_monsters.cpp src/cheat_quest.cpp src/cheat_hunter.cpp src/cheat_movement.cpp src/tick_sites.cpp src/camera_script.cpp src/movie_draw.cpp src/reset_fade.cpp src/loading_screen.cpp src/load_progress.cpp src/quest_clock.cpp src/ambient_hover.cpp src/fish_effects.cpp src/group_shuttle.cpp src/hit_timers.cpp src/enemy_glide.cpp src/creature_fade.cpp src/ambient_flutter.cpp src/yure_chain.cpp src/audio_reverb.cpp src/anm_chr_keys.cpp src/anm_chr_blend.cpp src/anm_obj_chr_res.cpp src/effect_texture.cpp src/effect_billboard.cpp src/effect_particle.cpp src/msl_math.cpp src/texture_scroll.cpp src/ceadeus_intro.cpp src/demo_pose.cpp src/event_demo.cpp src/alatreon_actions.cpp src/screen_fade.cpp src/enemy_timers.cpp src/shell_motion.cpp src/enemy_turn.cpp src/npc_turn.cpp src/field_actor.cpp src/object_ages.cpp src/village_player_actions.cpp src/field_player_actions.cpp src/g3d_res.cpp src/g3d_calc_world.cpp src/scene_world.cpp src/mtx.cpp src/ef_anim_curve.cpp src/nw4r_accessors.cpp src/g3d_anm_result.cpp src/nw4r_math.cpp src/scn_mdl_tasks.cpp src/gather_spots.cpp src/mhchar_move.cpp src/field_lists.cpp src/res_anm_keys.cpp src/drawshape.cpp src/particle_mtx.cpp src/particle_initialize.cpp src/hunter_parts.cpp src/player_skill.cpp src/sound_shells.cpp src/enemy_hit_shapes.cpp src/enemy_conditions.cpp src/small_monsters.cpp src/ef_mtx_scale.cpp src/ef_resource.cpp src/msl_string.cpp src/debug_font.cpp src/prim_buffers.cpp src/monster_intros.cpp src/monster_roars.cpp src/monster_attacks.cpp src/monster_control.cpp src/enemy_actions.cpp src/monster_waits.cpp src/g3d_destroy.cpp
++  src/android_keyboard.cpp src/hunter_telemetry.cpp src/device_tests.cpp src/efb_host.cpp src/ios.cpp src/usb_hid_services.cpp src/disc_image.cpp src/video_interface.cpp src/gx_registers.cpp src/gx_stream.cpp src/gx_services.cpp src/vi_services.cpp src/glare_filter.cpp src/frame_pacer.cpp src/fps_timers.cpp src/game_frame.cpp src/frame_draw.cpp src/hud_draw.cpp src/mhchar_motion.cpp src/game_step.cpp src/effect_step.cpp src/guest_worker.cpp src/guest_threads.cpp src/net/online_patches.cpp src/net/online_close.cpp src/net/net_ctrl.cpp src/net/ios_net.cpp ${MH3_NET_HOST_SOURCE} src/effect_calc.cpp src/effect_objects.cpp src/effect_draw_order.cpp src/particle_manager_calc.cpp src/map_sound.cpp src/player_timers.cpp src/port_check.cpp src/pulse.cpp src/rumble_timers.cpp src/pad_input.cpp src/camera_input.cpp src/field_camera.cpp src/player_aim.cpp src/step_counter.cpp src/swing_effect.cpp src/stamina.cpp src/player_turn.cpp src/field_jump.cpp src/quest_placement.cpp src/monster_heaps.cpp src/save_data.cpp src/game_tasks.cpp src/field_frame.cpp src/draw_buckets.cpp src/player_health.cpp src/cheats.cpp src/cheat_data.cpp src/cheat_items.cpp src/cheat_monsters.cpp src/cheat_quest.cpp src/cheat_hunter.cpp src/cheat_movement.cpp src/tick_sites.cpp src/camera_script.cpp src/movie_draw.cpp src/reset_fade.cpp src/loading_screen.cpp src/load_progress.cpp src/quest_clock.cpp src/ambient_hover.cpp src/fish_effects.cpp src/group_shuttle.cpp src/hit_timers.cpp src/enemy_glide.cpp src/creature_fade.cpp src/ambient_flutter.cpp src/yure_chain.cpp src/audio_reverb.cpp src/anm_chr_keys.cpp src/anm_chr_blend.cpp src/anm_obj_chr_res.cpp src/effect_texture.cpp src/effect_billboard.cpp src/effect_particle.cpp src/msl_math.cpp src/texture_scroll.cpp src/ceadeus_intro.cpp src/demo_pose.cpp src/event_demo.cpp src/alatreon_actions.cpp src/screen_fade.cpp src/enemy_timers.cpp src/shell_motion.cpp src/enemy_turn.cpp src/npc_turn.cpp src/field_actor.cpp src/object_ages.cpp src/village_player_actions.cpp src/field_player_actions.cpp src/g3d_res.cpp src/g3d_calc_world.cpp src/scene_world.cpp src/mtx.cpp src/ef_anim_curve.cpp src/nw4r_accessors.cpp src/g3d_anm_result.cpp src/nw4r_math.cpp src/scn_mdl_tasks.cpp src/gather_spots.cpp src/mhchar_move.cpp src/field_lists.cpp src/res_anm_keys.cpp src/drawshape.cpp src/particle_mtx.cpp src/particle_initialize.cpp src/hunter_parts.cpp src/player_skill.cpp src/sound_shells.cpp src/enemy_hit_shapes.cpp src/enemy_conditions.cpp src/small_monsters.cpp src/ef_mtx_scale.cpp src/ef_resource.cpp src/msl_string.cpp src/debug_font.cpp src/prim_buffers.cpp src/monster_intros.cpp src/monster_roars.cpp src/monster_attacks.cpp src/monster_control.cpp src/enemy_actions.cpp src/monster_waits.cpp src/g3d_destroy.cpp
    src/dol_sections.cpp
+   ../generated/rso_overlays/map_village.cpp ../generated/rso_overlays/quest_field.cpp ../generated/rso_overlays/enemy_field.cpp ../generated/rso_overlays/map01_field.cpp ../generated/rso_overlays/map00_field.cpp ../generated/rso_overlays/map02_field.cpp ../generated/rso_overlays/map03_field.cpp ../generated/rso_overlays/map04_field.cpp ../generated/rso_overlays/map05_field.cpp ../generated/rso_overlays/map06_field.cpp ../generated/rso_overlays/map07_field.cpp ../generated/rso_overlays/map08_field.cpp ../generated/rso_overlays/map09_field.cpp ../generated/rso_overlays/map10_field.cpp ../generated/rso_overlays/map11_field.cpp ../generated/rso_overlays/net_data.cpp ../generated/rso_overlays/map_town_online.cpp ../generated/rso_overlays/map_town_quest.cpp
+   ${MKW_BASE_COMMON_SHARDS} ${MKW_BASE_PORTABLE_SENSITIVE_SHARDS}
 @@ -348,10 +356,9 @@ target_include_directories(MH3 PRIVATE include ..)
  if(ANDROID)
    set_target_properties(MH3 PROPERTIES OUTPUT_NAME "main")
@@ -447,6 +861,26 @@ index 05a42e587a8b389f5776cd6566c91b2902614eae..65d928c37dc24503dd360dfa2f45d23e
  }
  #else
  inline std::filesystem::path mh3_self_exe() { return std::filesystem::read_symlink("/proc/self/exe"); }
+diff --git a/runtime/native/adapters/model_catalog_bridge.h b/runtime/native/adapters/model_catalog_bridge.h
+index e6a56e0f439ad6692c00e59957ac549394afe1e2..ecd4a03d0d606ba7b30f22996b2f7f98aadfe081 100644
+--- a/runtime/native/adapters/model_catalog_bridge.h
++++ b/runtime/native/adapters/model_catalog_bridge.h
+@@ -22,11 +22,11 @@ bool NativeResourceReadByDraw(uint32_t address, uint32_t bytes);
+  * material-field update, a live block change (ReadNativeLiveMaterialRevision)
+  * or provenance moving outside owners. */
+ uint64_t ReadNativeModelStructureRevision();
+-/* Advances whenever a live material block node is erased or fully
+- * (re)published. While it is unchanged every live block keeps its node; an
+- * in-place producer update (WritableNativeLiveMaterialBlock) changes only the
+- * node's fields and fields.generation. */
++/* Advances when a live material block is erased, published or changed by a
++ * validated in-place producer. Renderer snapshots must see field changes
++ * even when the underlying live block keeps the same node. */
+ uint64_t ReadNativeLiveMaterialRevision();
++void BumpNativeLiveMaterialRevision();
+ /* A vertex producer installs this before retaining any sources/revisions.
+  * Generic overwrites notify it even when no disc interval is tracked. */
+ using NativeModelVertexRetireHook = void (*)(uint32_t address, uint32_t bytes);
 diff --git a/runtime/src/anm_chr_keys.cpp b/runtime/src/anm_chr_keys.cpp
 index 89756eb185406d6f711829a5b3233d41187e85a8..206ab6b8cf1a194dfe1b6fc898829d951934c647 100644
 --- a/runtime/src/anm_chr_keys.cpp
@@ -565,7 +999,7 @@ index 04a5bcc05d93265828f58f94bef766149313f539..a4604de7d849c930dc1ef65d74d5ced5
  
      if (binding & 0xC000) {
 diff --git a/runtime/src/audio_output.cpp b/runtime/src/audio_output.cpp
-index 8f5c3dcdca217b475a42b00e593a023f91520527..913642bc332649cf6b4365aced07fbd04e82ef21 100644
+index 8f5c3dcdca217b475a42b00e593a023f91520527..69b921c63b4802f23ee4bcc2467ae9a5164c3b95 100644
 --- a/runtime/src/audio_output.cpp
 +++ b/runtime/src/audio_output.cpp
 @@ -11,15 +11,17 @@
@@ -734,7 +1168,18 @@ index 8f5c3dcdca217b475a42b00e593a023f91520527..913642bc332649cf6b4365aced07fbd0
  
      bool null = false;
  #ifdef MH3_DEVELOPMENT
-@@ -181,31 +288,34 @@ void StartAudioOutput() {
+@@ -175,37 +282,44 @@ void StartAudioOutput() {
+         null = v[0] == '1';
+ #endif
+     if (!null) {
+-#ifndef __EMSCRIPTEN__
++#if defined(__ANDROID__)
++        // Allow AAudio/Bluetooth scheduling jitter without changing the
++        // mixer clock or our serialized foreground-recovery worker.
++        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "1024");
++#elif !defined(__EMSCRIPTEN__)
+         // Not on the web: its ScriptProcessorNode takes a power of two, SDL picks it.
+         SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "384");
  #endif
  
          if (SDL_InitSubSystem(SDL_INIT_AUDIO)) {
@@ -781,7 +1226,7 @@ index 8f5c3dcdca217b475a42b00e593a023f91520527..913642bc332649cf6b4365aced07fbd0
      if (pullStream) {
          SDL_DestroyAudioStream(pullStream);
          pullStream = nullptr;
-@@ -217,4 +327,40 @@ void StopAudioOutput() {
+@@ -217,4 +331,40 @@ void StopAudioOutput() {
      }
  }
  
@@ -981,22 +1426,24 @@ index 376bc7a1b84f836484c5e3c9d3d9249eb2211709..9cb728ceb9fc06abae3f73ece4d8bc7d
  
      // Digital L/R inputs (keyboard, mouse or shoulder) report a full press.
 diff --git a/runtime/src/device_tests.cpp b/runtime/src/device_tests.cpp
-index 6b03b9f8a8b9409326eff16e4d36c1dd3bc9a99b..5378a8b5ffdb9de2edcb978eab82ae16e3949487 100644
+index 6b03b9f8a8b9409326eff16e4d36c1dd3bc9a99b..8fc7e78771475c497bf2561f02c75acdf9b4d7ad 100644
 --- a/runtime/src/device_tests.cpp
 +++ b/runtime/src/device_tests.cpp
-@@ -48,6 +48,7 @@ extern "C" void MH3_IOSOpenAsync(CpuContext*);
+@@ -48,6 +48,8 @@ extern "C" void MH3_IOSOpenAsync(CpuContext*);
  void RunSleepSelfTests(CpuContext*);
  void RunRsoOverlaySelfTests(CpuContext*);
  void RunGxPanicSelfTests(CpuContext*);
 +void RunEquipmentSelfTests(CpuContext*);
++void RunMotionWindowSelfTests();
  extern "C" void PPC_WriteSpr(uint32_t, uint32_t);
  extern "C" uint32_t PPC_ReadSpr(uint32_t);
  
-@@ -132,6 +133,7 @@ void RunDeviceSelfTests(CpuContext* cpu) {
+@@ -132,6 +134,8 @@ void RunDeviceSelfTests(CpuContext* cpu) {
  
      RunVideoTimingSelfTests();
      RunControllerSelfTests(cpu);
 +    RunEquipmentSelfTests(cpu);
++    RunMotionWindowSelfTests();
      RunRsoOverlaySelfTests(cpu);
      {
          constexpr uint32_t start = 0x81700004, end = 0x81701008;
@@ -1154,6 +1601,224 @@ index 3768236a11bb9a87982b852dff85fb438fee665e..8c164174bbff516f22a1b55c4f34c35d
  void Collected() {
      deferral.collecting = false;
  #if defined(MH3_DEVELOPMENT) && !defined(__vita__)
+diff --git a/runtime/src/event_demo.cpp b/runtime/src/event_demo.cpp
+index 315a0259da46e5a1608d09822fee93d1d99590e6..9f7b61d080d2d586a6d001c9f3df3922075394ab 100644
+--- a/runtime/src/event_demo.cpp
++++ b/runtime/src/event_demo.cpp
+@@ -41,6 +41,9 @@
+ #include "guest_call.h"
+ #include "memory.h"
+ #include "port_check.h"
++#include "village_boot.h"
++#include "rowell_features.h"
++#include "../native/mh3_classic_map.h"
+ 
+ #include <chrono>
+ #include <cstdint>
+@@ -63,6 +66,7 @@ namespace {
+ 
+ // The driver's state block.
+ constexpr uint32_t kDemo = 0x806D4FA0;
++RowellFeatures::SkipPress demoSkip;
+ 
+ enum : uint32_t {
+     kState = kDemo + 0x0,    // u8: 0 start, 1 waiting for a trigger, 2 loading, 3 preparing, 4 playing
+@@ -122,6 +126,8 @@ enum : uint32_t {
+     FieldResume = 0x8028D61C,   // (30)
+     CameraStart = 0x802BC884,   // (demo, 0): the demo's camera script
+     CameraPlaying = 0x802BE450, // () -> 0 once the camera script is done
++    CameraFollow = 0x802BC700,
++    CameraMgr = 0x802BED34,
+     CameraLength = 0x802BC8DC,  // () -> s16 steps
+     DemoLight = 0x802C239C,     // (demo): demo 0x21's light, from the clock
+     SetFlag = 0x8004D274,       // (flag): the story flag the demo sets
+@@ -340,6 +346,7 @@ uint32_t EventDemoUpdate(GuestCall& game, uint32_t entry) {
+     const uint8_t phase = Memory::Read8(entry + kPhase);
+ 
+     if (phase == 0) {
++        demoSkip.Reset();
+         game.Call<CameraStart>({Id(), 0});
+ 
+         if (Memory::Read8(kOnlineMode) == 1) {
+@@ -359,6 +366,23 @@ uint32_t EventDemoUpdate(GuestCall& game, uint32_t entry) {
+     }
+ 
+     if (phase == 1) {
++        const bool allowed = RowellFeatures::cutsceneSkip.load() &&
++            RowellFeatures::IsOfflineMode(Memory::Read8(kOnlineMode), Memory::Read8(kPlayMode));
++        bool skip = false;
++        if (allowed) {
++            const auto buttons = ReadGameController().buttons;
++            skip = demoSkip.Poll((uint64_t(entry) << 8) | Id(),
++                (buttons & (MH3_CL_A | MH3_CL_PLUS)) != 0, Clock() >= 5);
++        } else demoSkip.Reset();
++        if (skip && game.Call<Arena>() == 0) {
++            const uint32_t camera = game.Call<CameraMgr>();
++            if (camera && Memory::Contains(camera, 645)) {
++                Memory::Write32(kClock, 0x7FFF);
++                Memory::Write8(camera + 644, 2);
++                game.Call<CameraFollow>({1});
++            } else skip = false;
++        } else skip = false;
++        if (!skip) {
+         Memory::Write32(kClock, uint32_t(Clock() + int32_t(GameStep::Ticks())));
+         game.Call<DemoLight>({Id()});
+         game.Call<0x803C4914>({Id()});
+@@ -366,6 +390,7 @@ uint32_t EventDemoUpdate(GuestCall& game, uint32_t entry) {
+ 
+         if (game.Call<CameraPlaying>() != 0)
+             return 0;
++        }
+ 
+         Memory::Write8(entry + kPhase, uint8_t(phase + 1));
+ 
+diff --git a/runtime/src/field_camera.cpp b/runtime/src/field_camera.cpp
+index 586b2b29f52663dba9db6a582630cdc38a8ab7ff..60b4c2cf76f7ad63a0e6f1e3ea33d7ec7043a0c1 100644
+--- a/runtime/src/field_camera.cpp
++++ b/runtime/src/field_camera.cpp
+@@ -86,8 +86,9 @@ enum : uint32_t {
+     kTarget = 0x0C,       // VEC3
+     kOldEye = 0x18,       // VEC3, the reset blend's
+     kOldTarget = 0x24,    // VEC3
+-    kFovB = 0x30,         // f32
+-    kFovA = 0x34,         // f32
++    kTwist = 0x30,        // f32: roll passed as CameraSet's second float
++    kFovB = kTwist,
++    kFovA = 0x34,         // f32: vertical field of view
+     kReset = 0x42,        // u8: 1 start a reset blend, 2 blending
+     kResetLeft = 0x44,    // s16 steps (here ticks) of the blend left
+     kResetRate = 0x48,    // f32: 1 / 20
+@@ -551,12 +552,14 @@ static void FieldCameraUpdatePort(CpuContext* ctx) {
+                     Memory::WriteFloat32(eye + 4 * k, F(target + 4 * k) + away[k] / length * distance + (k == 1 ? distance / 3.0f : 0.0f));
+             }
+ 
+-            game.Call<CameraSet>({0, eye, target}, {F(cam + kFovA), F(cam + kFovB)});
++            WF(cam + kTwist, 0.0f);
++            game.Call<CameraSet>({0, eye, target}, {F(cam + kFovA), 0.0f});
+             return;
+         }
+     }
+ #endif
+-    game.Call<CameraSet>({0, cam + kEye, cam + kTarget}, {F(cam + kFovA), F(cam + kFovB)});
++    WF(cam + kTwist, 0.0f);
++    game.Call<CameraSet>({0, cam + kEye, cam + kTarget}, {F(cam + kFovA), 0.0f});
+ }
+ 
+ // 0x802B8ED0 BindCamera (camera, PLW), each step after the field camera
+@@ -631,6 +634,8 @@ static void BindCameraPort(CpuContext* ctx) {
+     static bool placed = false; // the last tick placed the eye and target
+     static BindPlace last;
+ 
++    const bool wasPlaced = placed;
++
+     for (uint32_t i = 0; i < ticks; ++i) {
+         placed = BindTick(ctx, cam, plw);
+ 
+@@ -640,17 +645,21 @@ static void BindCameraPort(CpuContext* ctx) {
+ 
+     if (ticks == 0 || fraction > 0) {
+         uint8_t state[kBindStateEnd - kBindSteps];
+-        BindPlace now;
+ 
+         for (uint32_t i = 0; i < sizeof(state); ++i)
+             state[i] = Memory::Read8(cam + kBindSteps + i);
+ 
+-        now.Read(cam);
+         const bool next = BindTick(ctx, cam, plw);
+ 
+         for (uint32_t i = 0; i < sizeof(state); ++i)
+             Memory::Write8(cam + kBindSteps + i, state[i]);
+ 
++        if (ticks == 0) {
++            placed = next;
++            if (placed)
++                last.Read(cam);
++        }
++
+         if (placed && next) {
+             GuestCall game{ctx};
+ 
+@@ -663,12 +672,31 @@ static void BindCameraPort(CpuContext* ctx) {
+             const uint32_t yaw = game.Call<AngleBetween>({cam + kTarget, cam + kEye});
+             W32(cam + kYawTarget, yaw);
+             W32(cam + kYaw, yaw);
+-        } else if (placed) {
+-            last.Write(cam);
+         } else {
+-            now.Write(cam);
++            // Keep the original release's restored camera state, rather than
++            // writing the stale pre-release zoom and roll back over it.
++            placed = false;
+         }
+     }
++
++    if (wasPlaced && !placed) {
++        float defaultFov = Memory::Contains(0x8079C9A8u, 4) ? F(0x8079C9A8u) : 55.0f;
++        if (!std::isfinite(defaultFov) || defaultFov <= 0.0f || defaultFov > 120.0f)
++            defaultFov = 55.0f;
++        WF(cam + kFovA, defaultFov);
++        WF(cam + kTwist, 0.0f);
++        W32(cam + kTiltTarget, 0);
++        W32(cam + kTilt, 0);
++
++        GuestCall game{ctx};
++        const uint8_t playerId = Memory::Read8(plw + kPlwPlayer);
++        uint32_t distance = game.Call<OptionConfig>({playerId, 11}) & 0xFF;
++        if (distance > 4)
++            distance = 2;
++        Memory::Write8(cam + kDistance, uint8_t(distance));
++        const uint32_t rows = Memory::Read8(plw + kPlwState) == 3 ? kRowsSwimming : kRows;
++        W32(cam + kRow, rows + distance * 28);
++    }
+ }
+ 
+ extern "C" void MH3_BindCamera(CpuContext* ctx) {
+diff --git a/runtime/src/field_player_actions.cpp b/runtime/src/field_player_actions.cpp
+index e86c0954516de5afc0b23b4940fde46d7b1269e0..9e9c5b0f489b8334eb994894681a558fdbde743e 100644
+--- a/runtime/src/field_player_actions.cpp
++++ b/runtime/src/field_player_actions.cpp
+@@ -1998,9 +1998,11 @@ void Spin(CpuContext* ctx) {
+         p.Flags(k.mode, 1, 0);
+         game.Call<0x80277CB4>({plw, 60});
+         game.Call<0x8027714C>({plw, k.list0, 0});
++        Memory::Write8(plw + 617, 1);
+         break;
+     case 1:
+         game.Call<0x80277CB4>({plw, 2});
++        Memory::Write8(plw + 617, 1);
+ 
+         if (p.Master()) {
+             // The original: 192 a step. Here its share of this step.
+@@ -2028,7 +2030,8 @@ void Spin(CpuContext* ctx) {
+             Memory::Write16(plw + 182, uint16_t(Memory::Read16(plw + 182) + 3));
+             game.Call<0x80284268>({plw, k.cueFinish, 0});
+             game.Call<0x8027714C>({plw, 0, 0});
+-        } else if (p.Timer() >= 2) {
++            Memory::Write8(plw + 617, 0);
++        } else if (p.Timer() == 2) {
+             game.Call<0x8027714C>({plw, k.list, 0});
+         }
+ 
+@@ -3857,12 +3860,18 @@ REGISTER_NATIVE_FUNCTION_AS(0x80252B50, MH3_SwimPitch, "SwimPitch");
+ extern "C" void func_802629A4(CpuContext* ctx);
+ extern "C" void MH3_ComboTable(CpuContext* ctx) {
+     const uint32_t plw = ctx->gpr[3];
++    const uint32_t table = Memory::Read32(plw + 0x318);
+ 
+-    if (Memory::Read32(plw + 0x318) == 0 || int8_t(Memory::Read8(plw + 0x313)) > 0) {
++    if (table == 0 || int8_t(Memory::Read8(plw + 0x313)) > 0) {
+         ctx->gpr[3] = 0;
+         return;
+     }
+ 
++    // Classic/touch lance guard advance must expose the same shield-bash
++    // command bit as the Wii Remote input path, even with forward held.
++    if (Memory::Read8(plw + 9) == 3 && (Memory::Read8(plw + 357) & 0x40) != 0)
++        Memory::Write8(plw + 356, uint8_t(Memory::Read8(plw + 356) | 0x80));
++
+     func_802629A4(ctx);
+ }
+ REGISTER_NATIVE_FUNCTION_AS(0x802629A4, MH3_ComboTable, "ComboTable");
 diff --git a/runtime/src/frame_pacer.cpp b/runtime/src/frame_pacer.cpp
 index 58240187f8d48f5ed0508173d6b3b660a3ad7d18..252f3ab8566b8972a0b38fe410c6170d05ae656b 100644
 --- a/runtime/src/frame_pacer.cpp
@@ -1510,6 +2175,160 @@ index 49786d7d5fd0a1e951657a4c6bbd9384fcdcecf4..feb6f0dc6e2f6629c2fa3fec16817b74
          SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "MH3 Error", error.what(), nullptr);
          std::this_thread::sleep_for(std::chrono::seconds(3));
  #endif
+diff --git a/runtime/src/mhchar_motion.cpp b/runtime/src/mhchar_motion.cpp
+index 69b4372c9979a77218fc323b91f19cba7c2af2ef..3f3e3bbcc3c820f09d9eedacb6d119d3b602dabd 100644
+--- a/runtime/src/mhchar_motion.cpp
++++ b/runtime/src/mhchar_motion.cpp
+@@ -24,6 +24,8 @@
+ #include <algorithm>
+ #include <array>
+ #include <cmath>
++#include <cstring>
++#include <stdexcept>
+ #include <unordered_map>
+ #ifdef MH3_DEVELOPMENT
+ #include <cstdio>
+@@ -109,8 +111,8 @@ struct Counters {
+ 
+ std::unordered_map<uint32_t, Counters> counters;
+ 
+-// The frame check's last mode-0 window ahead per character (a few slots by the
+-// MHchar's address; a slot another character took just starts afresh): the
++// The frame check's last mode-0 window ahead per character, keyed by the full
++// MHchar address so simultaneous actors cannot overwrite each other's window: the
+ // step (its game time), the frame the window started at, the frames it
+ // covered, the frame updates (MHcharRootMotionPort) since, and whether that
+ // port updates the character at all.
+@@ -122,10 +124,10 @@ struct AheadWindow {
+     bool updated = false;
+ };
+ 
+-std::array<AheadWindow, 64> aheadWindows;
++std::unordered_map<uint32_t, AheadWindow> aheadWindows;
+ 
+ AheadWindow& WindowOf(uint32_t self) {
+-    return aheadWindows[(self * 2654435761u) >> 26];
++    return aheadWindows[self];
+ }
+ 
+ // One frame update of `self`, an advance or a step without one (a pause);
+@@ -597,6 +599,13 @@ uint32_t FrameCheck(uint32_t self, uint32_t mode, bool ahead, double frame, doub
+         return to < frame;
+     case 3:
+     case 7:
++        // The game's open-ended command windows use a negative sentinel.
++        // A zero-width window must also survive advancing past its frame,
++        // otherwise high-FPS hammer finishers miss the input opportunity.
++        if (frame < -500.0)
++            return reached >= frame;
++        if (frame == end)
++            return (from < frame && reached >= frame) || (reached >= frame && reached <= end);
+         return reached >= frame && reached <= end;
+     case 4:
+         return reached > frame && reached <= end;
+@@ -625,3 +634,102 @@ extern "C" void MH3_MHcharFrameCheck(CpuContext* ctx) {
+     ctx->gpr[3] = FrameCheck(ctx->gpr[3], ctx->gpr[4] & 0xFFFF, (ctx->gpr[5] & 0xFFFF) == 0, ctx->fpr[1].d, ctx->fpr[2].d);
+ }
+ REGISTER_NATIVE_FUNCTION_AS(0x800E1740, MH3_MHcharFrameCheck, "MHcharFrameCheck");
++
++// Isolated synthetic RAM checks, called only by the explicit runtime self-test.
++// Exercise the production window tracker rather than a duplicate of its logic.
++void RunMotionWindowSelfTests() {
++    constexpr uint32_t base = 0x817B0000, bytes = 0x10000;
++    struct Restore {
++        std::array<uint8_t, bytes> ram;
++        std::array<uint32_t, 4> constants;
++        GameStep::State step = GameStep::Save();
++        bool variable = GameStep::Variable();
++        std::unordered_map<uint32_t, AheadWindow> windows = std::move(aheadWindows);
++        Restore() {
++            std::memcpy(ram.data(), Memory::GetPointer(base, bytes), bytes);
++            constants = {Memory::Read32(kZero), Memory::Read32(kOne),
++                         Memory::Read32(kAnimationBaseRate), Memory::Read32(0x8065B4D0)};
++            std::memset(Memory::GetPointer(base, bytes), 0, bytes);
++            Memory::WriteFloat32(kZero, 0.0f);
++            Memory::WriteFloat32(kOne, 1.0f);
++            GameStep::SetVariable(true);
++        }
++        ~Restore() {
++            std::memcpy(Memory::GetPointer(base, bytes), ram.data(), bytes);
++            for (unsigned i = 0; const auto address : {kZero, kOne, kAnimationBaseRate, 0x8065B4D0u})
++                Memory::Write32(address, constants[i++]);
++            GameStep::Restore(step);
++            GameStep::SetVariable(variable);
++            aheadWindows = std::move(windows);
++        }
++    } restore;
++    auto check = [](bool value, const char* reason) {
++        if (!value)
++            MH3_THROW(std::runtime_error(reason));
++    };
++    auto actor = [](uint32_t self, float frame, float rate = 1.0f) {
++        Memory::WriteFloat32(self + kFrame, frame);
++        Memory::WriteFloat32(self + kPrevFrame, frame - rate);
++        Memory::WriteFloat32(self + kRate, rate);
++        Memory::WriteFloat32(self + kEndFrame, 1000.0f);
++        Memory::WriteFloat32(self + kLoopFrame, -1.0f);
++    };
++
++    // These distinct actors collided in the former 64-slot table. Interleave
++    // their checks, then shorten the step: actor A must not replay its event.
++    const auto oldSlot = [](uint32_t self) { return (self * 2654435761u) >> 26; };
++    uint32_t other = base + 0x200;
++    while (other < base + bytes - 0x200 && oldSlot(other) != oldSlot(base))
++        other += 0x200;
++    check(other < base + bytes - 0x200, "Motion test could not find colliding actors");
++    actor(base, 10.0f);
++    actor(other, 10.0f);
++    GameStep::Begin(0.5);
++    check(FrameCheck(base, 0, true, 10.4, 0) == 1, "First actor lost its throw event");
++    check(FrameCheck(other, 0, true, 10.4, 0) == 1, "Second actor lost its throw event");
++    actor(base, 10.25f);
++    GameStep::Begin(0.25);
++    check(FrameCheck(base, 0, true, 10.4, 0) == 0, "Actor collision replayed a projectile event");
++
++    // At fixed and varying frame rates, a one-shot event must fire exactly
++    // once. Repeated checks within one step must share the same window.
++    for (const double scale : {1.0, 0.5, 1.0 / 3.0, 0.25}) {
++        aheadWindows.clear();
++        float frame = 0.0f;
++        unsigned hits = 0;
++        for (unsigned i = 0; i < 160; ++i) {
++            actor(base, frame);
++            GameStep::Begin(scale);
++            const auto hit = FrameCheck(base, 0, true, 15.0, 0);
++            check(FrameCheck(base, 0, true, 15.0, 0) == hit, "Same-step consumers disagreed");
++            hits += hit;
++            frame += float(scale);
++        }
++        check(hits == 1, "Fixed-FPS motion duplicated or missed an event");
++    }
++    aheadWindows.clear();
++    float frame = 0.0f;
++    unsigned hits = 0;
++    constexpr double jitter[] = {0.25, 0.5, 1.25, 0.4, 0.75};
++    for (unsigned i = 0; i < 80; ++i) {
++        const double scale = jitter[i % 5];
++        actor(base, frame);
++        GameStep::Begin(scale);
++        hits += FrameCheck(base, 0, true, 15.0, 0);
++        frame += float(scale);
++    }
++    check(hits == 1, "Varying-FPS motion duplicated or missed an event");
++
++    aheadWindows.clear();
++    actor(base, 5.75f);
++    GameStep::Begin(0.5);
++    for (const uint32_t mode : {3u, 7u}) {
++        check(FrameCheck(base, mode, true, 6.0, 6.0) == 1, "Hammer command missed a crossed frame");
++        check(FrameCheck(base, mode, true, -9999.0, 0.0) == 1, "Open-ended command window was rejected");
++        check(FrameCheck(base, mode, true, 6.0, 7.0) == 1, "Ordinary command window changed");
++        check(FrameCheck(base, mode, true, 7.0, 8.0) == 0, "Future command window opened early");
++        check(FrameCheck(base, mode, true, 0.0, 5.0) == 0, "Expired command window stayed open");
++    }
++    actor(base, 7.0f);
++    check(FrameCheck(base, 3, true, 6.0, 6.0) == 0, "Single-frame command remained active indefinitely");
++}
 diff --git a/runtime/src/model_assets.cpp b/runtime/src/model_assets.cpp
 index 55899e7aa523f29de98f2ae17359ab0ef4cdf993..6a987c8428c367122a371717d3d3a3a89436be3f 100644
 --- a/runtime/src/model_assets.cpp
@@ -1559,6 +2378,179 @@ index 55899e7aa523f29de98f2ae17359ab0ef4cdf993..6a987c8428c367122a371717d3d3a3a8
              }
          });
      }
+diff --git a/runtime/src/model_catalog.cpp b/runtime/src/model_catalog.cpp
+index 5e4a0ab8ecac03a201637e17276af7416d088167..fb17ada72d814bb8722e65dddeeae23843218231 100644
+--- a/runtime/src/model_catalog.cpp
++++ b/runtime/src/model_catalog.cpp
+@@ -119,8 +119,7 @@ struct Catalog {
+ 
+ Catalog catalog;
+ 
+-// Advanced by every live block erase or full (re)publication; not by an
+-// in-place producer update (WritableNativeLiveMaterialBlock).
++// Advanced by live block erasure, publication and validated in-place updates.
+ uint64_t live_version = 1;
+ Catalog& C() {
+     return catalog;
+@@ -1519,6 +1518,11 @@ void PublishNativeLiveMaterialBlock(const NativeLiveMaterialBlock& block) {
+     MH3_THROW(std::runtime_error("Native material publication refers to a retired resident allocation"));
+ }
+ 
++void BumpNativeLiveMaterialRevision() {
++    std::lock_guard guard(catalogLock);
++    ++live_version;
++}
++
+ void ReadNativeModelCoordinateMap(uint32_t pipeline, uint8_t mapping[8], uint8_t* known) {
+     std::lock_guard guard(catalogLock);
+ 
+diff --git a/runtime/src/model_material.cpp b/runtime/src/model_material.cpp
+index 03380117b7c86d3be9a4b810f0447296b76193b3..ed2b71a5034b9d0b03533b1db6351096f4db629f 100644
+--- a/runtime/src/model_material.cpp
++++ b/runtime/src/model_material.cpp
+@@ -57,6 +57,9 @@ void Update(uint32_t reference, mh3_model_material_block kind, Producer producer
+     // arguments before writing either.
+     if (auto* live = WritableNativeLiveMaterialBlock(Data(reference), kind)) {
+         Checked(producer(&live->fields, mh3_res_mut_span{GuestRange(live->address, live->bytes), live->bytes}, NextNativeMaterialRevision()));
++        // In-place lava/colour changes must invalidate the renderer's cached
++        // live-material snapshot, just like the publication path below.
++        BumpNativeLiveMaterialRevision();
+         return;
+     }
+ 
+diff --git a/runtime/src/movie_draw.cpp b/runtime/src/movie_draw.cpp
+index b3f7d60e17b9aa0756b4cc2e313d507eecc5a4e6..8d6cb5dbb866bcad5e0a9bf37cfcb65789e9b7ae 100644
+--- a/runtime/src/movie_draw.cpp
++++ b/runtime/src/movie_draw.cpp
+@@ -38,6 +38,9 @@
+ #include "native_effect_draw.h"
+ #include "memory.h"
+ #include "port_check.h"
++#include "village_boot.h"
++#include "rowell_features.h"
++#include "../native/mh3_classic_map.h"
+ #include <algorithm>
+ #include <cstdio>
+ #include <initializer_list>
+@@ -87,6 +90,7 @@ struct MovieClock {
+ };
+ 
+ MovieClock movieClock;
++RowellFeatures::SkipPress movieSkip;
+ 
+ void TraceMovie(uint32_t shown, double fps, double seconds) {
+     static const TraceFlag trace("movie");
+@@ -106,6 +110,7 @@ uint32_t FramesToDecode() {
+     const bool sound = SoundEngine::Stream::Played(kSoundSlot, stream, played);
+ 
+     if (!Memory::Read8(kMovie + kFrameDrawn)) {
++        movieSkip.Reset();
+         movieClock = {};
+         movieClock.stream = sound ? stream : 0;
+         movieClock.origin = sound && played >= 0.5 ? played : 0.0;
+@@ -204,6 +209,14 @@ REGISTER_NATIVE_FUNCTION_AS(0x804352A4, MH3_MovieFrames, "MovieFrames");
+ 
+ extern "C" void MH3_CheckMovieFinish(CpuContext* ctx) {
+     PortCheck::Call(ctx, "CheckMovieFinish", func_80434604, CheckMovieFinishPort);
++    const uint32_t frames = MovieFrames();
++    const bool allowed = frames && RowellFeatures::cutsceneSkip.load() &&
++        RowellFeatures::IsOfflineMode(Memory::Read8(0x8065AA84), Memory::Read8(0x8065AA85));
++    if (allowed) {
++        const auto buttons = ReadGameController().buttons;
++        if (movieSkip.Poll(frames, (buttons & (MH3_CL_A | MH3_CL_PLUS)) != 0,
++                           true, Memory::Read32(kMovie + kPendingFlag) == 0)) ctx->gpr[3] = 1;
++    } else movieSkip.Reset();
+ #ifdef MH3_DEVELOPMENT
+     // As Movie_cut, only with no frame pending (a read or decode in flight
+     // would land in the closed movie's buffers).
+diff --git a/runtime/src/native_ui_cursor.cpp b/runtime/src/native_ui_cursor.cpp
+index 631aacbf85363ed4f05abf41822c41e7cac6b2a1..ed01071ea40d985d79c0983a3ad9536ceabe6201 100644
+--- a/runtime/src/native_ui_cursor.cpp
++++ b/runtime/src/native_ui_cursor.cpp
+@@ -4,6 +4,9 @@
+ #include "fatal.h"
+ #include "guest_call.h"
+ #include "memory.h"
++#ifdef __ANDROID__
++#include "android_keyboard.h"
++#endif
+ #include "native_graphics.h"
+ #include "runtime/native/mh3_ui_cursor.h"
+ #include <stdexcept>
+@@ -55,6 +58,9 @@ void Cursor(void *user, int32_t x, int32_t y) {
+ } // namespace
+ 
+ extern "C" void MH3_UICursorDraw(CpuContext *cpu) {
++#ifdef __ANDROID__
++    AndroidKeyboard_ProcessPending(cpu);
++#endif
+     GuestFrame frame(cpu, 0x10);
+     GuestCall call{cpu};
+     const mh3_ui_cursor_callbacks callbacks{&call, RasterRead, RasterPublish, Clear, Field, Virtual, Position, Cursor};
+diff --git a/runtime/src/net/ios_net.cpp b/runtime/src/net/ios_net.cpp
+index c6e9d531d9c126d7fd4136f3d023e5725f9f3c69..76a66f301a995df8ef9ff0a4dffaf10d77c8cf9b 100644
+--- a/runtime/src/net/ios_net.cpp
++++ b/runtime/src/net/ios_net.cpp
+@@ -568,7 +568,21 @@ std::optional<Attempt> IpTopIoctl(uint32_t command, uint32_t in, uint32_t inSize
+             return Done(-NetHost::kSoEBadF);
+ 
+         const uint32_t size = std::min<uint32_t>(Memory::Read32(in + 0xC), 20);
+-        return Done(NetHost::SetOption(socket->handle, Memory::Read32(in + 4), Memory::Read32(in + 8), Memory::GetPointer(in + 0x10, size), size));
++        const uint32_t level = Memory::Read32(in + 4), name = Memory::Read32(in + 8);
++#ifdef __ANDROID__
++        // Linux accounts TCP packet metadata against SO_SNDBUF. The Wii's
++        // 4 KiB payload budget can therefore hold only a few tiny TLS records.
++        // Keep room for a complete reply; leave UDP and other options alone.
++        if (socket->stream && level == 0xFFFF && name == 0x1001 && size == 4) {
++            const uint32_t requested = Memory::Read32(in + 0x10);
++            if (requested > 0 && requested < 32768) {
++                constexpr uint8_t minimum[4]{0, 0, 0x80, 0};
++                const int32_t result = NetHost::SetOption(socket->handle, level, name, minimum, sizeof(minimum));
++                return Done(result);
++            }
++        }
++#endif
++        return Done(NetHost::SetOption(socket->handle, level, name, Memory::GetPointer(in + 0x10, size), size));
+     }
+ 
+     case kSoGetSockName:
+@@ -937,21 +951,29 @@ std::optional<Attempt> SslIoctlv(uint32_t command, const std::vector<Vector>& in
+         const Vector data = command == kSslRead ? (in.size() > 1 ? in[1] : Vector{}) : (out.size() > 1 ? out[1] : Vector{});
+         return Attempt([=]() -> std::optional<int32_t> {
+             TlsSession* current = sessions[id] ? &*sessions[id] : nullptr;
+-            const Socket* socket = current ? Find(current->socket) : nullptr;
++            Socket* socket = current ? Find(current->socket) : nullptr;
+ 
+             if (!socket) {
+                 Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kSyscall)));
+                 return 0;
+             }
+ 
+-            // A handshake waits for the socket's connection first.
+-            if (socket->connecting && NetHost::ConnectResult(socket->handle) == -NetHost::kSoEInProgress) {
+-                if (socket->nonBlocking) {
+-                    Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kWantRead)));
++            // Only a genuinely pending TCP connect waits here. Once complete,
++            // TLS handles its own read/write readiness and retry results.
++            if (socket->connecting) {
++                const int32_t connection = NetHost::ConnectResult(socket->handle);
++                if (connection == -NetHost::kSoEInProgress) {
++                    if (socket->nonBlocking) {
++                        Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kWantRead)));
++                        return 0;
++                    }
++                    return std::nullopt;
++                }
++                socket->connecting = false;
++                if (connection < 0) {
++                    Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kSyscall)));
+                     return 0;
+                 }
+-
+-                return std::nullopt;
+             }
+ 
+             int32_t result;
 diff --git a/runtime/src/net/local_server.cpp b/runtime/src/net/local_server.cpp
 index bee817f25e43e86f55d2ff6f4e7d9ca433cb2d81..a73442cc5d97bff1e3d332eff88062ac262e749a 100644
 --- a/runtime/src/net/local_server.cpp
@@ -1576,6 +2568,67 @@ index bee817f25e43e86f55d2ff6f4e7d9ca433cb2d81..a73442cc5d97bff1e3d332eff88062ac
  }
  
  bool PortOpen(uint16_t port) {
+diff --git a/runtime/src/net/net_host_posix.cpp b/runtime/src/net/net_host_posix.cpp
+index 24790d9624226592cb2a584f346607cc723046ec..19cef48c4f540959205fd26eb2b0162d966caf2d 100644
+--- a/runtime/src/net/net_host_posix.cpp
++++ b/runtime/src/net/net_host_posix.cpp
+@@ -7,6 +7,10 @@
+ 
+ #include "guest_threads.h"
+ 
++#if defined(__ANDROID__)
++#include "background_value.h"
++#endif
++
+ #include <algorithm>
+ #include <arpa/inet.h>
+ #include <cerrno>
+@@ -566,7 +570,7 @@ Interface DefaultInterface() {
+     return result;
+ }
+ #else
+-Interface DefaultInterface() {
++static Interface ReadDefaultInterface(bool enumerate) {
+     Interface result{};
+     inet_pton(AF_INET, "10.0.1.30", &result.ip);
+     inet_pton(AF_INET, "255.255.255.0", &result.netmask);
+@@ -601,6 +605,16 @@ Interface DefaultInterface() {
+     if (!found)
+         return result;
+ 
++#if defined(__ANDROID__)
++    // Android can stall for over a second in getifaddrs/netlink. Seed a usable
++    // route immediately, then let the worker fill in the real interface mask.
++    result.ip = local.sin_addr.s_addr;
++    result.broadcast = (result.ip & result.netmask) | ~result.netmask;
++    result.gateway = (result.ip & result.netmask) | htonl(1);
++#endif
++    if (!enumerate)
++        return result;
++
+     ifaddrs* interfaces = nullptr;
+ 
+     if (getifaddrs(&interfaces) != 0)
+@@ -626,6 +640,19 @@ Interface DefaultInterface() {
+     freeifaddrs(interfaces);
+     return result;
+ }
++
++Interface DefaultInterface() {
++#if defined(__ANDROID__)
++    // Wii asks for interface options during gameplay. Never enumerate Android
++    // interfaces on that thread; refresh the snapshot without holding its lock.
++    static BackgroundValue<Interface> cached(ReadDefaultInterface(false),
++                                            [] { return ReadDefaultInterface(true); },
++                                            std::chrono::seconds(5));
++    return cached.Get();
++#else
++    return ReadDefaultInterface(true);
++#endif
++}
+ #endif
+ 
+ bool ParseIpv4(const std::string& text, uint32_t* ip) {
 diff --git a/runtime/src/nw4r_accessors.cpp b/runtime/src/nw4r_accessors.cpp
 index 92a0876adf8ca978ef84162767caa8212f3de8a9..949d322e8e5a3e51011b5876808b892d25889cc1 100644
 --- a/runtime/src/nw4r_accessors.cpp
@@ -1630,6 +2683,26 @@ index 92a0876adf8ca978ef84162767caa8212f3de8a9..949d322e8e5a3e51011b5876808b892d
  
      const uint32_t offset = Read32(dic + (index + 1) * 16 + 0x14);
      return Aligned(offset ? dic + offset : 0);
+diff --git a/runtime/src/player_timers.cpp b/runtime/src/player_timers.cpp
+index 540f8fc4fb0a3f9b8432fcac10dafa10be9846ce..c724f09784f618eebd7a038500af84d5b1b23e9a 100644
+--- a/runtime/src/player_timers.cpp
++++ b/runtime/src/player_timers.cpp
+@@ -17,6 +17,7 @@
+ // +0x386) where the gauge would go down.
+ #include "cheats.h"
+ #include "game_step.h"
++#include "hunter_telemetry.h"
+ #include "guest_call.h"
+ #include "port_check.h"
+ 
+@@ -374,6 +375,7 @@ void Tick(GuestCall& game, const Plw p) {
+ }
+ 
+ void PlayerStepTimers(CpuContext* ctx) {
++    HunterTelemetry::Update(ctx->gpr[3]);
+     GuestFrame frame(ctx, 0x20);
+     GuestCall game{ctx};
+     const Plw player{frame.Arg(3)};
 diff --git a/runtime/src/save_manager.cpp b/runtime/src/save_manager.cpp
 index f121310357040dfaa513f4882949ffb4af3eae35..6864abc60e0d13c5c9236db9254c4f3a7de78fc6 100644
 --- a/runtime/src/save_manager.cpp
@@ -1896,14 +2969,18 @@ index f121310357040dfaa513f4882949ffb4af3eae35..6864abc60e0d13c5c9236db9254c4f3a
 +}
 +}
 diff --git a/runtime/src/touch_controls.cpp b/runtime/src/touch_controls.cpp
-index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca0a0df8b8 100644
+index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..347aa54a1da5f1c631a42d1455bda51752edb236 100644
 --- a/runtime/src/touch_controls.cpp
 +++ b/runtime/src/touch_controls.cpp
-@@ -1,12 +1,31 @@
+@@ -1,12 +1,35 @@
  #include "touch_controls.h"
 -#include "droid_sans_atlas.h"
 +#include "touch_contacts.h"
 +#include "game_speed.h"
++#include "rowell_features.h"
++#ifdef __ANDROID__
++#include "android_keyboard.h"
++#endif
 +#include "gamepad_bindings.h"
 +#include <optional>
 +#include <array>
@@ -1932,7 +3009,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
  #include <SDL3/SDL.h>
  #include <GLES3/gl3.h>
-@@ -18,6 +37,8 @@
+@@ -18,6 +41,8 @@
  #include <sstream>
  #include <filesystem>
  #include <chrono>
@@ -1941,7 +3018,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  #include <atomic>
  #include <cstdio>
  #include <cstring>
-@@ -25,6 +46,7 @@
+@@ -25,6 +50,7 @@
  
  #if defined(__ANDROID__)
  #include <android/log.h>
@@ -1949,7 +3026,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  #define LOG_TAG "MH3_TOUCH"
  #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
  #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-@@ -49,15 +71,56 @@ bool Gamepad_GetSwapTriggers();
+@@ -49,15 +75,56 @@ bool Gamepad_GetSwapTriggers();
  void Gamepad_SetSwapTriggers(bool swap);
  }
  
@@ -2006,7 +3083,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  struct Vec2 {
      float x = 0.0f;
      float y = 0.0f;
-@@ -67,21 +130,27 @@ struct Color {
+@@ -67,21 +134,27 @@ struct Color {
      float r = 1.0f, g = 1.0f, b = 1.0f, a = 1.0f;
  };
  
@@ -2046,7 +3123,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      uint16_t mask;
      Vec2 defaultNormPos;
      float defaultNormRadius;
-@@ -90,7 +159,7 @@ struct ConfigurableButton {
+@@ -90,7 +163,7 @@ struct ConfigurableButton {
      Vec2 pos;
      float radius = 0.0f;
      bool isPressed = false;
@@ -2055,7 +3132,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      Color baseColor;
      Color borderColor;
  };
-@@ -106,14 +175,23 @@ struct UIVertex {
+@@ -106,14 +179,23 @@ struct UIVertex {
      float extra;         // half width (for type 2)
  };
  
@@ -2080,8 +3157,11 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  #endif
      }
  
-@@ -128,14 +206,50 @@ public:
+@@ -126,16 +208,53 @@ public:
+ 
+         LoadSettings();
          LoadLayoutConfig();
++        RowellFeatures::Load();
      }
  
 -    void SetEnabled(bool enabled) { m_enabled = enabled; }
@@ -2133,7 +3213,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              SDL_ShowCursor();
              if (SDL_Window* win = aurora_get_window()) {
                  SDL_SetWindowRelativeMouseMode(win, false);
-@@ -143,19 +257,69 @@ public:
+@@ -143,19 +262,69 @@ public:
          } else {
              if (SDL_Window* win = aurora_get_window()) {
  #if !defined(__ANDROID__)
@@ -2205,7 +3285,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              SetWidescreenSetting(true);
  #if defined(__cpp_exceptions)
              try {
-@@ -173,6 +337,7 @@ public:
+@@ -173,6 +342,7 @@ public:
          } else {
              ApplyAspectRatio(m_aspectIndex);
          }
@@ -2213,7 +3293,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          SaveSettings();
      }
  
-@@ -180,13 +345,388 @@ public:
+@@ -180,13 +350,388 @@ public:
          ApplyFullscreen(!m_fullscreen);
      }
  
@@ -2572,7 +3652,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
 +                out.write(reinterpret_cast<const char*>(e.m_verts.data()),e.m_verts.size()*sizeof(UIVertex));
 +            };
 +            e.SetMenuOpen(true);
-+            for(int width:{960,1280,1600})for(int tab=0;tab<6;++tab) {
++            for(int width:{960,1280,1600})for(int tab=0;tab<7;++tab) {
 +                e.UpdateLayout(width,720);e.m_menuTab=tab;e.m_verts.clear();e.RenderSettingsMenu();
 +                for(const auto& v:e.m_verts)if(v.type==3)
 +                    if(!check(v.x>=-1 && v.x<=width+1 && v.y>=-1 && v.y<=721,
@@ -2606,7 +3686,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          RecalculateButtonPositions();
      }
-@@ -228,15 +768,19 @@ public:
+@@ -228,15 +773,19 @@ public:
          float btnR = 0.058f;
  
          // Macro Buttons FIRST (checked before individual buttons for collision priority)
@@ -2629,7 +3709,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          // A, B, X, Y (after macros so macros win collision priority)
          AddBtn("A", "A", MH3_CL_A, { diamondNormX + spreadX, diamondNormY }, btnR,
                 { 0.85f, 0.25f, 0.25f, 0.55f }, { 1.0f, 0.40f, 0.40f, 0.90f });
-@@ -281,6 +825,9 @@ public:
+@@ -281,6 +830,9 @@ public:
                 { 0.15f, 0.22f, 0.28f, 0.55f }, { 0.65f, 0.85f, 1.00f, 0.85f });
          AddBtn("PLUS",  "+", MH3_CL_PLUS,  { 0.54f, menuY }, menuR,
                 { 0.15f, 0.22f, 0.28f, 0.55f }, { 0.65f, 0.85f, 1.00f, 0.85f });
@@ -2639,7 +3719,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      }
  
      void AddBtn(const std::string& id, const char* label, uint16_t mask, Vec2 normPos, float normRadius,
-@@ -298,12 +845,22 @@ public:
+@@ -298,12 +850,22 @@ public:
          m_buttons.push_back(b);
      }
  
@@ -2664,7 +3744,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          if (m_editMode) {
              HandleEditModeTouchDown(id, px, py);
-@@ -319,8 +876,8 @@ public:
+@@ -319,8 +881,8 @@ public:
          float gdx = px - m_gearPos.x;
          float gdy = py - m_gearPos.y;
          if (gdx * gdx + gdy * gdy <= (m_gearRadius * 1.8f) * (m_gearRadius * 1.8f)) {
@@ -2675,7 +3755,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              return;
          }
  
-@@ -329,28 +886,28 @@ public:
+@@ -329,28 +891,28 @@ public:
              return;
          }
  
@@ -2716,7 +3796,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                      UpdateLeftStickPosition(px, py);
                      return;
                  }
-@@ -359,8 +916,8 @@ public:
+@@ -359,8 +921,8 @@ public:
  
          // Right Stick (Free floating camera look)
          if (px >= float(m_width) * 0.45f) {
@@ -2727,7 +3807,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                  m_rightFloatingOrigin = { px, py };
                  m_rightStickPos = { px, py };
                  m_rightLastPos = { px, py };
-@@ -376,27 +933,30 @@ public:
+@@ -376,27 +938,30 @@ public:
          float py = normY * float(m_height);
  
          if (m_editMode) {
@@ -2770,7 +3850,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              float dx = px - m_rightLastPos.x;
              float dy = py - m_rightLastPos.y;
              m_rightLastPos = { px, py };
-@@ -422,12 +982,14 @@ public:
+@@ -422,12 +987,14 @@ public:
      }
  
      void HandleTouchUp(SDL_FingerID id) {
@@ -2788,7 +3868,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              }
              return;
          }
-@@ -435,27 +997,30 @@ public:
+@@ -435,27 +1002,30 @@ public:
          if (m_menuOpen) return;
  
          for (auto& btn : m_buttons) {
@@ -2827,7 +3907,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      void HandleMouseDown(float px, float py) {
          if (!m_enabled) return;
          if (m_editMode) {
-@@ -472,27 +1037,24 @@ public:
+@@ -472,27 +1042,24 @@ public:
              ToggleMenu();
              return;
          }
@@ -2864,7 +3944,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      }
  
      void UpdateLeftStickPosition(float px, float py) {
-@@ -513,10 +1075,13 @@ public:
+@@ -513,32 +1080,42 @@ public:
      }
  
      bool IsButtonActive(const ConfigurableButton& btn) const {
@@ -2878,7 +3958,18 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          return true;
      }
  
-@@ -526,19 +1091,17 @@ public:
+     void UpdateSample(uint16_t* buttons, int16_t* leftX, int16_t* leftY,
+                       int16_t* rightX, int16_t* rightY,
+                       uint8_t* triggerL, uint8_t* triggerR) {
++#ifdef __ANDROID__
++        if(AndroidKeyboard_IsImeShowing()) {
++            ResetInput();
++            if(buttons)*buttons=0;
++            if(leftX)*leftX=0; if(leftY)*leftY=0; if(rightX)*rightX=0; if(rightY)*rightY=0;
++            if(triggerL)*triggerL=0; if(triggerR)*triggerR=0;
++            return;
++        }
++#endif
          if (!m_enabled || m_menuOpen || m_editMode) return;
  
          uint32_t latched = m_latchedMask.exchange(0, std::memory_order_relaxed);
@@ -2902,7 +3993,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              *leftX = m_leftX;
              *leftY = m_leftY;
          }
-@@ -550,10 +1113,10 @@ public:
+@@ -550,10 +1127,10 @@ public:
              }
          }
  
@@ -2917,7 +4008,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          float camX = m_cameraDeltaX.exchange(0.0f);
          float camY = m_cameraDeltaY.exchange(0.0f);
-@@ -566,7 +1129,7 @@ public:
+@@ -566,7 +1143,7 @@ public:
          static float s_cachedTemp = 0.0f;
          static auto s_lastRead = std::chrono::steady_clock::now();
          auto now = std::chrono::steady_clock::now();
@@ -2926,7 +4017,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              return s_cachedTemp;
          }
          s_lastRead = now;
-@@ -597,9 +1160,9 @@ public:
+@@ -597,9 +1174,9 @@ public:
          return s_cachedTemp;
      }
  
@@ -2939,9 +4030,13 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      }
  
      // -------------------------------------------------------------
-@@ -608,6 +1171,14 @@ public:
+@@ -607,7 +1184,18 @@ public:
+     // -------------------------------------------------------------
      void RenderGL(int windowWidth, int windowHeight) {
          if (!m_enabled) return;
++#ifdef __ANDROID__
++        AndroidKeyboard_UpdatePerFrame();
++#endif
          UpdateLayout(windowWidth, windowHeight);
 +#if defined(MH3_PC_TOUCH_UI)
 +        // Reassert the visible pointer after menu changes and Alt Tab, even if
@@ -2954,7 +4049,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          static bool s_firstFrameApplied = false;
          if (!s_firstFrameApplied) {
-@@ -628,7 +1199,11 @@ public:
+@@ -628,7 +1216,11 @@ public:
                  if (Memory::Contains(0x80797F68, 4) && Memory::Contains(0x8065B4C8, 4)) {
                      uint32_t wideVal = Memory::Read32(0x80797F68);
                      if (wideVal != 0) {
@@ -2966,7 +4061,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                              Memory::Write32(0x8065B4C8, wideVal);
                              Memory::Write8(0x8065B4D5, 1);
                          } else if (m_aspectIndex == 1) {
-@@ -659,20 +1234,11 @@ public:
+@@ -659,20 +1251,11 @@ public:
              lastStamp = now;
          }
  
@@ -2992,7 +4087,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          // Save OpenGL State
          GLint lastViewport[4]; glGetIntegerv(GL_VIEWPORT, lastViewport);
-@@ -684,12 +1250,24 @@ public:
+@@ -684,12 +1267,24 @@ public:
          GLint lastProgram = 0; glGetIntegerv(GL_CURRENT_PROGRAM, &lastProgram);
          GLint lastVAO = 0; glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &lastVAO);
          GLint lastVBO = 0; glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &lastVBO);
@@ -3017,7 +4112,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          glDisable(GL_DEPTH_TEST);
          glDisable(GL_CULL_FACE);
  
-@@ -703,11 +1281,18 @@ public:
+@@ -703,11 +1298,18 @@ public:
          glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
  
          m_verts.clear();
@@ -3036,7 +4131,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          } else {
              if (m_touchVisible) {
                  RenderGameplayOverlay();
-@@ -734,13 +1319,31 @@ public:
+@@ -734,13 +1336,31 @@ public:
          if (cullEnabled) glEnable(GL_CULL_FACE);
          glUseProgram(lastProgram);
          glBindTexture(GL_TEXTURE_2D, lastTex);
@@ -3069,7 +4164,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          const char* vertShaderSrc =
              "#version 300 es\n"
-@@ -780,14 +1383,10 @@ private:
+@@ -780,14 +1400,10 @@ private:
              "        float f = vParams.z;\n"
              "        float alpha = smoothstep(1.0, 1.0 - f, d);\n"
              "        if (alpha <= 0.0) discard;\n"
@@ -3086,7 +4181,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              "        vec4 col = mix(bodyCol, rimCol, isBorder);\n"
              "        FragColor = vec4(col.rgb, col.a * alpha);\n"
              "    } else if (type < 1.5) {\n" // 1: Anti-aliased Ring
-@@ -883,6 +1482,9 @@ private:
+@@ -883,6 +1499,9 @@ private:
  
      // Geometry Helpers
      void DrawAADisc(float cx, float cy, float radius, Color col, Color border, float borderThick = 0.08f) {
@@ -3096,7 +4191,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          float x0 = cx - radius, y0 = cy - radius;
          float x1 = cx + radius, y1 = cy + radius;
          float feather = 1.5f / std::max(radius, 1.0f);
-@@ -897,6 +1499,7 @@ private:
+@@ -897,6 +1516,7 @@ private:
      }
  
      void DrawAARing(float cx, float cy, float radius, float thickness, Color col) {
@@ -3104,7 +4199,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          float x0 = cx - radius, y0 = cy - radius;
          float x1 = cx + radius, y1 = cy + radius;
          float feather = 1.5f / std::max(radius, 1.0f);
-@@ -912,6 +1515,7 @@ private:
+@@ -912,6 +1532,7 @@ private:
      }
  
      void DrawRoundedRect(float x, float y, float w, float h, float radius, Color fill, Color border) {
@@ -3112,7 +4207,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          float halfW = w * 0.5f;
          float halfH = h * 0.5f;
          radius = std::min(radius, std::min(halfW, halfH));
-@@ -962,63 +1566,71 @@ private:
+@@ -962,63 +1583,71 @@ private:
          return c;
      }
  
@@ -3162,7 +4257,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
 -            curX += (g ? g->advance : (BASE_FONT_SIZE * 0.5f)) * scale;
 -        }
 +    void DrawMenuIcon(int icon,float x,float y,float size,Color color) {
-+        const auto* glyph=FindFontGlyph(0xe100u+unsigned(icon));
++        const auto* glyph=FindFontGlyph(0xe100u+unsigned(icon==6?1:icon));
 +        if(glyph)DrawQuadTextured(x,y,size,size,glyph->u0,glyph->v0,glyph->u1,glyph->v1,color);
 +    }
  
@@ -3232,7 +4327,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          float scale = size / BASE_FONT_SIZE;
          float totalW = MeasureText(label, size);
  
-@@ -1027,7 +1639,7 @@ private:
+@@ -1027,7 +1656,7 @@ private:
          const char* pCheck = label;
          while (*pCheck) {
              uint32_t cp = DecodeUtf8(pCheck);
@@ -3241,7 +4336,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              if (g && g->w > 0 && g->h > 0) {
                  minOffY = std::min(minOffY, g->offY);
                  maxBottomY = std::max(maxBottomY, g->offY + g->h);
-@@ -1043,13 +1655,13 @@ private:
+@@ -1043,13 +1672,13 @@ private:
          float startY = cy - visualCenterY;
  
          // Shadow pass for crisp contrast
@@ -3258,7 +4353,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              if (g && g->w > 0 && g->h > 0) {
                  float gx = curX + g->offX * scale + shadowOffset;
                  float gy = startY + g->offY * scale + shadowOffset;
-@@ -1065,7 +1677,7 @@ private:
+@@ -1065,7 +1694,7 @@ private:
          curX = startX;
          while (*p) {
              uint32_t cp = DecodeUtf8(p);
@@ -3267,8 +4362,13 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              if (g && g->w > 0 && g->h > 0) {
                  float gx = curX + g->offX * scale;
                  float gy = startY + g->offY * scale;
-@@ -1104,23 +1716,12 @@ private:
+@@ -1102,25 +1731,17 @@ private:
+     }
+ 
      void RenderGameplayOverlay() {
++#ifdef __ANDROID__
++        if (AndroidKeyboard_IsImeShowing()) return;
++#endif
          float op = std::clamp(m_buttonOpacity, 0.10f, 1.0f);
  
 -        // 1. Fixed Left Stick
@@ -3297,7 +4397,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          // 2. Free Right Stick (Camera Look)
          if (m_rightStickActive) {
-@@ -1129,20 +1730,32 @@ private:
+@@ -1129,20 +1750,32 @@ private:
                         { 0.15f, 0.45f, 0.60f, 0.45f * op }, { 0.40f, 0.80f, 1.00f, 0.70f * op }, 0.10f);
          }
  
@@ -3335,7 +4435,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          }
  
          // 4. Gear / Menu Button
-@@ -1168,60 +1781,54 @@ private:
+@@ -1168,60 +1801,55 @@ private:
  
          DrawRoundedRect(padX, padY, panW, panH, 16.0f, COL_BG_DARK, COL_PANEL_BORDER);
  
@@ -3352,7 +4452,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
 -
          // Header Title & Subtitle (Larger readable fonts)
 -        const char* titles[] = { "Gráficos", "Sistema", "Guardados", "Controles", "Online" };
-+        const char* titles[] = { "Graphics", "System", "Saves", "Controls", "Online", "Combos" };
++        const char* titles[] = { "Graphics", "System", "Saves", "Controls", "Online", "Combos", "Extras" };
          const char* subtitles[] = {
 -            "Pantalla, resolución y presentación",
 -            "Idioma, guardados y reinicio",
@@ -3364,7 +4464,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
 +            "Saved progress, backups and transfers",
 +            "Touch layout and physical controllers",
 +            "Local and community multiplayer",
-+            "Your saved combinations and touch buttons"
++            "Your saved combinations and touch buttons",
++            "Optional game tools and local diagnostics"
          };
 -        DrawText(padX + 24.0f, padY + 16.0f, titles[m_menuTab], 28.0f, COL_WHITE);
 -        DrawText(padX + 24.0f, padY + 48.0f, subtitles[m_menuTab], 14.5f, COL_MUTED);
@@ -3400,10 +4501,10 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          // Tab Navigation Bar
          float tabY = padY + 86.0f;
 -        float tabW = (panW - 40.0f - 40.0f) / 5.0f;
-+        float tabW = (panW - 40.0f - 50.0f) / 6.0f;
++        float tabW = (panW - 40.0f - 60.0f) / 7.0f;
          float tabH = 44.0f;
 -        for (int i = 0; i < 5; ++i) {
-+        for (int i = 0; i < 6; ++i) {
++        for (int i = 0; i < 7; ++i) {
              float tx = padX + 20.0f + float(i) * (tabW + 10.0f);
              bool active = (m_menuTab == i);
              DrawRoundedRect(tx, tabY, tabW, tabH, 8.0f,
@@ -3419,11 +4520,12 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          }
  
          // Tab Content
-@@ -1233,16 +1840,17 @@ private:
+@@ -1233,16 +1861,18 @@ private:
          else if (m_menuTab == 2) RenderTabSaves(padX + 20.0f, contentY, contentW);
          else if (m_menuTab == 3) RenderTabControls(padX + 20.0f, contentY, contentW);
          else if (m_menuTab == 4) RenderTabOnline(padX + 20.0f, contentY, contentW);
 +        else if (m_menuTab == 5) RenderTabCombos(padX + 20.0f, contentY, contentW);
++        else if (m_menuTab == 6) RenderTabExtras(padX + 20.0f, contentY, contentW);
      }
  
      void RenderTabGraphics(float x, float y, float w) {
@@ -3440,7 +4542,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          float chipW = (w - 36.0f - 25.0f) / 6.0f;
          float chipH = 42.0f;
          float chipY = y + 54.0f;
-@@ -1256,7 +1864,7 @@ private:
+@@ -1256,7 +1886,7 @@ private:
                       active ? COL_ACTIVE_TEXT : COL_WHITE, true);
          }
  
@@ -3449,7 +4551,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          float c2Y = y + c1H + 12.0f;
          float c2H = 114.0f;
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
-@@ -1264,8 +1872,8 @@ private:
+@@ -1264,8 +1894,8 @@ private:
          float colW = (w - 36.0f - 16.0f) * 0.5f;
  
          // Left side: Fullscreen & 16:9 Fix
@@ -3460,7 +4562,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          float fsBtnY = c2Y + 54.0f;
          float fsBtnW = colW;
-@@ -1274,15 +1882,15 @@ private:
+@@ -1274,15 +1904,15 @@ private:
                          fsActive ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          fsActive ? COL_CYAN : COL_CHIP_BORDER);
          DrawText(x + 18.0f + fsBtnW * 0.5f, fsBtnY + 12.0f,
@@ -3481,7 +4583,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          float aChipW = (colW - 10.0f) / 3.0f;
          for (int i = 0; i < 3; ++i) {
              float ax = rightColX + float(i) * (aChipW + 5.0f);
-@@ -1300,13 +1908,13 @@ private:
+@@ -1300,13 +1930,13 @@ private:
          DrawRoundedRect(x, c3Y, w, c3H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
  
          float fpsColW = (w - 36.0f - 16.0f) * 0.52f;
@@ -3500,7 +4602,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          }
  
          const char* fpsLabels[] = { "30 FPS", "60 FPS", "90 FPS", "120 FPS" };
-@@ -1326,15 +1934,15 @@ private:
+@@ -1326,15 +1956,15 @@ private:
          // Right side: Sincronización y Contador
          float syncColX = x + 18.0f + fpsColW + 16.0f;
          float syncColW = (w - 36.0f - 16.0f) * 0.48f;
@@ -3519,7 +4621,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                   m_vsync ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // HUD FPS chip
-@@ -1342,9 +1950,25 @@ private:
+@@ -1342,9 +1972,25 @@ private:
          DrawRoundedRect(hudX, fChipY, sChipW, chipH, 8.0f,
                          m_showFpsHud ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_showFpsHud ? COL_CYAN : COL_CHIP_BORDER);
@@ -3546,7 +4648,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          // Card 4: Reemplazo de Texturas HD (Dolphin Texture Pack)
          float c4Y = c3Y + c3H + 12.0f;
          float c4H = 108.0f;
-@@ -1353,9 +1977,9 @@ private:
+@@ -1353,9 +1999,9 @@ private:
          bool texEnabled = aurora::gfx::texture_replacement::is_enabled();
          size_t texCount = aurora::gfx::texture_replacement::get_replacement_count();
          char texSub[140];
@@ -3558,7 +4660,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          DrawText(x + 18.0f, c4Y + 36.0f, texSub, 13.0f, (texCount > 0) ? COL_CYAN : COL_MUTED);
  
          float tBtnW = (w - 36.0f - 15.0f) * 0.50f;
-@@ -1366,22 +1990,23 @@ private:
+@@ -1366,22 +2012,45 @@ private:
                          texEnabled ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          texEnabled ? COL_CYAN : COL_CHIP_BORDER);
          DrawText(x + 18.0f + tBtnW * 0.5f, tBtnY + 12.0f,
@@ -3574,6 +4676,28 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
 +                        COL_ACTIVE_CHIP, COL_ACTIVE_CHIP);
 +        DrawText(reloadX + tBtnW * 0.5f, tBtnY + 12.0f, "Reload textures", 14.5f, COL_WHITE, true);
 +#endif
++    }
++
++    void RenderTabExtras(float x, float y, float w) {
++        const char* labels[] = {"Offline cutscene skipping", "Android keyboard", "Physics diagnostics"};
++        const char* details[] = {"Press A or + to skip. Online play keeps its normal cutscenes.",
++            "Use your phone keyboard for character names and chat.",
++            "Local troubleshooting only. Up to 2 MB. Turns off when you close the app."};
++        const bool values[] = {RowellFeatures::cutsceneSkip.load(), RowellFeatures::androidKeyboard.load(), RowellFeatures::physicsLog.load()};
++        int row = 0;
++        for (int i=0;i<3;++i) {
++#ifndef __ANDROID__
++            if(i==1)continue;
++#endif
++            const float top=y+row++*128.0f;
++            DrawRoundedRect(x,top,w,114,12,COL_PANEL_CARD,COL_PANEL_BORDER);
++            DrawClippedText(x+18,top+16,labels[i],20,w-170,COL_WHITE);
++            DrawClippedText(x+18,top+57,details[i],14,w-36,COL_MUTED);
++            DrawRoundedRect(x+w-124,top+12,106,36,8,values[i]?COL_ACTIVE_CHIP:COL_INACTIVE_CHIP,COL_CHIP_BORDER);
++            DrawText(x+w-71,top+21,values[i]?"ON":"OFF",15,COL_WHITE,true);
++        }
++        DrawClippedText(x+18,y+row*128+6,"Changes apply immediately. Saved progress is separate from these options.",14,w-36,COL_MUTED);
++        if(!m_featureStatus.empty())DrawClippedText(x+18,y+row*128+34,m_featureStatus.c_str(),14,w-36,COL_MUTED);
      }
  
      void RenderTabSystem(float x, float y, float w) {
@@ -3587,7 +4711,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          const char* langLabels[] = { "Español", "English", "Français", "Deutsch", "Italiano" };
          float chipW = (w - 36.0f - 20.0f) / 5.0f;
-@@ -1399,28 +2024,57 @@ private:
+@@ -1399,28 +2068,57 @@ private:
  
          // Active Language status text
          float statusY = y + c1H + 12.0f;
@@ -3654,7 +4778,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          // Action Buttons
          float btnW = (w - 36.0f - 20.0f) / 3.0f;
-@@ -1429,33 +2083,447 @@ private:
+@@ -1429,33 +2127,447 @@ private:
  
          // 1. Export
          float b1X = x + 18.0f;
@@ -4113,7 +5237,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          float tvChipW = (w - 36.0f - 15.0f) / 2.0f;
          float tvChipH = 38.0f;
-@@ -1466,7 +2534,7 @@ private:
+@@ -1466,7 +2578,7 @@ private:
          DrawRoundedRect(tv1X, tvChipY, tvChipW, tvChipH, 8.0f,
                          m_touchVisible ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          m_touchVisible ? COL_CYAN : COL_CHIP_BORDER);
@@ -4122,7 +5246,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                   m_touchVisible ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Hidden chip
-@@ -1474,12 +2542,12 @@ private:
+@@ -1474,12 +2586,12 @@ private:
          DrawRoundedRect(tv2X, tvChipY, tvChipW, tvChipH, 8.0f,
                          !m_touchVisible ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          !m_touchVisible ? COL_CYAN : COL_CHIP_BORDER);
@@ -4138,7 +5262,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          const float opValues[] = { 0.25f, 0.50f, 0.75f, 1.00f };
          float opChipW = (w - 36.0f - 30.0f) / 4.0f;
          float opChipH = 36.0f;
-@@ -1498,8 +2566,10 @@ private:
+@@ -1498,8 +2610,10 @@ private:
          float c2Y = y + c1H + 12.0f;
          float c2H = 116.0f;
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
@@ -4151,7 +5275,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          const int gpLayout = Gamepad_GetLayout();
          const bool swapTrig = Gamepad_GetSwapTriggers();
-@@ -1513,7 +2583,7 @@ private:
+@@ -1513,7 +2627,7 @@ private:
          DrawRoundedRect(l1X, gpChipY, lChipW, gpChipH, 8.0f,
                          (gpLayout == 0) ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          (gpLayout == 0) ? COL_CYAN : COL_CHIP_BORDER);
@@ -4160,7 +5284,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                   (gpLayout == 0) ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Xbox/Generic layout
-@@ -1521,7 +2591,7 @@ private:
+@@ -1521,7 +2635,7 @@ private:
          DrawRoundedRect(l2X, gpChipY, lChipW, gpChipH, 8.0f,
                          (gpLayout == 1) ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          (gpLayout == 1) ? COL_CYAN : COL_CHIP_BORDER);
@@ -4169,7 +5293,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                   (gpLayout == 1) ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Swap triggers
-@@ -1531,66 +2601,95 @@ private:
+@@ -1531,66 +2645,95 @@ private:
                          swapTrig ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          swapTrig ? COL_CYAN : COL_CHIP_BORDER);
          DrawText(trigX + trigW * 0.5f, gpChipY + 12.0f,
@@ -4242,8 +5366,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
 +        DrawRoundedRect(x+33+bw,by,bw,38,8,COL_INACTIVE_CHIP,COL_CHIP_BORDER);
 +        DrawText(x+33+bw*1.5f,by+11,"Custom combos",16,COL_WHITE,true);
 +
-     }
- 
++    }
++
 +    EditSnapshot CaptureLayout() {
 +        return {m_buttons,m_normLeftStickPos,m_leftStickScale,m_comboMasks,
 +            {m_macro1Enabled,m_macro2Enabled,m_macro3Enabled,m_macro4Enabled,m_macro5Enabled}};
@@ -4299,8 +5423,8 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
 +        if(m_selectedButtonIndex<0 || m_selectedButtonIndex>=int(m_buttons.size()))return -1;
 +        const auto& id=m_buttons[m_selectedButtonIndex].id;
 +        return id.size()==2 && id[0]=='M' && id[1]>='1' && id[1]<='5'?id[1]-'1':-1;
-+    }
-+
+     }
+ 
 +    void OpenEditorCombo(bool edit) {
 +        int slot=edit?SelectedCombo():-1;
 +        if(!edit)for(int i=0;i<5;++i)if(!m_comboMasks[i]){slot=i;break;}
@@ -4321,7 +5445,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      void RenderEditMode() {
          DrawRectSolid(0, 0, float(m_width), float(m_height), { 0.0f, 0.0f, 0.0f, 0.40f });
  
-@@ -1600,65 +2699,107 @@ private:
+@@ -1600,65 +2743,107 @@ private:
              if (!IsButtonActive(btn)) continue;
              bool isSel = (int(i) == m_selectedButtonIndex);
              DrawAADisc(btn.pos.x, btn.pos.y, btn.radius,
@@ -4475,7 +5599,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          float mChipW = (w - 36.0f - 12.0f) / 2.0f;
          float mChipH = 42.0f;
-@@ -1670,7 +2811,7 @@ private:
+@@ -1670,7 +2855,7 @@ private:
          DrawRoundedRect(c0X, mChipY, mChipW, mChipH, 8.0f,
                          c0Active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          c0Active ? COL_CYAN : COL_CHIP_BORDER);
@@ -4484,7 +5608,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                   c0Active ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Chip 1: Desconectado
-@@ -1679,7 +2820,7 @@ private:
+@@ -1679,7 +2864,7 @@ private:
          DrawRoundedRect(c1X, mChipY, mChipW, mChipH, 8.0f,
                          c1Active ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
                          c1Active ? COL_CYAN : COL_CHIP_BORDER);
@@ -4493,7 +5617,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                   c1Active ? COL_ACTIVE_TEXT : COL_WHITE, true);
  
          // Card 2: Detalles
-@@ -1688,62 +2829,92 @@ private:
+@@ -1688,62 +2873,92 @@ private:
          DrawRoundedRect(x, c2Y, w, c2H, 12.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
  
          if (m_onlineMode == 3) { // Community
@@ -4587,11 +5711,11 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          // Tabs
          float tabY = padY + 86.0f;
 -        float tabW = (panW - 40.0f - 40.0f) / 5.0f;
-+        float tabW = (panW - 40.0f - 50.0f) / 6.0f;
++        float tabW = (panW - 40.0f - 60.0f) / 7.0f;
          float tabH = 44.0f;
          if (py >= tabY && py <= tabY + tabH) {
 -            for (int i = 0; i < 5; ++i) {
-+            for (int i = 0; i < 6; ++i) {
++            for (int i = 0; i < 7; ++i) {
                  float tx = padX + 20.0f + float(i) * (tabW + 10.0f);
                  if (px >= tx && px <= tx + tabW) {
                      m_menuTab = i;
@@ -4606,7 +5730,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                      return;
                  }
              }
-@@ -1752,6 +2923,7 @@ private:
+@@ -1752,6 +2967,7 @@ private:
          float contentY = tabY + tabH + 16.0f;
          float contentW = panW - 40.0f;
          float x = padX + 20.0f;
@@ -4614,7 +5738,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          if (m_menuTab == 0) { // Gráficos
              // Resolution chips
-@@ -1770,12 +2942,12 @@ private:
+@@ -1770,12 +2986,12 @@ private:
                  }
              }
  
@@ -4629,7 +5753,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                  if (px >= x + 18.0f && px <= x + 18.0f + colW) {
                      ToggleFullscreen();
                      return;
-@@ -1803,7 +2975,7 @@ private:
+@@ -1803,7 +3019,7 @@ private:
                  for (int i = 0; i < 4; ++i) {
                      float fx = x + 18.0f + float(i) * (fChipW + 5.0f);
                      if (px >= fx && px <= fx + fChipW) {
@@ -4638,7 +5762,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                              // Locked to 30 FPS in Online City
                              return;
                          }
-@@ -1821,10 +2993,7 @@ private:
+@@ -1821,10 +3037,7 @@ private:
                  // VSync click
                  if (px >= syncColX && px <= syncColX + sChipW) {
                      m_vsync = !m_vsync;
@@ -4650,7 +5774,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                      aurora_enable_vsync(m_vsync);
                      SaveSettings();
                      return;
-@@ -1838,21 +3007,53 @@ private:
+@@ -1838,21 +3051,68 @@ private:
                  }
              }
  
@@ -4681,10 +5805,25 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
 +#ifndef MH3_PC_TOUCH_UI
                      aurora::gfx::texture_replacement::reload();
 +#endif
++                    return;
++                }
++            }
++#endif
++        } else if (m_menuTab == 6) {
++            int row=0;
++            for(int i=0;i<3;++i) {
++#ifndef __ANDROID__
++                if(i==1)continue;
++#endif
++                const float top=contentY+row++*128.0f;
++                if(px>=x+contentW-124 && px<=x+contentW-18 && py>=top+12 && py<=top+48) {
++                    if(i==0)RowellFeatures::cutsceneSkip.store(!RowellFeatures::cutsceneSkip.load());
++                    if(i==1)RowellFeatures::androidKeyboard.store(!RowellFeatures::androidKeyboard.load());
++                    if(i==2)RowellFeatures::physicsLog.store(!RowellFeatures::physicsLog.load());
++                    m_featureStatus=i==2?"Diagnostics are for this app session only.":RowellFeatures::Save()?"Saved.":"Applied for this session; could not save the option.";
                      return;
                  }
              }
-+#endif
          } else if (m_menuTab == 1) { // Sistema
 +#ifdef MH3_PC_TOUCH_UI
 +            const float foldersY=contentY+420,folderW=(contentW-46)*.5f;
@@ -4705,7 +5844,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              float chipY = contentY + 60.0f;
              float chipW = (contentW - 36.0f - 20.0f) / 5.0f;
              float chipH = 44.0f;
-@@ -1875,7 +3076,7 @@ private:
+@@ -1875,7 +3135,7 @@ private:
              if (px >= rBtnX && px <= rBtnX + rBtnW && py >= rBtnY && py <= rBtnY + 44.0f) {
                  SaveSettings();
                  SaveLanguage();
@@ -4714,7 +5853,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                  return;
              }
          } else if (m_menuTab == 2) { // Guardados
-@@ -1889,17 +3090,22 @@ private:
+@@ -1889,17 +3149,22 @@ private:
  
              if (py >= btnY && py <= btnY + btnH) {
                  if (px >= b1X && px <= b1X + btnW) {
@@ -4740,7 +5879,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              // Card 1: Touch Visibility & Opacity
              float c1H = 176.0f;
              float tvChipW = (contentW - 36.0f - 15.0f) / 2.0f;
-@@ -1915,7 +3121,7 @@ private:
+@@ -1915,7 +3180,7 @@ private:
                      return;
                  } else if (px >= tv2X && px <= tv2X + tvChipW) {
                      m_touchVisible = false;
@@ -4749,7 +5888,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
                      return;
                  }
              }
-@@ -1948,74 +3154,30 @@ private:
+@@ -1948,74 +3213,30 @@ private:
              float trigX = x + contentW * 0.62f;
              float trigW = contentW * 0.38f - 18.0f;
  
@@ -4837,7 +5976,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              HandleTabOnlineTouch(px, py, x, contentY, contentW);
          }
      }
-@@ -2030,92 +3192,111 @@ private:
+@@ -2030,92 +3251,111 @@ private:
              if (px >= c0X && px <= c0X + mChipW) {
                  m_onlineMode = 3;
                  LocalOnlineServer::SetMode(LocalOnlineServer::Mode::Community, "mh3sp.com");
@@ -5016,7 +6155,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          }
      }
  
-@@ -2137,14 +3318,21 @@ private:
+@@ -2137,14 +3377,21 @@ private:
      void ApplyResolutionScale(int idx) {
          constexpr float scales[] = { 1.0f, 720.0f / 448.0f, 1080.0f / 448.0f, 1440.0f / 448.0f, 2160.0f / 448.0f, 0.0f };
          idx = std::clamp(idx, 0, 5);
@@ -5041,7 +6180,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          SetWidescreenSetting(idx != 1);
  #if defined(__cpp_exceptions)
-@@ -2164,9 +3352,19 @@ private:
+@@ -2164,9 +3411,19 @@ private:
  
      void LoadSettings() {
          const char* user = std::getenv("MH3_USER_DIR");
@@ -5062,7 +6201,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          std::ifstream in(gfxPath);
          int msaa = 1, vsync = 1, resIdx = 0, fpsLimit = 60, aspect = 0, showFps = 1, fullscreen = 0;
          if (in >> msaa >> vsync >> resIdx >> fpsLimit >> aspect >> showFps) {
-@@ -2184,11 +3382,12 @@ private:
+@@ -2184,11 +3441,12 @@ private:
          } else {
              m_vsync = true;
              m_resolutionIndex = 0; // 0: Original Wii by default!
@@ -5076,7 +6215,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
          ApplyResolutionScale(m_resolutionIndex);
          if (m_fullscreen) {
-@@ -2208,35 +3407,41 @@ private:
+@@ -2208,35 +3466,41 @@ private:
              else if (code == "fr") m_langChoice = 2;
              else if (code == "de") m_langChoice = 3;
              else if (code == "it") m_langChoice = 4;
@@ -5125,7 +6264,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          std::string langPath = dir + "/MH3UI.language";
  
          const char* codes[] = { "es", "en", "fr", "de", "it" };
-@@ -2246,38 +3451,45 @@ private:
+@@ -2246,38 +3510,45 @@ private:
          }
      }
  
@@ -5178,7 +6317,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              return;
          }
  
-@@ -2287,12 +3499,20 @@ private:
+@@ -2287,12 +3558,20 @@ private:
              std::istringstream iss(line);
              std::string tag;
              if (!(iss >> tag)) continue;
@@ -5200,7 +6339,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
              else if (tag == "LEFT_STICK") {
                  iss >> m_normLeftStickPos.x >> m_normLeftStickPos.y >> m_leftStickScale;
              } else if (tag == "BTN") {
-@@ -2301,95 +3521,90 @@ private:
+@@ -2301,104 +3580,101 @@ private:
                  if (iss >> id >> nx >> ny >> sc) {
                      for (auto& btn : m_buttons) {
                          if (btn.id == id) {
@@ -5342,7 +6481,10 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          }
      }
  
-@@ -2399,6 +3614,7 @@ private:
+     // State Variables
+     bool m_initialized = false;
++    std::string m_featureStatus;
+     bool m_enabled = false;
      int m_width = 0;
      int m_height = 0;
      float m_unit = 0.0f;
@@ -5350,7 +6492,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
      // Fixed Left Stick
      Vec2 m_normLeftStickPos{ 0.12f, 0.76f };
-@@ -2407,7 +3623,7 @@ private:
+@@ -2407,7 +3683,7 @@ private:
      Vec2 m_leftStickPos{ 0, 0 };
      float m_leftStickRadius = 0.0f;
      float m_leftStickKnobRadius = 0.0f;
@@ -5359,7 +6501,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      int16_t m_leftX = 0;
      int16_t m_leftY = 0;
  
-@@ -2418,7 +3634,7 @@ private:
+@@ -2418,7 +3694,7 @@ private:
      Vec2 m_rightLastPos{ 0, 0 };
      float m_rightStickRadius = 0.0f;
      float m_rightStickKnobRadius = 0.0f;
@@ -5368,7 +6510,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      int16_t m_rightX = 0;
      int16_t m_rightY = 0;
      std::atomic<float> m_cameraDeltaX{ 0.0f };
-@@ -2432,31 +3648,61 @@ private:
+@@ -2432,31 +3708,61 @@ private:
  
      // Settings Menu & Options State
      bool m_menuOpen = false;
@@ -5436,7 +6578,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  
      // GL Resources
      GLuint m_shaderProgram = 0;
-@@ -2466,22 +3712,34 @@ private:
+@@ -2466,22 +3772,34 @@ private:
      GLuint m_vbo = 0;
      GLuint m_fontTex = 0;
  
@@ -5471,7 +6613,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
      SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
      g_touchSettingsEngine.Init();
-@@ -2492,44 +3750,83 @@ void TouchControls_Init(void) {
+@@ -2492,44 +3810,93 @@ void TouchControls_Init(void) {
      }
  }
  
@@ -5498,7 +6640,17 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
  void TouchControls_HandleSdlEvent(const void* sdlEvent) {
 +    std::lock_guard lock(g_touchMutex);
      if (!sdlEvent) return;
++#ifdef __ANDROID__
++    if (AndroidKeyboard_HandleSdlEvent(sdlEvent)) return;
++#endif
      const SDL_Event* event = reinterpret_cast<const SDL_Event*>(sdlEvent);
++#ifdef __ANDROID__
++    if(event->type==SDL_EVENT_FINGER_DOWN && AndroidKeyboard_ShouldBeActive() && event->tfinger.y<0.65f) {
++        g_touchSettingsEngine.ResetInput();
++        AndroidKeyboard_OnScreenTouch();
++        return;
++    }
++#endif
  
 +    float pointerScaleX=1, pointerScaleY=1;
 +    if (event->type==SDL_EVENT_MOUSE_BUTTON_DOWN || event->type==SDL_EVENT_MOUSE_BUTTON_UP || event->type==SDL_EVENT_MOUSE_MOTION) {
@@ -5560,7 +6712,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
          break;
      case SDL_EVENT_FINGER_DOWN:
          g_touchSettingsEngine.HandleTouchDown(event->tfinger.fingerID, event->tfinger.x, event->tfinger.y);
-@@ -2538,13 +3835,22 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
+@@ -2538,13 +3905,22 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
          g_touchSettingsEngine.HandleTouchMove(event->tfinger.fingerID, event->tfinger.x, event->tfinger.y);
          break;
      case SDL_EVENT_FINGER_UP:
@@ -5584,7 +6736,7 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
      default:
          break;
      }
-@@ -2553,23 +3859,35 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
+@@ -2553,23 +3929,35 @@ void TouchControls_HandleSdlEvent(const void* sdlEvent) {
  void TouchControls_UpdateSample(uint16_t* buttons, int16_t* leftX, int16_t* leftY,
                                  int16_t* rightX, int16_t* rightY,
                                  uint8_t* triggerL, uint8_t* triggerR) {
@@ -5620,6 +6772,30 @@ index 296810b3f4e7187412d5a90b6b615eaad4d7ca38..84e0fe625c6ec87a2dc188367433d4ca
 +#endif
  
  } // extern "C"
+diff --git a/runtime/src/wpad_services.cpp b/runtime/src/wpad_services.cpp
+index 7a04d66b998721f06b98dc6ad43242024e7c3fa9..3ad903b4ff5a9f5c86149bd0c3a03b6b164a0b9e 100644
+--- a/runtime/src/wpad_services.cpp
++++ b/runtime/src/wpad_services.cpp
+@@ -2,6 +2,9 @@
+ #include "fatal.h"
+ #include "controller_host.h"
+ #include "village_boot.h"
++#ifdef __ANDROID__
++#include "android_keyboard.h"
++#endif
+ #include "ios_host.h"
+ #include "../native/mh3_classic_map.h"
+ #include <array>
+@@ -147,6 +150,9 @@ extern "C" void MH3_WPADSetDataFormat(CpuContext* cpu) {
+ REGISTER_NATIVE_FUNCTION(0x804EF2A0, MH3_WPADSetDataFormat);
+ 
+ extern "C" void MH3_WPADRead(CpuContext* cpu) {
++#ifdef __ANDROID__
++    AndroidKeyboard_ProcessPending(cpu);
++#endif
+     const auto channel = cpu->gpr[3];
+     const auto sample = ReadGameController();
+     const auto status = ControllerStatus(channel, sample);
 diff --git a/scripts/prepare_native_dispatch.py b/scripts/prepare_native_dispatch.py
 index a1d4b3b3a0dcd024a9b030774bd70870f919be3b..13e82c65ff3d1fa2ddd015308f02521545a8ae75 100644
 --- a/scripts/prepare_native_dispatch.py
@@ -5647,198 +6823,3 @@ index a1d4b3b3a0dcd024a9b030774bd70870f919be3b..13e82c65ff3d1fa2ddd015308f025215
  
  
  def prepare(args):
-diff --git a/packaging/android/AndroidManifest.xml b/packaging/android/AndroidManifest.xml
-index 940453d42908a79e9e348b531648235292a11442..7ab5d5bc7a728b249c3526ca19b9863bda8e9dc6 100644
---- a/packaging/android/AndroidManifest.xml
-+++ b/packaging/android/AndroidManifest.xml
-@@ -1,42 +1,22 @@
--<?xml version="1.0" encoding="utf-8"?>
--<manifest xmlns:android="http://schemas.android.com/apk/res/android"
--    package="com.oceantri.mh3"
--    android:versionCode="4"
--    android:versionName="1.4">
--
--    <uses-sdk
--        android:minSdkVersion="29"
--        android:targetSdkVersion="35" />
--
--    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
--    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
--    <uses-feature android:name="android.hardware.gamepad" android:required="false" />
--
--    <uses-permission android:name="android.permission.INTERNET" />
--    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
--    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
--    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
--    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
--
--    <application
--        android:label="@string/app_name"
--        android:icon="@mipmap/ic_launcher"
--        android:allowBackup="true"
--        android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
--        android:hardwareAccelerated="true"
--        android:requestLegacyExternalStorage="true"
--        android:extractNativeLibs="true">
--
--        <activity
--            android:name="com.oceantri.mh3.OceanTriActivity"
--            android:label="@string/app_name"
--            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden|navigation"
--            android:screenOrientation="sensorLandscape"
--            android:exported="true">
--            <intent-filter>
--                <action android:name="android.intent.action.MAIN" />
--                <category android:name="android.intent.category.LAUNCHER" />
--            </intent-filter>
--        </activity>
--    </application>
--</manifest>
-+﻿<?xml version="1.0" encoding="utf-8"?>
-+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.rowell.mh3dev" android:versionCode="10013" android:versionName="1.4-rowell.13-netfix2">
-+  <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35" />
-+  <uses-feature android:glEsVersion="0x00030000" android:required="true" />
-+  <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-+  <uses-feature android:name="android.hardware.gamepad" android:required="false" />
-+  <uses-permission android:name="android.permission.INTERNET" />
-+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
-+  <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
-+  <application android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:allowBackup="true" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:hardwareAccelerated="true" android:requestLegacyExternalStorage="true" android:extractNativeLibs="true">
-+    <activity android:name="com.oceantri.mh3.OceanTriActivity" android:label="@string/app_name" android:launchMode="singleTask" android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation|uiMode|density" android:screenOrientation="sensorLandscape" android:exported="true">
-+      <intent-filter>
-+        <action android:name="android.intent.action.MAIN" />
-+        <category android:name="android.intent.category.LAUNCHER" />
-+      </intent-filter>
-+    </activity>
-+    <activity android:name="com.oceantri.mh3.RowellRestartActivity" android:process=":restart" android:exported="false" android:excludeFromRecents="true" android:theme="@android:style/Theme.NoDisplay" />
-+    <profileable android:shell="true" />
-+  </application>
-+</manifest>
-\ No newline at end of file
-diff --git a/runtime/src/net/net_host_posix.cpp b/runtime/src/net/net_host_posix.cpp
-index 24790d9624226592cb2a584f346607cc723046ec..19cef48c4f540959205fd26eb2b0162d966caf2d 100644
---- a/runtime/src/net/net_host_posix.cpp
-+++ b/runtime/src/net/net_host_posix.cpp
-@@ -7,6 +7,10 @@
- 
- #include "guest_threads.h"
- 
-+#if defined(__ANDROID__)
-+#include "background_value.h"
-+#endif
-+
- #include <algorithm>
- #include <arpa/inet.h>
- #include <cerrno>
-@@ -566,7 +570,7 @@ Interface DefaultInterface() {
-     return result;
- }
- #else
--Interface DefaultInterface() {
-+static Interface ReadDefaultInterface(bool enumerate) {
-     Interface result{};
-     inet_pton(AF_INET, "10.0.1.30", &result.ip);
-     inet_pton(AF_INET, "255.255.255.0", &result.netmask);
-@@ -601,6 +605,16 @@ Interface DefaultInterface() {
-     if (!found)
-         return result;
- 
-+#if defined(__ANDROID__)
-+    // Android can stall for over a second in getifaddrs/netlink. Seed a usable
-+    // route immediately, then let the worker fill in the real interface mask.
-+    result.ip = local.sin_addr.s_addr;
-+    result.broadcast = (result.ip & result.netmask) | ~result.netmask;
-+    result.gateway = (result.ip & result.netmask) | htonl(1);
-+#endif
-+    if (!enumerate)
-+        return result;
-+
-     ifaddrs* interfaces = nullptr;
- 
-     if (getifaddrs(&interfaces) != 0)
-@@ -626,6 +640,19 @@ Interface DefaultInterface() {
-     freeifaddrs(interfaces);
-     return result;
- }
-+
-+Interface DefaultInterface() {
-+#if defined(__ANDROID__)
-+    // Wii asks for interface options during gameplay. Never enumerate Android
-+    // interfaces on that thread; refresh the snapshot without holding its lock.
-+    static BackgroundValue<Interface> cached(ReadDefaultInterface(false),
-+                                            [] { return ReadDefaultInterface(true); },
-+                                            std::chrono::seconds(5));
-+    return cached.Get();
-+#else
-+    return ReadDefaultInterface(true);
-+#endif
-+}
- #endif
- 
- bool ParseIpv4(const std::string& text, uint32_t* ip) {
-diff --git a/runtime/src/net/ios_net.cpp b/runtime/src/net/ios_net.cpp
-index c6e9d531d9c126d7fd4136f3d023e5725f9f3c69..76a66f301a995df8ef9ff0a4dffaf10d77c8cf9b 100644
---- a/runtime/src/net/ios_net.cpp
-+++ b/runtime/src/net/ios_net.cpp
-@@ -568,7 +568,21 @@ std::optional<Attempt> IpTopIoctl(uint32_t command, uint32_t in, uint32_t inSize
-             return Done(-NetHost::kSoEBadF);
- 
-         const uint32_t size = std::min<uint32_t>(Memory::Read32(in + 0xC), 20);
--        return Done(NetHost::SetOption(socket->handle, Memory::Read32(in + 4), Memory::Read32(in + 8), Memory::GetPointer(in + 0x10, size), size));
-+        const uint32_t level = Memory::Read32(in + 4), name = Memory::Read32(in + 8);
-+#ifdef __ANDROID__
-+        // Linux accounts TCP packet metadata against SO_SNDBUF. The Wii's
-+        // 4 KiB payload budget can therefore hold only a few tiny TLS records.
-+        // Keep room for a complete reply; leave UDP and other options alone.
-+        if (socket->stream && level == 0xFFFF && name == 0x1001 && size == 4) {
-+            const uint32_t requested = Memory::Read32(in + 0x10);
-+            if (requested > 0 && requested < 32768) {
-+                constexpr uint8_t minimum[4]{0, 0, 0x80, 0};
-+                const int32_t result = NetHost::SetOption(socket->handle, level, name, minimum, sizeof(minimum));
-+                return Done(result);
-+            }
-+        }
-+#endif
-+        return Done(NetHost::SetOption(socket->handle, level, name, Memory::GetPointer(in + 0x10, size), size));
-     }
- 
-     case kSoGetSockName:
-@@ -937,21 +951,29 @@ std::optional<Attempt> SslIoctlv(uint32_t command, const std::vector<Vector>& in
-         const Vector data = command == kSslRead ? (in.size() > 1 ? in[1] : Vector{}) : (out.size() > 1 ? out[1] : Vector{});
-         return Attempt([=]() -> std::optional<int32_t> {
-             TlsSession* current = sessions[id] ? &*sessions[id] : nullptr;
--            const Socket* socket = current ? Find(current->socket) : nullptr;
-+            Socket* socket = current ? Find(current->socket) : nullptr;
- 
-             if (!socket) {
-                 Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kSyscall)));
-                 return 0;
-             }
- 
--            // A handshake waits for the socket's connection first.
--            if (socket->connecting && NetHost::ConnectResult(socket->handle) == -NetHost::kSoEInProgress) {
--                if (socket->nonBlocking) {
--                    Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kWantRead)));
-+            // Only a genuinely pending TCP connect waits here. Once complete,
-+            // TLS handles its own read/write readiness and retry results.
-+            if (socket->connecting) {
-+                const int32_t connection = NetHost::ConnectResult(socket->handle);
-+                if (connection == -NetHost::kSoEInProgress) {
-+                    if (socket->nonBlocking) {
-+                        Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kWantRead)));
-+                        return 0;
-+                    }
-+                    return std::nullopt;
-+                }
-+                socket->connecting = false;
-+                if (connection < 0) {
-+                    Memory::Write32(reply, uint32_t(int32_t(NetHost::Tls::kSyscall)));
-                     return 0;
-                 }
--
--                return std::nullopt;
-             }
- 
-             int32_t result;

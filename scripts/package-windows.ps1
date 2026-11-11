@@ -1,6 +1,6 @@
 #requires -Version 5.1
 [CmdletBinding()]
-param([string]$BuildDirectory,[string]$OutputDirectory,[string]$VersionName='1.4-rowell.13')
+param([string]$BuildDirectory,[string]$OutputDirectory,[string]$VersionName='1.4-rowell.14')
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 if(-not $BuildDirectory){$BuildDirectory=Join-Path $projectRoot 'build/windows'}

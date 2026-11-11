@@ -17,6 +17,7 @@
 // +0x386) where the gauge would go down.
 #include "cheats.h"
 #include "game_step.h"
+#include "hunter_telemetry.h"
 #include "guest_call.h"
 #include "port_check.h"
 
@@ -374,6 +375,7 @@ void Tick(GuestCall& game, const Plw p) {
 }
 
 void PlayerStepTimers(CpuContext* ctx) {
+    HunterTelemetry::Update(ctx->gpr[3]);
     GuestFrame frame(ctx, 0x20);
     GuestCall game{ctx};
     const Plw player{frame.Arg(3)};

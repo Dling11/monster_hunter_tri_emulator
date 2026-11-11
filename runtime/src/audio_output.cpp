@@ -282,7 +282,11 @@ void StartAudioOutput() {
         null = v[0] == '1';
 #endif
     if (!null) {
-#ifndef __EMSCRIPTEN__
+#if defined(__ANDROID__)
+        // Allow AAudio/Bluetooth scheduling jitter without changing the
+        // mixer clock or our serialized foreground-recovery worker.
+        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "1024");
+#elif !defined(__EMSCRIPTEN__)
         // Not on the web: its ScriptProcessorNode takes a power of two, SDL picks it.
         SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "384");
 #endif
